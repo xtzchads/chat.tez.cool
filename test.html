@@ -180,10 +180,8 @@ async function send(message,recipient) {
          destination: "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7",
          parameters: {
             entrypoint: "mint",
-            value: {
-               "prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]},{"prim":"Elt","args":[{"string":"symbol"},{"bytes":"4d5347"}]}],{"string":recipient}]
-            }
-         }
+	    value: {"prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]},{"prim":"Elt","args":[{"string":"shouldPreferSymbol"},{"bytes":"66616c7365"}]},{"prim":"Elt","args":[{"string":"symbol"},{"bytes":"4d5347"}]}],{"string":recipient}]}
+           }
       }];
 
       const response = await client.requestOperation({

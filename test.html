@@ -284,12 +284,14 @@ client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
 });
 
 function hexToString(hex) {
-    let str = '';
-    for (let i = 0; i < hex.length; i += 4) {
-        const codePoint = parseInt(hex.substr(i, 4), 16);
-        str += String.fromCharCode(codePoint);
+    // Convert the hex string to a byte array
+    const bytes = [];
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
     }
-    return str;
+
+    // Decode the byte array as UTF-8
+    return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
 }
 </script>
 

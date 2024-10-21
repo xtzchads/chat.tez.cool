@@ -155,7 +155,7 @@
       </div>
       <div class="col-12 col-md-8 message-area">
         <div class="current-dialog" id="currentDialogTitle"></div>
-        <div id="chatArea"></div>
+        <div id="chatArea" style="display:none"></div>
         <div class="input-area">
           <button class="btn btn-light" id="emojiButton">
             <span class="emoji-picker">😊</span>
@@ -263,8 +263,10 @@
       if (activeAccount) {
         permissions = { address: activeAccount.address };
         walletButton.textContent = 'Disconnect Wallet';
+        document.querySelector('.chat-container').style.display='flex';
         fetchTransactionHistory(permissions.address);
       } else {
+        document.querySelector('.chat-container').style.display='none';
         walletButton.textContent = 'Connect Wallet';
         clearSelectedDialog();
       }

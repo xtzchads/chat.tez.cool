@@ -276,8 +276,6 @@ async function disconnectWallet() {
     clearSelectedDialog(); // Ensure the send button is disabled
 }
 
-document.addEventListener('DOMContentLoaded', checkActiveSession);
-
 const newDialogInput = document.getElementById('newDialogInput');
 
 newDialogInput.addEventListener('keypress', function(event) {
@@ -297,6 +295,43 @@ function addNewDialog(address) {
     dialogItem.textContent = address;
     dialogItem.addEventListener('click', () => loadChat(address, [], permissions.address)); // Load chat on click
     dialogPanel.appendChild(dialogItem);
+}
+
+client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
+    checkActiveSession();
+});
+
+function hexToString(hex) {
+    const bytes = [];
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
+    }
+    return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+}
+
+async function send(message,recipient) {
+   try {
+      if (!permissions?.address) {
+         permissions = await client.requestPermissions();
+         checkActiveSession();
+      }
+      const operation = [{
+         amount: "0",
+         kind: beacon.TezosOperationType.TRANSACTION,
+         source: permissions.address,
+         destination: "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7",
+         parameters: {
+            entrypoint: "mint",
+	    value: {"prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]},{"prim":"Elt","args":[{"string":"shouldPreferSymbol"},{"bytes":"66616c7365"}]}],{"string":recipient}]}
+           }
+      }];
+
+      const response = await client.requestOperation({
+         operationDetails: operation
+      });
+      setTimeout(checkActiveSession, 15000);
+   } catch (error) {
+   }
 }
 </script>
 </body>

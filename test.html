@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Interface with Emoji Picker</title>
+    <title>Chad Chat</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-	<script src="js/walletbeacon.min.js"></script>
+    <script src="js/walletbeacon.min.js"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -18,24 +18,20 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            flex-direction: column; /* Allow vertical stacking */
         }
         .dialog-panel {
+            flex: 0 0 250px; /* Use flex property for responsive width */
             border-right: 1px solid #dee2e6;
             padding: 15px;
             background-color: white;
             height: 400px; /* Maintain the height */
             overflow-y: auto; /* Allow scrolling if content exceeds height */
-            flex-shrink: 0; /* Prevent shrinking */
         }
         .dialog-item {
             padding: 10px;
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.2s;
-            white-space: nowrap; /* Prevent line breaks for addresses */
-            overflow: hidden; /* Hide overflow text */
-            text-overflow: ellipsis; /* Show ellipsis for overflow */
         }
         .dialog-item:hover {
             background-color: #e9ecef;
@@ -75,16 +71,20 @@
             position: relative;
             z-index: 1;
         }
+        .new-dialog-input {
+            margin-bottom: 10px; /* Add spacing below input */
+        }
     </style>
 </head>
 <body>
 
 <div class="wallet-button-container">
-    <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button> <!-- Wallet button added outside -->
+    <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button>
 </div>
 
 <div class="chat-container">
     <div class="dialog-panel">
+        <input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog...">
         <!-- Dynamic dialog items will be added here -->
     </div>
     <div class="message-area">
@@ -94,17 +94,12 @@
             <button class="btn btn-light" id="emojiButton">
                 <span class="emoji-picker">😊</span>
             </button>
-            <input type="text" id="messageInput" class="form-control me-2" placeholder="Type your message..." disabled>
-            <button class="btn btn-primary" id="sendButton" disabled>Send</button>
-        </div>
-        <div class="input-area mt-2">
-            <input type="text" id="newDialogInput" class="form-control me-2" placeholder="Paste address here...">
-            <button class="btn btn-success" id="addDialogButton">Add Dialog</button>
+            <input type="text" id="messageInput" class="form-control me-2" placeholder="Type your message...">
+            <button class="btn btn-primary" id="sendButton">Send</button>
         </div>
     </div>
 </div>
 
-<!-- Load the emoji-button as a module -->
 <script type="module">
     import { EmojiButton } from 'https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js';
     const emojiButton = document.getElementById('emojiButton');
@@ -129,10 +124,15 @@ const chatArea = document.getElementById('chatArea');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const walletButton = document.getElementById('walletButton');
-const newDialogInput = document.getElementById('newDialogInput');
-const dialogPanel = document.querySelector('.dialog-panel');
+const newDialogInput = document.getElementById('newDialogInput'); // New dialog input field
 
 sendButton.addEventListener('click', sendMessage);
+newDialogInput.addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        addNewDialog(newDialogInput.value.trim());
+        newDialogInput.value = ''; // Clear input field after adding
+    }
+});
 
 function sendMessage() {
     const messageText = messageInput.value.trim();
@@ -143,7 +143,7 @@ function sendMessage() {
         chatArea.appendChild(messageDiv);
         messageInput.value = '';
         chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-        send(hex(messageText), selectedDialogAddress);
+        send(hex(messageText), selectedDialogAddress); // Use selected dialog address
     }
 }
 
@@ -157,7 +157,7 @@ async function disconnectWallet() {
     await client.clearActiveAccount();
     walletButton.textContent = 'Connect Wallet';
     permissions = null;
-    dialogPanel.innerHTML = ''; // Clear dialogs
+    document.querySelector('.dialog-panel').innerHTML = ''; // Clear dialogs
     chatArea.innerHTML = ''; // Clear chat area
 }
 
@@ -205,6 +205,7 @@ async function fetchTransactionHistory(address) {
         const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
         combinedTransactions.sort((a, b) => b.id - a.id);
 
+        const dialogPanel = document.querySelector('.dialog-panel');
         dialogPanel.innerHTML = ''; // Clear previous dialogs
 
         const uniqueAddresses = new Set();
@@ -231,52 +232,40 @@ async function fetchTransactionHistory(address) {
     }
 }
 
-let selectedDialogAddress = null;
-
 function loadChat(friendAddress, transactions, currentAddress) {
     const chatArea = document.getElementById('chatArea');
-    const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the current dialog title
+    const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the title element
+    chatArea.innerHTML = '';
     currentDialogTitle.textContent = `Chat with ${friendAddress}`;
-    selectedDialogAddress = friendAddress;
+    selectedDialogAddress = friendAddress; // Store selected dialog address
 
-    const messages = transactions.filter(tx => {
-        return (tx.sender?.address === friendAddress && tx.target?.address === currentAddress) ||
-               (tx.sender?.address === currentAddress && tx.target?.address === friendAddress);
-    });
+    transactions
+        .filter(tx => {
+            const senderAddress = tx.sender?.address;
+            const receiverAddress = tx.parameter?.value?.to_ || tx.target?.address;
+            return (senderAddress === friendAddress || receiverAddress === friendAddress);
+        })
+        .forEach(tx => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            messageDiv.textContent = (tx.sender?.address === currentAddress ? 'You: ' : '') + (tx.parameter?.value?.entrypoint === 'send' ? tx.parameter?.value?.amount : 'Message');
+            chatArea.appendChild(messageDiv);
+        });
 
-    chatArea.innerHTML = ''; // Clear previous messages
-
-    messages.forEach(tx => {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message';
-        messageDiv.textContent = tx.parameter?.value || "Unknown message"; // Show message or default text
-        chatArea.appendChild(messageDiv);
-    });
-
-    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to bottom
-    messageInput.disabled = false; // Enable input
-    sendButton.disabled = !selectedDialogAddress; // Disable button if no dialog selected
+    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
 }
 
-// Add new dialog functionality
-document.getElementById('addDialogButton').addEventListener('click', () => {
-    const newDialogAddress = newDialogInput.value.trim();
-    if (newDialogAddress) {
+function addNewDialog(address) {
+    if (address) {
+        const dialogPanel = document.querySelector('.dialog-panel');
         const dialogItem = document.createElement('div');
         dialogItem.className = 'dialog-item';
-        dialogItem.textContent = newDialogAddress;
-        dialogItem.addEventListener('click', () => loadChat(newDialogAddress, [], permissions.address)); // Load empty chat for new address
+        dialogItem.textContent = address;
+        dialogItem.addEventListener('click', () => loadChat(address, [], permissions.address)); // Load chat on click
         dialogPanel.appendChild(dialogItem);
-        newDialogInput.value = ''; // Clear input
     }
-});
-
-// Update send button state based on dialog selection
-setInterval(() => {
-    sendButton.disabled = !selectedDialogAddress;
-}, 100);
-
-checkActiveSession();
+}
 </script>
+
 </body>
 </html>

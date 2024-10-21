@@ -36,36 +36,44 @@
             background-color: #e9ecef;
         }
         .message-area {
-            flex-grow: 1;
-            padding: 15px;
-            background-color: #f0f2f5; /* Light, eye-friendly background */
-            display: flex;
-            flex-direction: column;
-            height: 400px; 
-            overflow-y: auto; /* Allow scrolling */
-            border-radius: 10px; /* Add rounded corners */
-        }
+    flex-grow: 1;
+    padding: 15px;
+    background-color: #f0f2f5; /* Light, eye-friendly background */
+    display: flex;
+    flex-direction: column;
+    height: 400px; 
+    overflow-y: auto; /* Allow scrolling */
+    border-radius: 10px; /* Add rounded corners */
+}
+
+.chat-message {
+    margin-bottom: 10px; /* Ensure messages have spacing */
+    padding: 10px 15px; /* Add padding inside messages */
+    border-radius: 15px; /* Rounded corners */
+    max-width: 70%; /* Limit the width of message bubbles */
+    display: inline-block; /* Allow message bubbles to fit content */
+    word-wrap: break-word; /* Wrap long words */
+}
+
+.chat-message.own-message {
+    background-color: #007bff; /* Your message color (blue) */
+    color: white; /* Text color */
+    align-self: flex-end; /* Align own messages to the right */
+}
+
+.chat-message.friend-message {
+    background-color: #e0e0e0; /* Friend's message color (light gray) */
+    color: black; /* Text color */
+    align-self: flex-start; /* Align friend's messages to the left */
+}
+
         .current-dialog {
             font-size: 20px; /* Heading style */
             font-weight: bold;
             padding: 10px;
             border-bottom: 2px solid #007bff; /* Bottom border for heading */
         }
-        .chat-message {
-            margin-bottom: 10px; /* Ensure messages have spacing */
-            padding: 10px 15px; /* Add padding inside messages */
-            border-radius: 15px; /* Rounded corners */
-        }
-        .chat-message.own-message {
-            background-color: #007bff; /* Your message color (blue) */
-            color: white; /* Text color */
-            text-align:right /* Align own messages to the right */
-        }
-        .chat-message.friend-message {
-            background-color: #e0e0e0; /* Friend's message color (light gray) */
-            color: black; /* Text color */
-            text-align:left; /* Align friend's messages to the left */
-        }
+        
         .timestamp {
             font-size: 0.75em; /* Smaller font size */
             color: #888; /* Gray color */

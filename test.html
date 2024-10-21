@@ -138,7 +138,9 @@ function sendMessage() {
 }
 
 function hex(str) {
-    return Array.from(str).map(char => char.charCodeAt(0).toString(16)).join('');
+    return Array.from(new TextEncoder().encode(str))
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('');
 }
 
 async function disconnectWallet() {

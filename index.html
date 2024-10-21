@@ -412,7 +412,6 @@
         const response = await client.requestOperation({
           operationDetails: operation
         });
-        setTimeout(checkActiveSession, 15000);
       } catch (error) {
       }
     }
@@ -428,6 +427,8 @@
         }
       }
     }
+
+  setTimeout(checkActiveSession, 15000);
   </script>
 </body>
 

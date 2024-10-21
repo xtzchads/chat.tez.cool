@@ -84,7 +84,7 @@
         <!-- Dynamic dialog items will be added here -->
     </div>
     <div class="message-area">
-        <div class="current-dialog" id="currentDialogTitle">Everstake</div>
+        <div class="current-dialog" id="currentDialogTitle"></div>
         <div id="chatArea"></div>
         <div class="input-area">
             <button class="btn btn-light" id="emojiButton">
@@ -222,7 +222,9 @@ async function fetchTransactionHistory(address) {
 
 function loadChat(friendAddress, transactions, currentAddress) {
     const chatArea = document.getElementById('chatArea');
-    chatArea.innerHTML = ''; // Clear previous chat messages
+    const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the title element
+    chatArea.innerHTML = '';
+    currentDialogTitle.textContent = `Chat with ${friendAddress}`;
 
     transactions
         .filter(tx => {

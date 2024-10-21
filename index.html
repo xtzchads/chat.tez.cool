@@ -151,7 +151,7 @@
     <div class="row flex-grow-1">
       <div class="col-12 col-md-4 dialog-panel">
         <input type="text" id="newDialogInput" class="form-control new-dialog-input"
-          placeholder="Paste address to add dialog..." onkeydown="handleKeyDown(event)">
+          placeholder="Paste address and press enter to add dialog..." onkeydown="handleKeyDown(event)">
       </div>
       <div class="col-12 col-md-8 message-area">
         <div class="current-dialog" id="currentDialogTitle"></div>
@@ -284,7 +284,7 @@
         combinedTransactions.sort((a, b) => a.id - b.id);
 
         const dialogPanel = document.querySelector('.dialog-panel');
-        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog..." onkeydown="handleKeyDown(event)">';
+        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address and press enter to add dialog..." onkeydown="handleKeyDown(event)">';
 
         const uniqueAddresses = new Set();
 

@@ -36,22 +36,28 @@
             background-color: #e9ecef;
         }
         .message-area {
-            flex-grow: 1;
-            padding: 15px;
-            background-color: #f0f2f5; /* Light, eye-friendly background */
-            display: flex;
-            flex-direction: column;
-            height: 400px; 
-            overflow-y: auto; /* Allow scrolling */
-            border-radius: 10px; /* Add rounded corners */
-        }
-        .current-dialog {
-            font-size: 20px; /* Heading style */
-            font-weight: bold;
-            padding: 10px;
-            border-bottom: 2px solid #007bff; /* Bottom border for heading */
-		margin-bottom:5px;
-        }
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 400px; 
+    overflow: hidden; /* Prevent overflow affecting children */
+    padding: 15px;
+    background-color: #f0f2f5; /* Light, eye-friendly background */
+    border-radius: 10px; /* Add rounded corners */
+}
+#chatArea {
+    flex-grow: 1; /* Allow chatArea to grow */
+    overflow-y: auto; /* Only chatArea should scroll */
+    padding: 10px 0; /* Optional padding for better layout */
+}
+
+.current-dialog {
+    font-size: 20px; /* Heading style */
+    font-weight: bold;
+    padding: 10px;
+    border-bottom: 2px solid #007bff; /* Bottom border for heading */
+    margin-bottom: 5px;
+}
         .chat-message {
     margin-bottom: 10px; /* Ensure messages have spacing */
     padding: 10px 15px; /* Add padding inside messages */

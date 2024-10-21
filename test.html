@@ -186,14 +186,14 @@ async function fetchTransactionHistory(address) {
     try {
         const [sentResponse, receivedResponse] = await Promise.all([
             fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${address}&target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&status=applied&limit=1000&sort.desc=id`),
-            fetch(`https://api.tzkt.io/v1/operations/transactions?target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameters.to_=${address}&status=applied&limit=1000&sort.desc=id`)
+            fetch(`https://api.tzkt.io/v1/operations/transactions?target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameter.to_=${address}&status=applied&limit=1000&sort.desc=id`)
         ]);
 
         const sentTransactions = await sentResponse.json();
-        const receivedTransactions = await receivedResponse.json();
-
-        const combinedTransactions = [...sentTransactions, ...receivedTransactions];
-        combinedTransactions.sort((a, b) => b.id - a.id); // Sort by most recent
+const receivedTransactions = await receivedResponse.json();
+const combined = [...sentTransactions, ...receivedTransactions];
+const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
+combinedTransactions.sort((a, b) => b.id - a.id);
 
         const dialogPanel = document.querySelector('.dialog-panel');
         dialogPanel.innerHTML = ''; // Clear previous dialogs
@@ -285,8 +285,9 @@ client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
 
 function hexToString(hex) {
     let str = '';
-    for (let i = 0; i < hex.length; i += 2) {
-        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    for (let i = 0; i < hex.length; i += 4) {
+        const codePoint = parseInt(hex.substr(i, 4), 16);
+        str += String.fromCharCode(codePoint);
     }
     return str;
 }

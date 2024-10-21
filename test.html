@@ -175,7 +175,7 @@ function sendMessage() {
 
             const messageContainer = document.createElement('div');
             messageContainer.style.display = 'flex';
-            messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start'; // Align based on message sender
+            messageContainer.style.justifyContent = 'flex-end'; // Align based on message sender
             messageContainer.appendChild(messageDiv);
 
             // Create and append the timestamp

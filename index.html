@@ -262,6 +262,8 @@
 
     async function fetchTransactionHistory(address) {
       try {
+        if (address!==permissions.address)
+        {
         const [sentResponse, receivedResponse] = await Promise.all([
           fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${address}&target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&status=applied&limit=1000&sort.desc=id`),
           fetch(`https://api.tzkt.io/v1/operations/transactions?target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameter.to_=${address}&status=applied&limit=1000&sort.desc=id`)
@@ -271,8 +273,15 @@
         const receivedTransactions = await receivedResponse.json();
         const combined = [...sentTransactions, ...receivedTransactions];
         const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
+        }
+        else
+        {
+          const [selfMsg] = await Promise.all([
+          fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${address}&target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameter.to_=${address}&status=applied&limit=1000&sort.desc=id`)
+        ]);
+          const combinedTransactions = await selfMsg.json();
+        }
         combinedTransactions.sort((a, b) => a.id - b.id);
-
         const dialogPanel = document.querySelector('.dialog-panel');
         dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog..." onkeydown="handleKeyDown(event)">';  
 

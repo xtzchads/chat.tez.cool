@@ -237,7 +237,7 @@ function loadChat(friendAddress, transactions, currentAddress) {
             messageDiv.className = 'chat-message';
 
             const isOwnMessage = tx.sender?.address === currentAddress;
-            messageDiv.textContent = tx.parameter?.value?.metadata?.name || 'Unknown message'; // Display message content
+            messageDiv.textContent = hexToString(tx.parameter?.value?.metadata?.name); // Display message content
 
             // Style messages differently
             if (isOwnMessage) {
@@ -280,6 +280,14 @@ async function send(message,recipient) {
 client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
     checkActiveSession();
 });
+
+function hexToString(hex) {
+    let str = '';
+    for (let i = 0; i < hex.length; i += 2) {
+        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    }
+    return str;
+}
 </script>
 
 </body>

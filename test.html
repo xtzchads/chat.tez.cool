@@ -200,7 +200,7 @@ async function fetchTransactionHistory(address) {
         const receivedTransactions = await receivedResponse.json();
         const combined = [...sentTransactions, ...receivedTransactions];
         const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
-        combinedTransactions.sort((a, b) => b.id - a.id);
+        combinedTransactions.sort((a, b) => a.id - b.id);
 
         const dialogPanel = document.querySelector('.dialog-panel');
         dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog..." onkeydown="handleKeyDown(event)">'; // Clear previous dialogs

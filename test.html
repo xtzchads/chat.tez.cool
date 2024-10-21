@@ -13,7 +13,7 @@
         .chat-container {
             display: flex;
             max-width: 800px;
-            margin: 50px auto;
+            margin: 50px auto 0 auto;
             border: 1px solid #dee2e6;
             border-radius: 10px;
             overflow: hidden;
@@ -62,20 +62,30 @@
             cursor: pointer;
             line-height: 1; /* Align emoji vertically */
         }
+        .wallet-button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .wallet-button {
+            position: relative;
+            z-index: 1;
+        }
     </style>
 </head>
 <body>
 
+<div class="wallet-button-container">
+    <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button> <!-- Wallet button added outside -->
+</div>
+
 <div class="chat-container">
     <div class="dialog-panel">
-        <div class="dialog-item">Everstake</div>
-        <div class="dialog-item">StakeFish</div>
-        <div class="dialog-item">P2P.org</div>
+        <!-- Dynamic dialog items will be added here -->
     </div>
     <div class="message-area">
         <div class="current-dialog" id="currentDialogTitle">Everstake</div>
-        <div id="chatArea">
-        </div>
+        <div id="chatArea"></div>
         <div class="input-area">
             <button class="btn btn-light" id="emojiButton">
                 <span class="emoji-picker">😊</span>
@@ -97,62 +107,46 @@
     });
 
     picker.on('emoji', emoji => {
-        console.log(emoji);
         messageInput.value += emoji.emoji;
     });
 </script>
+
 <script>
 let client = new beacon.DAppClient({
    name: 'Chad Chat'
 });
-let flag = false;
 let permissions;
 
-    const chatArea = document.getElementById('chatArea');
-    const messageInput = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendButton');
-    
-    const currentDialogTitle = document.getElementById('currentDialogTitle');
+const chatArea = document.getElementById('chatArea');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const walletButton = document.getElementById('walletButton');
 
-    sendButton.addEventListener('click', sendMessage);
+sendButton.addEventListener('click', sendMessage);
 
-    function sendMessage() {
-        const messageText = messageInput.value.trim();
-        if (messageText) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'chat-message';
-            messageDiv.textContent = messageText;
-            chatArea.appendChild(messageDiv);
-            messageInput.value = '';
-            chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-	    send(hex(messageText),"KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
-        }
+function sendMessage() {
+    const messageText = messageInput.value.trim();
+    if (messageText) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message';
+        messageDiv.textContent = messageText;
+        chatArea.appendChild(messageDiv);
+        messageInput.value = '';
+        chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
+        send(hex(messageText), "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
     }
+}
 
 function hex(str) {
-  return Array.from(str).map(char => char.charCodeAt(0).toString(16)).join('');
+    return Array.from(str).map(char => char.charCodeAt(0).toString(16)).join('');
 }
-	
+
 async function disconnectWallet() {
     await client.clearActiveAccount();
-    const walletInfoDiv = document.getElementById('walletInfo');
-    walletInfoDiv.innerHTML = '';
-    walletInfoDiv.style.display='none';
+    walletButton.textContent = 'Connect Wallet';
     permissions = null;
-    //checkActiveSession();
-}
-
-client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
-    checkActiveSession();
-});
-
-async function checkActiveSession() {
-    const activeAccount = await client.getActiveAccount();
-    if (activeAccount) {
-        permissions = {
-            address: activeAccount.address
-        };
-}
+    document.querySelector('.dialog-panel').innerHTML = ''; // Clear dialogs
+    chatArea.innerHTML = ''; // Clear chat area
 }
 
 async function connectWallet() {
@@ -163,39 +157,101 @@ async function connectWallet() {
         }
     } catch (error) {
         console.error('Error connecting wallet:', error);
-        showNotification('Failed to connect wallet. Please try again.', true);
+        alert('Failed to connect wallet. Please try again.');
     }
 }
 
-async function send(message,recipient) {
-   try {
-      if (!permissions?.address) {
-         permissions = await client.requestPermissions();
-         checkActiveSession();
-      }
-      const operation = [{
-         amount: "0",
-         kind: beacon.TezosOperationType.TRANSACTION,
-         source: permissions.address,
-         destination: "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7",
-         parameters: {
-            entrypoint: "mint",
-	    value: {"prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]},{"prim":"Elt","args":[{"string":"shouldPreferSymbol"},{"bytes":"66616c7365"}]}],{"string":recipient}]}
-           }
-      }];
+walletButton.addEventListener('click', () => {
+    if (permissions?.address) {
+        disconnectWallet();
+    } else {
+        connectWallet();
+    }
+});
 
-      const response = await client.requestOperation({
-         operationDetails: operation
-      });
-      showNotification(`Successfully finalized unstake. Transaction hash: ${response.transactionHash}`);
-      setTimeout(checkActiveSession, 15000);
-   } catch (error) {
-      console.error('Error unstaking tez:', error);
-      showNotification('Failed. Please try again.', true);
-   }
+async function checkActiveSession() {
+    const activeAccount = await client.getActiveAccount();
+    if (activeAccount) {
+        permissions = { address: activeAccount.address };
+        walletButton.textContent = 'Disconnect Wallet';
+        fetchTransactionHistory(permissions.address);
+    } else {
+        walletButton.textContent = 'Connect Wallet';
+    }
 }
+
+async function fetchTransactionHistory(address) {
+    try {
+        const [sentResponse, receivedResponse] = await Promise.all([
+            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${address}&target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&status=applied&limit=1000&sort.desc=id`),
+            fetch(`https://api.tzkt.io/v1/operations/transactions?target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameters.to_=${address}&status=applied&limit=1000&sort.desc=id`)
+        ]);
+
+        const sentTransactions = await sentResponse.json();
+        const receivedTransactions = await receivedResponse.json();
+
+        const combinedTransactions = [...sentTransactions, ...receivedTransactions];
+        combinedTransactions.sort((a, b) => b.id - a.id); // Sort by most recent
+
+        const dialogPanel = document.querySelector('.dialog-panel');
+        dialogPanel.innerHTML = ''; // Clear previous dialogs
+
+        const uniqueAddresses = new Set();
+
+        // Create dialog items for unique addresses
+        combinedTransactions.forEach(tx => {
+            const senderAddress = tx.sender?.address;
+            const receiverAddress = tx.parameter?.value?.to_ || tx.target?.address;
+
+            const friendAddress = (senderAddress === address) ? receiverAddress : senderAddress;
+            
+            if (!uniqueAddresses.has(friendAddress)) {
+                uniqueAddresses.add(friendAddress);
+
+                const dialogItem = document.createElement('div');
+                dialogItem.className = 'dialog-item';
+                dialogItem.textContent = friendAddress;
+                dialogItem.addEventListener('click', () => loadChat(friendAddress, combinedTransactions, address)); // Load chat on click
+                dialogPanel.appendChild(dialogItem);
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching transaction history:', error);
+    }
+}
+
+function loadChat(friendAddress, transactions, currentAddress) {
+    const chatArea = document.getElementById('chatArea');
+    chatArea.innerHTML = ''; // Clear previous chat messages
+
+    transactions
+        .filter(tx => {
+            const senderAddress = tx.sender?.address;
+            const receiverAddress = tx.parameter?.value?.to_ || tx.target?.address;
+            return (senderAddress === friendAddress || receiverAddress === friendAddress);
+        })
+        .forEach(tx => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+
+            const isOwnMessage = tx.sender?.address === currentAddress;
+            messageDiv.textContent = tx.parameter?.value?.metadata?.name || 'Unknown message'; // Display message content
+
+            // Style messages differently
+            if (isOwnMessage) {
+                messageDiv.style.color = 'blue'; // Our message
+                messageDiv.style.textAlign = 'right'; // Align to right
+            } else {
+                messageDiv.style.color = 'green'; // Friend's message
+            }
+
+            chatArea.appendChild(messageDiv);
+        });
+
+    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom after loading
+}
+
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

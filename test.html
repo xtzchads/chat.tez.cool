@@ -18,20 +18,24 @@
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            flex-direction: column; /* Allow vertical stacking */
         }
         .dialog-panel {
-            width: 250px;
             border-right: 1px solid #dee2e6;
             padding: 15px;
             background-color: white;
             height: 400px; /* Maintain the height */
             overflow-y: auto; /* Allow scrolling if content exceeds height */
+            flex-shrink: 0; /* Prevent shrinking */
         }
         .dialog-item {
             padding: 10px;
             cursor: pointer;
             border-radius: 5px;
             transition: background-color 0.2s;
+            white-space: nowrap; /* Prevent line breaks for addresses */
+            overflow: hidden; /* Hide overflow text */
+            text-overflow: ellipsis; /* Show ellipsis for overflow */
         }
         .dialog-item:hover {
             background-color: #e9ecef;
@@ -90,8 +94,12 @@
             <button class="btn btn-light" id="emojiButton">
                 <span class="emoji-picker">😊</span>
             </button>
-            <input type="text" id="messageInput" class="form-control me-2" placeholder="Type your message...">
-            <button class="btn btn-primary" id="sendButton">Send</button>
+            <input type="text" id="messageInput" class="form-control me-2" placeholder="Type your message..." disabled>
+            <button class="btn btn-primary" id="sendButton" disabled>Send</button>
+        </div>
+        <div class="input-area mt-2">
+            <input type="text" id="newDialogInput" class="form-control me-2" placeholder="Paste address here...">
+            <button class="btn btn-success" id="addDialogButton">Add Dialog</button>
         </div>
     </div>
 </div>
@@ -121,6 +129,8 @@ const chatArea = document.getElementById('chatArea');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const walletButton = document.getElementById('walletButton');
+const newDialogInput = document.getElementById('newDialogInput');
+const dialogPanel = document.querySelector('.dialog-panel');
 
 sendButton.addEventListener('click', sendMessage);
 
@@ -133,7 +143,7 @@ function sendMessage() {
         chatArea.appendChild(messageDiv);
         messageInput.value = '';
         chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-        send(hex(messageText), "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
+        send(hex(messageText), selectedDialogAddress);
     }
 }
 
@@ -147,7 +157,7 @@ async function disconnectWallet() {
     await client.clearActiveAccount();
     walletButton.textContent = 'Connect Wallet';
     permissions = null;
-    document.querySelector('.dialog-panel').innerHTML = ''; // Clear dialogs
+    dialogPanel.innerHTML = ''; // Clear dialogs
     chatArea.innerHTML = ''; // Clear chat area
 }
 
@@ -190,12 +200,11 @@ async function fetchTransactionHistory(address) {
         ]);
 
         const sentTransactions = await sentResponse.json();
-const receivedTransactions = await receivedResponse.json();
-const combined = [...sentTransactions, ...receivedTransactions];
-const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
-combinedTransactions.sort((a, b) => b.id - a.id);
+        const receivedTransactions = await receivedResponse.json();
+        const combined = [...sentTransactions, ...receivedTransactions];
+        const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
+        combinedTransactions.sort((a, b) => b.id - a.id);
 
-        const dialogPanel = document.querySelector('.dialog-panel');
         dialogPanel.innerHTML = ''; // Clear previous dialogs
 
         const uniqueAddresses = new Set();
@@ -222,78 +231,52 @@ combinedTransactions.sort((a, b) => b.id - a.id);
     }
 }
 
+let selectedDialogAddress = null;
+
 function loadChat(friendAddress, transactions, currentAddress) {
     const chatArea = document.getElementById('chatArea');
-    const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the title element
-    chatArea.innerHTML = '';
+    const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the current dialog title
     currentDialogTitle.textContent = `Chat with ${friendAddress}`;
+    selectedDialogAddress = friendAddress;
 
-    transactions
-        .filter(tx => {
-            const senderAddress = tx.sender?.address;
-            const receiverAddress = tx.parameter?.value?.to_ || tx.target?.address;
-            return (senderAddress === friendAddress || receiverAddress === friendAddress);
-        })
-        .forEach(tx => {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'chat-message';
+    const messages = transactions.filter(tx => {
+        return (tx.sender?.address === friendAddress && tx.target?.address === currentAddress) ||
+               (tx.sender?.address === currentAddress && tx.target?.address === friendAddress);
+    });
 
-            const isOwnMessage = tx.sender?.address === currentAddress;
-            messageDiv.textContent = hexToString(tx.parameter?.value?.metadata?.name); // Display message content
+    chatArea.innerHTML = ''; // Clear previous messages
 
-            // Style messages differently
-            if (isOwnMessage) {
-                messageDiv.style.color = 'blue'; // Our message
-                messageDiv.style.textAlign = 'right'; // Align to right
-            } else {
-                messageDiv.style.color = 'green'; // Friend's message
-            }
+    messages.forEach(tx => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message';
+        messageDiv.textContent = tx.parameter?.value || "Unknown message"; // Show message or default text
+        chatArea.appendChild(messageDiv);
+    });
 
-            chatArea.appendChild(messageDiv);
-        });
-
-    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom after loading
+    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to bottom
+    messageInput.disabled = false; // Enable input
+    sendButton.disabled = !selectedDialogAddress; // Disable button if no dialog selected
 }
 
-async function send(message,recipient) {
-   try {
-      if (!permissions?.address) {
-         permissions = await client.requestPermissions();
-         checkActiveSession();
-      }
-      const operation = [{
-         amount: "0",
-         kind: beacon.TezosOperationType.TRANSACTION,
-         source: permissions.address,
-         destination: "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7",
-         parameters: {
-            entrypoint: "mint",
-	    value: {"prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]},{"prim":"Elt","args":[{"string":"shouldPreferSymbol"},{"bytes":"66616c7365"}]}],{"string":recipient}]}
-           }
-      }];
-
-      const response = await client.requestOperation({
-         operationDetails: operation
-      });
-      setTimeout(checkActiveSession, 15000);
-   } catch (error) {
-   }
-}
-client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
-    checkActiveSession();
+// Add new dialog functionality
+document.getElementById('addDialogButton').addEventListener('click', () => {
+    const newDialogAddress = newDialogInput.value.trim();
+    if (newDialogAddress) {
+        const dialogItem = document.createElement('div');
+        dialogItem.className = 'dialog-item';
+        dialogItem.textContent = newDialogAddress;
+        dialogItem.addEventListener('click', () => loadChat(newDialogAddress, [], permissions.address)); // Load empty chat for new address
+        dialogPanel.appendChild(dialogItem);
+        newDialogInput.value = ''; // Clear input
+    }
 });
 
-function hexToString(hex) {
-    // Convert the hex string to a byte array
-    const bytes = [];
-    for (let i = 0; i < hex.length; i += 2) {
-        bytes.push(parseInt(hex.substr(i, 2), 16));
-    }
+// Update send button state based on dialog selection
+setInterval(() => {
+    sendButton.disabled = !selectedDialogAddress;
+}, 100);
 
-    // Decode the byte array as UTF-8
-    return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
-}
+checkActiveSession();
 </script>
-
 </body>
 </html>

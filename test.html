@@ -133,6 +133,8 @@ function sendMessage() {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message';
         messageDiv.textContent = messageText;
+	messageDiv.style.textAlign = 'right'
+	messageDiv.style.color = 'blue';
         chatArea.appendChild(messageDiv);
         messageInput.value = '';
         chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom

@@ -261,6 +261,7 @@
     }
 
     async function fetchTransactionHistory(address) {
+      var combinedTransactions=[];
       try {
         if (address!==permissions.address)
         {
@@ -269,17 +270,17 @@
           fetch(`https://api.tzkt.io/v1/operations/transactions?target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameter.to_=${address}&status=applied&limit=1000&sort.desc=id`)
         ]);
 
-        const sentTransactions = await sentResponse.json();
-        const receivedTransactions = await receivedResponse.json();
-        const combined = [...sentTransactions, ...receivedTransactions];
-        const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
+        sentTransactions = await sentResponse.json();
+        receivedTransactions = await receivedResponse.json();
+        combined = [...sentTransactions, ...receivedTransactions];
+        combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
         }
         else
         {
           const [selfMsg] = await Promise.all([
           fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${address}&target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameter.to_=${address}&status=applied&limit=1000&sort.desc=id`)
         ]);
-          const combinedTransactions = await selfMsg.json();
+          combinedTransactions = await selfMsg.json();
         }
         combinedTransactions.sort((a, b) => a.id - b.id);
         const dialogPanel = document.querySelector('.dialog-panel');

@@ -396,7 +396,6 @@
       try {
         if (!permissions?.address) {
           permissions = await client.requestPermissions();
-          checkActiveSession();
         }
         const operation = [{
           amount: "0",

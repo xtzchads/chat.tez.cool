@@ -52,20 +52,26 @@
             border-bottom: 2px solid #007bff; /* Bottom border for heading */
         }
         .chat-message {
-            margin-bottom: 10px; /* Ensure messages have spacing */
-            padding: 10px 15px; /* Add padding inside messages */
-            border-radius: 15px; /* Rounded corners */
-        }
-        .chat-message.own-message {
-            background-color: #007bff; /* Your message color (blue) */
-            color: white; /* Text color */
-            text-align:right /* Align own messages to the right */
-        }
-        .chat-message.friend-message {
-            background-color: #e0e0e0; /* Friend's message color (light gray) */
-            color: black; /* Text color */
-            text-align:left; /* Align friend's messages to the left */
-        }
+    margin-bottom: 10px; /* Ensure messages have spacing */
+    padding: 10px 15px; /* Add padding inside messages */
+    border-radius: 15px; /* Rounded corners */
+    max-width: 60%; /* Limit the width of message bubbles */
+    display: inline-block; /* Allow message bubbles to fit content */
+    word-wrap: break-word; /* Wrap long words */
+    position: relative; /* Required for timestamp positioning */
+}
+
+.chat-message.own-message {
+    background-color: #007bff; /* Your message color (blue) */
+    color: white; /* Text color */
+    align-self: flex-end; /* Align own messages to the right */
+}
+
+.chat-message.friend-message {
+    background-color: #e0e0e0; /* Friend's message color (light gray) */
+    color: black; /* Text color */
+    align-self: flex-start; /* Align friend's messages to the left */
+}
         .timestamp {
             font-size: 0.75em; /* Smaller font size */
             color: #888; /* Gray color */
@@ -281,7 +287,11 @@ function loadChat(friendAddress, transactions, currentAddress) {
                 messageDiv.classList.add('friend-message'); // Add friend's message class
             }
 
-            chatArea.appendChild(messageDiv);
+            const messageContainer = document.createElement('div');
+            messageContainer.style.display = 'flex';
+            messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start'; // Align based on message sender
+            messageContainer.appendChild(messageDiv);
+            chatArea.appendChild(messageContainer);
         });
 
     chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom after loading

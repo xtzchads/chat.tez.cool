@@ -313,6 +313,8 @@
         .filter(tx => {
           const senderAddress = tx.sender?.address;
           const receiverAddress = tx.parameter?.value?.to_;
+          console.log(senderAddress);
+          console.log(receiverAddress);
           if (senderAddress===receiverAddress)
             return (senderAddress === friendAddress && receiverAddress === friendAddress);
           else

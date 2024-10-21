@@ -276,16 +276,18 @@ async function disconnectWallet() {
     clearSelectedDialog(); // Ensure the send button is disabled
 }
 
-const newDialogInput = document.getElementById('newDialogInput');
+document.addEventListener('DOMContentLoaded', () => {
+    const newDialogInput = document.getElementById('newDialogInput');
 
-newDialogInput.addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        const address = newDialogInput.value.trim();
-        if (address) {
-            addNewDialog(address);
-            newDialogInput.value = ''; // Clear the input after adding the dialog
+    newDialogInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            const address = newDialogInput.value.trim();
+            if (address) {
+                addNewDialog(address);
+                newDialogInput.value = ''; // Clear the input after adding the dialog
+            }
         }
-    }
+    });
 });
 
 function addNewDialog(address) {

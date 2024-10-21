@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chad Chat</title>
+    <title>Chat Interface with Emoji Picker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="js/walletbeacon.min.js"></script>
+	<script src="js/walletbeacon.min.js"></script>
     <style>
         body {
             background-color: #f8f9fa;
@@ -20,7 +20,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .dialog-panel {
-            flex: 0 0 250px; /* Use flex property for responsive width */
+            width: 250px;
             border-right: 1px solid #dee2e6;
             padding: 15px;
             background-color: white;
@@ -71,20 +71,16 @@
             position: relative;
             z-index: 1;
         }
-        .new-dialog-input {
-            margin-bottom: 10px; /* Add spacing below input */
-        }
     </style>
 </head>
 <body>
 
 <div class="wallet-button-container">
-    <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button>
+    <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button> <!-- Wallet button added outside -->
 </div>
 
 <div class="chat-container">
     <div class="dialog-panel">
-        <input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog...">
         <!-- Dynamic dialog items will be added here -->
     </div>
     <div class="message-area">
@@ -100,6 +96,7 @@
     </div>
 </div>
 
+<!-- Load the emoji-button as a module -->
 <script type="module">
     import { EmojiButton } from 'https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js';
     const emojiButton = document.getElementById('emojiButton');
@@ -124,15 +121,8 @@ const chatArea = document.getElementById('chatArea');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const walletButton = document.getElementById('walletButton');
-const newDialogInput = document.getElementById('newDialogInput'); // New dialog input field
 
 sendButton.addEventListener('click', sendMessage);
-newDialogInput.addEventListener('keypress', function(event) {
-    if (event.key === 'Enter') {
-        addNewDialog(newDialogInput.value.trim());
-        newDialogInput.value = ''; // Clear input field after adding
-    }
-});
 
 function sendMessage() {
     const messageText = messageInput.value.trim();
@@ -143,7 +133,7 @@ function sendMessage() {
         chatArea.appendChild(messageDiv);
         messageInput.value = '';
         chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-        send(hex(messageText), selectedDialogAddress); // Use selected dialog address
+        send(hex(messageText), "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
     }
 }
 
@@ -200,10 +190,10 @@ async function fetchTransactionHistory(address) {
         ]);
 
         const sentTransactions = await sentResponse.json();
-        const receivedTransactions = await receivedResponse.json();
-        const combined = [...sentTransactions, ...receivedTransactions];
-        const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
-        combinedTransactions.sort((a, b) => b.id - a.id);
+const receivedTransactions = await receivedResponse.json();
+const combined = [...sentTransactions, ...receivedTransactions];
+const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
+combinedTransactions.sort((a, b) => b.id - a.id);
 
         const dialogPanel = document.querySelector('.dialog-panel');
         dialogPanel.innerHTML = ''; // Clear previous dialogs
@@ -237,7 +227,6 @@ function loadChat(friendAddress, transactions, currentAddress) {
     const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the title element
     chatArea.innerHTML = '';
     currentDialogTitle.textContent = `Chat with ${friendAddress}`;
-    selectedDialogAddress = friendAddress; // Store selected dialog address
 
     transactions
         .filter(tx => {
@@ -248,22 +237,61 @@ function loadChat(friendAddress, transactions, currentAddress) {
         .forEach(tx => {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message';
-            messageDiv.textContent = (tx.sender?.address === currentAddress ? 'You: ' : '') + (tx.parameter?.value?.entrypoint === 'send' ? tx.parameter?.value?.amount : 'Message');
+
+            const isOwnMessage = tx.sender?.address === currentAddress;
+            messageDiv.textContent = hexToString(tx.parameter?.value?.metadata?.name); // Display message content
+
+            // Style messages differently
+            if (isOwnMessage) {
+                messageDiv.style.color = 'blue'; // Our message
+                messageDiv.style.textAlign = 'right'; // Align to right
+            } else {
+                messageDiv.style.color = 'green'; // Friend's message
+            }
+
             chatArea.appendChild(messageDiv);
         });
 
-    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
+    chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom after loading
 }
 
-function addNewDialog(address) {
-    if (address) {
-        const dialogPanel = document.querySelector('.dialog-panel');
-        const dialogItem = document.createElement('div');
-        dialogItem.className = 'dialog-item';
-        dialogItem.textContent = address;
-        dialogItem.addEventListener('click', () => loadChat(address, [], permissions.address)); // Load chat on click
-        dialogPanel.appendChild(dialogItem);
+async function send(message,recipient) {
+   try {
+      if (!permissions?.address) {
+         permissions = await client.requestPermissions();
+         checkActiveSession();
+      }
+      const operation = [{
+         amount: "0",
+         kind: beacon.TezosOperationType.TRANSACTION,
+         source: permissions.address,
+         destination: "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7",
+         parameters: {
+            entrypoint: "mint",
+	    value: {"prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]},{"prim":"Elt","args":[{"string":"shouldPreferSymbol"},{"bytes":"66616c7365"}]}],{"string":recipient}]}
+           }
+      }];
+
+      const response = await client.requestOperation({
+         operationDetails: operation
+      });
+      setTimeout(checkActiveSession, 15000);
+   } catch (error) {
+   }
+}
+client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
+    checkActiveSession();
+});
+
+function hexToString(hex) {
+    // Convert the hex string to a byte array
+    const bytes = [];
+    for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
     }
+
+    // Decode the byte array as UTF-8
+    return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
 }
 </script>
 

@@ -80,7 +80,7 @@
 
 <div class="chat-container">
     <div class="dialog-panel">
-        <input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog...">
+        <input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog..." onkeydown="handleKeyDown(event)">
         <!-- Dynamic dialog items will be added here -->
     </div>
     <div class="message-area">
@@ -200,7 +200,7 @@ async function fetchTransactionHistory(address) {
         combinedTransactions.sort((a, b) => b.id - a.id);
 
         const dialogPanel = document.querySelector('.dialog-panel');
-        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog...">'; // Clear previous dialogs
+        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog..." onkeydown="handleKeyDown(event)">'; // Clear previous dialogs
 
         const uniqueAddresses = new Set();
 
@@ -321,19 +321,21 @@ async function send(message,recipient) {
    } catch (error) {
    }
 }
-</script>
-<script>
-    const newDialogInput = document.getElementById('newDialogInput');
 
-    newDialogInput.addEventListener('keypress', function(event) {
+function handleKeyDown(event) {
+        console.log('Key pressed:', event.key); // Log key pressed
         if (event.key === 'Enter') {
-            const address = newDialogInput.value.trim();
-            if (address) {
-                addNewDialog(address);
-                newDialogInput.value = ''; // Clear the input after adding the dialog
+            event.preventDefault(); // Prevent default action (optional)
+            const inputValue = event.target.value.trim(); // Get the input value
+            console.log('Input value:', inputValue); // Log the input value
+
+            // Here you can call your function to add a new dialog
+            if (inputValue) {
+                addNewDialog(inputValue);
+                event.target.value = ''; // Clear the input field
             }
         }
-    });
+    }
 </script>
 </body>
 </html>

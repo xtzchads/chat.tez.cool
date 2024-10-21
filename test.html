@@ -71,16 +71,14 @@
         <div class="dialog-item">Everstake</div>
         <div class="dialog-item">StakeFish</div>
         <div class="dialog-item">P2P.org</div>
-        <!-- Add more dialog items here -->
     </div>
     <div class="message-area">
         <div class="current-dialog" id="currentDialogTitle">Everstake</div>
         <div id="chatArea">
-            <!-- Chat messages will appear here -->
         </div>
         <div class="input-area">
             <button class="btn btn-light" id="emojiButton">
-                <span class="emoji-picker">😊</span> <!-- Using Unicode emoji -->
+                <span class="emoji-picker">😊</span>
             </button>
             <input type="text" id="messageInput" class="form-control me-2" placeholder="Type your message...">
             <button class="btn btn-primary" id="sendButton">Send</button>
@@ -91,8 +89,7 @@
 <!-- Load the emoji-button as a module -->
 <script type="module">
     import { EmojiButton } from 'https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js';
-	const emojiButton = document.getElementById('emojiButton');
-	// Initialize the emoji picker
+    const emojiButton = document.getElementById('emojiButton');
     const picker = new EmojiButton();
 
     emojiButton.addEventListener('click', () => {
@@ -101,7 +98,7 @@
 
     picker.on('emoji', emoji => {
         console.log(emoji);
-        messageInput.value += emoji.emoji; // Ensure the emoji is converted to a string
+        messageInput.value += emoji.emoji;
     });
 </script>
 <script>
@@ -124,11 +121,11 @@ let permissions;
         if (messageText) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'chat-message';
-            messageDiv.textContent = messageText; // Ensure we're setting textContent to a string
+            messageDiv.textContent = messageText;
             chatArea.appendChild(messageDiv);
-            messageInput.value = ''; // Clear input after sending
+            messageInput.value = '';
             chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-			send(hex(messageText),"KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
+	    send(hex(messageText),"KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
         }
     }
 
@@ -155,6 +152,7 @@ async function checkActiveSession() {
         permissions = {
             address: activeAccount.address
         };
+}
 }
 
 async function connectWallet() {

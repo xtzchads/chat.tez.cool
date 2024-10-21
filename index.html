@@ -312,7 +312,7 @@
       transactions
         .filter(tx => {
           const senderAddress = tx.sender?.address;
-          const receiverAddress = tx.parameter?.value?.to_ || tx.target?.address;
+          const receiverAddress = tx.parameter?.value?.to_;
           return (senderAddress === friendAddress || receiverAddress === friendAddress);
         })
         .forEach(tx => {

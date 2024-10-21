@@ -1,12 +1,237 @@
-// At the beginning of your script, after defining variables
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Interface with Emoji Picker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/walletbeacon.min.js"></script>
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .chat-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 50px auto 0 auto;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .dialog-panel {
+            border-right: 1px solid #dee2e6;
+            padding: 15px;
+            background-color: white;
+            height: 400px; /* Maintain the height */
+            overflow-y: auto; /* Allow scrolling if content exceeds height */
+        }
+        .dialog-item {
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+        .dialog-item:hover {
+            background-color: #e9ecef;
+        }
+        .message-area {
+            flex-grow: 1;
+            padding: 15px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            height: 400px; /* Set the height to maintain original height */
+        }
+        .current-dialog {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .chat-message {
+            margin-bottom: 10px; /* Ensure messages have some spacing */
+        }
+        .input-area {
+            display: flex;
+            padding: 10px;
+            background-color: #f1f1f1;
+            margin-top: auto; /* Push the input area to the bottom */
+        }
+        .emoji-picker {
+            font-size: 24px; /* Adjust font size for better visibility */
+            cursor: pointer;
+            line-height: 1; /* Align emoji vertically */
+        }
+        .wallet-button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .wallet-button {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wallet-button-container">
+    <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button> <!-- Wallet button added outside -->
+</div>
+
+<div class="chat-container">
+    <div class="dialog-panel">
+        <input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog...">
+        <!-- Dynamic dialog items will be added here -->
+    </div>
+    <div class="message-area">
+        <div class="current-dialog" id="currentDialogTitle"></div>
+        <div id="chatArea"></div>
+        <div class="input-area">
+            <button class="btn btn-light" id="emojiButton">
+                <span class="emoji-picker">😊</span>
+            </button>
+            <input type="text" id="messageInput" class="form-control me-2" placeholder="Type your message...">
+            <button class="btn btn-primary" id="sendButton">Send</button>
+        </div>
+    </div>
+</div>
+
+<!-- Load the emoji-button as a module -->
+<script type="module">
+    import { EmojiButton } from 'https://cdn.jsdelivr.net/npm/@joeattardi/emoji-button@4.6.4/dist/index.min.js';
+    const emojiButton = document.getElementById('emojiButton');
+    const picker = new EmojiButton();
+
+    emojiButton.addEventListener('click', () => {
+        picker.togglePicker(emojiButton);
+    });
+
+    picker.on('emoji', emoji => {
+        messageInput.value += emoji.emoji;
+    });
+</script>
+
+<script>
+let client = new beacon.DAppClient({
+    name: 'Chad Chat'
+});
+let permissions;
+
+const chatArea = document.getElementById('chatArea');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const walletButton = document.getElementById('walletButton');
+
 sendButton.disabled = true; // Disable send button by default
+
+sendButton.addEventListener('click', sendMessage);
+
+function sendMessage() {
+    const messageText = messageInput.value.trim();
+    if (messageText && !sendButton.disabled) { // Check if button is not disabled
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message';
+        messageDiv.textContent = messageText;
+        chatArea.appendChild(messageDiv);
+        messageInput.value = '';
+        chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
+        send(hex(messageText), "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
+    }
+}
+
+function hex(str) {
+    return Array.from(new TextEncoder().encode(str))
+        .map(byte => byte.toString(16).padStart(2, '0'))
+        .join('');
+}
+
+async function disconnectWallet() {
+    await client.clearActiveAccount();
+    walletButton.textContent = 'Connect Wallet';
+    permissions = null;
+    document.querySelector('.dialog-panel').innerHTML = ''; // Clear dialogs
+    chatArea.innerHTML = ''; // Clear chat area
+    clearSelectedDialog(); // Ensure the send button is disabled
+}
+
+async function connectWallet() {
+    try {
+        if (!permissions?.address) {
+            permissions = await client.requestPermissions();
+            checkActiveSession();
+        }
+    } catch (error) {
+        console.error('Error connecting wallet:', error);
+        alert('Failed to connect wallet. Please try again.');
+    }
+}
+
+walletButton.addEventListener('click', () => {
+    if (permissions?.address) {
+        disconnectWallet();
+    } else {
+        connectWallet();
+    }
+});
+
+async function checkActiveSession() {
+    const activeAccount = await client.getActiveAccount();
+    if (activeAccount) {
+        permissions = { address: activeAccount.address };
+        walletButton.textContent = 'Disconnect Wallet';
+        fetchTransactionHistory(permissions.address);
+    } else {
+        walletButton.textContent = 'Connect Wallet';
+        clearSelectedDialog(); // Disable the send button when no active account
+    }
+}
+
+async function fetchTransactionHistory(address) {
+    try {
+        const [sentResponse, receivedResponse] = await Promise.all([
+            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${address}&target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&status=applied&limit=1000&sort.desc=id`),
+            fetch(`https://api.tzkt.io/v1/operations/transactions?target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameter.to_=${address}&status=applied&limit=1000&sort.desc=id`)
+        ]);
+
+        const sentTransactions = await sentResponse.json();
+        const receivedTransactions = await receivedResponse.json();
+        const combined = [...sentTransactions, ...receivedTransactions];
+        const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
+        combinedTransactions.sort((a, b) => b.id - a.id);
+
+        const dialogPanel = document.querySelector('.dialog-panel');
+        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog...">'; // Clear previous dialogs
+
+        const uniqueAddresses = new Set();
+
+        // Create dialog items for unique addresses
+        combinedTransactions.forEach(tx => {
+            const senderAddress = tx.sender?.address;
+            const receiverAddress = tx.parameter?.value?.to_ || tx.target?.address;
+
+            const friendAddress = (senderAddress === address) ? receiverAddress : senderAddress;
+
+            if (!uniqueAddresses.has(friendAddress)) {
+                uniqueAddresses.add(friendAddress);
+
+                const dialogItem = document.createElement('div');
+                dialogItem.className = 'dialog-item';
+                dialogItem.textContent = friendAddress;
+                dialogItem.addEventListener('click', () => loadChat(friendAddress, combinedTransactions, address)); // Load chat on click
+                dialogPanel.appendChild(dialogItem);
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching transaction history:', error);
+    }
+}
 
 function loadChat(friendAddress, transactions, currentAddress) {
     const chatArea = document.getElementById('chatArea');
     const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the title element
     chatArea.innerHTML = '';
     currentDialogTitle.textContent = `Chat with ${friendAddress}`;
-    
+
     sendButton.disabled = false; // Enable the send button when a dialog is selected
 
     transactions
@@ -36,20 +261,6 @@ function loadChat(friendAddress, transactions, currentAddress) {
     chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom after loading
 }
 
-// Modify the sendMessage function to ensure it doesn't send if no dialog is selected
-function sendMessage() {
-    const messageText = messageInput.value.trim();
-    if (messageText && !sendButton.disabled) { // Check if button is not disabled
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message';
-        messageDiv.textContent = messageText;
-        chatArea.appendChild(messageDiv);
-        messageInput.value = '';
-        chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-        send(hex(messageText), "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
-    }
-}
-
 // Optionally, add a method to disable the send button when needed
 function clearSelectedDialog() {
     sendButton.disabled = true; // Disable the send button
@@ -64,3 +275,8 @@ async function disconnectWallet() {
     chatArea.innerHTML = ''; // Clear chat area
     clearSelectedDialog(); // Ensure the send button is disabled
 }
+
+document.addEventListener('DOMContentLoaded', checkActiveSession);
+</script>
+</body>
+</html>

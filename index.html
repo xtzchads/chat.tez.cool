@@ -301,56 +301,55 @@
     }
 
     function loadChat(friendAddress, transactions, currentAddress) {
-      const chatArea = document.getElementById('chatArea');
-      const currentDialogTitle = document.getElementById('currentDialogTitle');  
-      chatArea.innerHTML = '';
-      currentDialogTitle.textContent = `Chat with ${friendAddress}`;
-      current = friendAddress;
+    const chatArea = document.getElementById('chatArea');
+    const currentDialogTitle = document.getElementById('currentDialogTitle');  
+    chatArea.innerHTML = '';
+    currentDialogTitle.textContent = `Chat with ${friendAddress}`;
+    current = friendAddress;
 
-      sendButton.disabled = false;  
+    sendButton.disabled = false;  
 
-      transactions
-        .filter(tx => {
-          const senderAddress = tx.sender?.address;
-          const receiverAddress = tx.parameter?.value?.to_;
-          console.log(senderAddress);
-          console.log(receiverAddress);
-          if (senderAddress===receiverAddress)
-            return (senderAddress === friendAddress && receiverAddress === friendAddress);
-          else
-          return (senderAddress === friendAddress || receiverAddress === friendAddress);
-        })
-        .forEach(tx => {
-          const messageDiv = document.createElement('div');
-          messageDiv.className = 'chat-message';
+    transactions
+      .filter(tx => {
+        const senderAddress = tx.sender?.address;
+        const receiverAddress = tx.parameter?.value?.to_;
 
-          const isOwnMessage = tx.sender?.address === currentAddress;
-          messageDiv.textContent = hexToString(tx.parameter?.value?.metadata?.name);  
+        // Ensure that the transaction involves only the current address and the friendAddress
+        return (
+          (senderAddress === currentAddress && receiverAddress === friendAddress) ||
+          (senderAddress === friendAddress && receiverAddress === currentAddress)
+        );
+      })
+      .forEach(tx => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'chat-message';
 
-           
-          if (isOwnMessage) {
-            messageDiv.classList.add('own-message');  
-          } else {
-            messageDiv.classList.add('friend-message');  
-          }
+        const isOwnMessage = tx.sender?.address === currentAddress;
+        messageDiv.textContent = hexToString(tx.parameter?.value?.metadata?.name);  
 
-          const messageContainer = document.createElement('div');
-          messageContainer.style.display = 'flex';
-          messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start';  
-          messageContainer.appendChild(messageDiv);
+        if (isOwnMessage) {
+          messageDiv.classList.add('own-message');  
+        } else {
+          messageDiv.classList.add('friend-message');  
+        }
 
-           
-          const timestampDiv = document.createElement('div');
-          const timestamp = new Date(tx.timestamp);  
-          timestampDiv.className = 'timestamp';  
-          timestampDiv.textContent = formatTimestamp(timestamp);  
-          messageContainer.appendChild(timestampDiv);  
+        const messageContainer = document.createElement('div');
+        messageContainer.style.display = 'flex';
+        messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start';  
+        messageContainer.appendChild(messageDiv);
 
-          chatArea.appendChild(messageContainer);
-        });
+        const timestampDiv = document.createElement('div');
+        const timestamp = new Date(tx.timestamp);  
+        timestampDiv.className = 'timestamp';  
+        timestampDiv.textContent = formatTimestamp(timestamp);  
+        messageContainer.appendChild(timestampDiv);  
 
-      chatArea.scrollTop = chatArea.scrollHeight;  
-    }
+        chatArea.appendChild(messageContainer);
+      });
+
+    chatArea.scrollTop = chatArea.scrollHeight;  
+}
+
 
      
     function formatTimestamp(date) {

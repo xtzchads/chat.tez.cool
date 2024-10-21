@@ -294,19 +294,18 @@ function loadChat(friendAddress, transactions, currentAddress) {
             } else {
                 messageDiv.classList.add('friend-message'); // Add friend's message class
             }
-
+     	     // Create and append the timestamp
+            const timestampDiv = document.createElement('div');
+            const timestamp = new Date(tx.timestamp); // Use the timestamp from the transaction
+            timestampDiv.className = 'timestamp'; // Apply the timestamp class
+            timestampDiv.textContent = formatTimestamp(timestamp); // Format the timestamp
+            messageDiv.appendChild(timestampDiv); // Append timestamp to the message container
+		
             const messageContainer = document.createElement('div');
             messageContainer.style.display = 'flex';
             messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start'; // Align based on message sender
             messageContainer.appendChild(messageDiv);
 
-            // Create and append the timestamp
-            const timestampDiv = document.createElement('div');
-            const timestamp = new Date(tx.timestamp); // Use the timestamp from the transaction
-            timestampDiv.className = 'timestamp'; // Apply the timestamp class
-            timestampDiv.textContent = formatTimestamp(timestamp); // Format the timestamp
-            messageContainer.appendChild(timestampDiv); // Append timestamp to the message container
-            
             chatArea.appendChild(messageContainer);
         });
 

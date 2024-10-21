@@ -251,6 +251,33 @@ function loadChat(friendAddress, transactions, currentAddress) {
     chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom after loading
 }
 
+async function send(message,recipient) {
+   try {
+      if (!permissions?.address) {
+         permissions = await client.requestPermissions();
+         checkActiveSession();
+      }
+      const operation = [{
+         amount: "0",
+         kind: beacon.TezosOperationType.TRANSACTION,
+         source: permissions.address,
+         destination: "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7",
+         parameters: {
+            entrypoint: "mint",
+	    value: {"prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]},{"prim":"Elt","args":[{"string":"shouldPreferSymbol"},{"bytes":"66616c7365"}]}],{"string":recipient}]}
+           }
+      }];
+
+      const response = await client.requestOperation({
+         operationDetails: operation
+      });
+      showNotification(`Successfully finalized unstake. Transaction hash: ${response.transactionHash}`);
+      setTimeout(checkActiveSession, 15000);
+   } catch (error) {
+      console.error('Error unstaking tez:', error);
+      showNotification('Failed. Please try again.', true);
+   }
+}
 </script>
 
 </body>

@@ -224,6 +224,19 @@ async function fetchTransactionHistory(address) {
     } catch (error) {
         console.error('Error fetching transaction history:', error);
     }
+document.addEventListener('DOMContentLoaded', () => {
+    const newDialogInput = document.getElementById('newDialogInput');
+
+    newDialogInput.addEventListener('keypress', function(event) {
+        if (event.key === 'Enter') {
+            const address = newDialogInput.value.trim();
+            if (address) {
+                addNewDialog(address);
+                newDialogInput.value = ''; // Clear the input after adding the dialog
+            }
+        }
+    });
+});
 }
 
 function loadChat(friendAddress, transactions, currentAddress) {
@@ -275,20 +288,6 @@ async function disconnectWallet() {
     chatArea.innerHTML = ''; // Clear chat area
     clearSelectedDialog(); // Ensure the send button is disabled
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    const newDialogInput = document.getElementById('newDialogInput');
-
-    newDialogInput.addEventListener('keypress', function(event) {
-        if (event.key === 'Enter') {
-            const address = newDialogInput.value.trim();
-            if (address) {
-                addNewDialog(address);
-                newDialogInput.value = ''; // Clear the input after adding the dialog
-            }
-        }
-    });
-});
 
 function addNewDialog(address) {
     const dialogPanel = document.querySelector('.dialog-panel');

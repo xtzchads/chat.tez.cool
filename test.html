@@ -155,7 +155,7 @@ function sendMessage() {
     const messageText = messageInput.value.trim();
     if (messageText && !sendButton.disabled) { // Check if button is not disabled
         const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message';
+        messageDiv.className = 'chat-message own-message';
         messageDiv.textContent = messageText;
 	messageDiv.style.textAlign = 'right'
 	messageDiv.style.color = 'blue';
@@ -277,10 +277,10 @@ function loadChat(friendAddress, transactions, currentAddress) {
 
             // Style messages differently
             if (isOwnMessage) {
-                messageDiv.style.color = 'blue'; // Our message
-                messageDiv.style.textAlign = 'right'; // Align to right
+                messageDiv.classList.add('own-message'); // Add own message class
+																	   
             } else {
-                messageDiv.style.color = 'green'; // Friend's message
+                messageDiv.classList.add('friend-message'); // Add friend's message class
             }
 
             chatArea.appendChild(messageDiv);

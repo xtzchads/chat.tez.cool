@@ -146,39 +146,15 @@ async function disconnectWallet() {
 }
 
 client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
-    if (flag)
     checkActiveSession();
 });
 
 async function checkActiveSession() {
     const activeAccount = await client.getActiveAccount();
     if (activeAccount) {
-        // Active session found
         permissions = {
             address: activeAccount.address
         };
-       
-		const apiUrl = `https://api.tzkt.io/v1/accounts/${activeAccount.address}`;
-        try {
-            const response = await fetch(apiUrl);
-            const accountData = await response.json();
-            const { balance, stakedBalance, unstakedBalance, delegate} = accountData;
-			if (unstakedBalance>0)
-				document.getElementById('finalize').disabled=false;
-			else
-				document.getElementById('finalize').disabled=true;
-			displayWalletInfo(DOMPurify.sanitize(activeAccount.address), balance, stakedBalance, unstakedBalance, delegate);
-        } catch (error) {
-            console.error('Error fetching account data:', error);
-            showNotification('Failed to fetch account data. Please try again.', true);
-        }
-        disconnectWalletBtn.style.display = 'block';
-        connectWalletBtn.style.display = 'none';
-    } else {
-        walletInfoDiv.style.display = 'none'; // Hide walletInfo if no active session
-        disconnectWalletBtn.style.display = 'none';
-        connectWalletBtn.style.display = 'block';
-    }
 }
 
 async function connectWallet() {

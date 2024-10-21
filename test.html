@@ -161,9 +161,11 @@ function sendMessage() {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message own-message';
         messageDiv.textContent = messageText;
-	messageDiv.style.textAlign = 'right'
-	messageDiv.style.color = 'blue';
-        chatArea.appendChild(messageDiv);
+	const messageContainer = document.createElement('div');
+        messageContainer.style.display = 'flex';
+        messageContainer.style.justifyContent = 'flex-end'; // Align based on message sender
+        messageContainer.appendChild(messageDiv);
+        chatArea.appendChild(messageContainer);
         messageInput.value = '';
         chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
         send(hex(messageText), current);

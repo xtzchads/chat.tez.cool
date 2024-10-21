@@ -116,6 +116,7 @@ let client = new beacon.DAppClient({
     name: 'Chad Chat'
 });
 let permissions;
+let current = '';
 
 const chatArea = document.getElementById('chatArea');
 const messageInput = document.getElementById('messageInput');
@@ -135,7 +136,7 @@ function sendMessage() {
         chatArea.appendChild(messageDiv);
         messageInput.value = '';
         chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
-        send(hex(messageText), "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7");
+        send(hex(messageText), current);
     }
 }
 
@@ -231,6 +232,7 @@ function loadChat(friendAddress, transactions, currentAddress) {
     const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the title element
     chatArea.innerHTML = '';
     currentDialogTitle.textContent = `Chat with ${friendAddress}`;
+    current=friendAddress;
 
     sendButton.disabled = false; // Enable the send button when a dialog is selected
 

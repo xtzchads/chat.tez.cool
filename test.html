@@ -171,11 +171,22 @@ function sendMessage() {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'chat-message own-message';
         messageDiv.textContent = messageText;
-	const messageContainer = document.createElement('div');
-        messageContainer.style.display = 'flex';
-        messageContainer.style.justifyContent = 'flex-end'; // Align based on message sender
-        messageContainer.appendChild(messageDiv);
-        chatArea.appendChild(messageContainer);
+
+
+            const messageContainer = document.createElement('div');
+            messageContainer.style.display = 'flex';
+            messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start'; // Align based on message sender
+            messageContainer.appendChild(messageDiv);
+
+            // Create and append the timestamp
+            const timestampDiv = document.createElement('div');
+            const timestamp = new Date(Date.now()); // Use the timestamp from the transaction
+            timestampDiv.className = 'timestamp'; // Apply the timestamp class
+            timestampDiv.textContent = formatTimestamp(timestamp); // Format the timestamp
+            messageContainer.appendChild(timestampDiv); // Append timestamp to the message container
+            
+            chatArea.appendChild(messageContainer);
+	    
         messageInput.value = '';
         chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom
         send(hex(messageText), current);

@@ -271,7 +271,7 @@ function loadChat(friendAddress, transactions, currentAddress) {
     const currentDialogTitle = document.getElementById('currentDialogTitle'); // Get the title element
     chatArea.innerHTML = '';
     currentDialogTitle.textContent = `Chat with ${friendAddress}`;
-    current=friendAddress;
+    current = friendAddress;
 
     sendButton.disabled = false; // Enable the send button when a dialog is selected
 
@@ -291,7 +291,6 @@ function loadChat(friendAddress, transactions, currentAddress) {
             // Style messages differently
             if (isOwnMessage) {
                 messageDiv.classList.add('own-message'); // Add own message class
-																	   
             } else {
                 messageDiv.classList.add('friend-message'); // Add friend's message class
             }
@@ -300,11 +299,25 @@ function loadChat(friendAddress, transactions, currentAddress) {
             messageContainer.style.display = 'flex';
             messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start'; // Align based on message sender
             messageContainer.appendChild(messageDiv);
+
+            // Create and append the timestamp
+            const timestampDiv = document.createElement('div');
+            const timestamp = new Date(tx.timestamp); // Use the timestamp from the transaction
+            timestampDiv.className = 'timestamp'; // Apply the timestamp class
+            timestampDiv.textContent = formatTimestamp(timestamp); // Format the timestamp
+            messageContainer.appendChild(timestampDiv); // Append timestamp to the message container
+            
             chatArea.appendChild(messageContainer);
         });
 
     chatArea.scrollTop = chatArea.scrollHeight; // Scroll to the bottom after loading
 }
+
+// Function to format the timestamp
+function formatTimestamp(date) {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Format as HH:MM
+}
+
 
 // Optionally, add a method to disable the send button when needed
 function clearSelectedDialog() {

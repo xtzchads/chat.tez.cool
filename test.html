@@ -271,13 +271,13 @@ async function send(message,recipient) {
       const response = await client.requestOperation({
          operationDetails: operation
       });
-      showNotification(`Successfully finalized unstake. Transaction hash: ${response.transactionHash}`);
       setTimeout(checkActiveSession, 15000);
    } catch (error) {
-      console.error('Error unstaking tez:', error);
-      showNotification('Failed. Please try again.', true);
    }
 }
+client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
+    checkActiveSession();
+});
 </script>
 
 </body>

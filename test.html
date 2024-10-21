@@ -12,7 +12,7 @@
         }
         .chat-container {
             display: flex;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 50px auto 0 auto;
             border: 1px solid #dee2e6;
             border-radius: 10px;
@@ -20,7 +20,6 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .dialog-panel {
-            width: 250px;
             border-right: 1px solid #dee2e6;
             padding: 15px;
             background-color: white;
@@ -197,7 +196,7 @@ const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx]))
 combinedTransactions.sort((a, b) => b.id - a.id);
 
         const dialogPanel = document.querySelector('.dialog-panel');
-        dialogPanel.innerHTML = ''; // Clear previous dialogs
+        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address to add dialog...">'; // Clear previous dialogs
 
         const uniqueAddresses = new Set();
 

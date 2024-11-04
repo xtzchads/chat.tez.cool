@@ -359,8 +359,9 @@
           const messageContainer = document.createElement('div');
           messageContainer.style.display = 'flex';
           messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start';
+          if (!isOwnMessage)
+          messageContainer.innerHTML="<img src='https://services.tkt.io/v1/avatars/"+currentAddress+"'/>";
           messageContainer.appendChild(messageDiv);
-
           const timestampDiv = document.createElement('div');
           const timestamp = new Date(tx.timestamp);
           timestampDiv.className = 'timestamp';

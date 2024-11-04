@@ -360,7 +360,7 @@
           messageContainer.style.display = 'flex';
           messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start';
           if (!isOwnMessage)
-          messageContainer.innerHTML="<img style='width:45px;height:45px' src='https://services.tzkt.io/v1/avatars/"+friendAddress+"'/>";
+          messageContainer.innerHTML='<img style="width:45px;height:45px" src="https://services.tzkt.io/v1/avatars/'+escapeHtml(friendAddress)+'"/>';
           messageContainer.appendChild(messageDiv);
           const timestampDiv = document.createElement('div');
           const timestamp = new Date(tx.timestamp);
@@ -373,7 +373,14 @@
 
       chatArea.scrollTop = chatArea.scrollHeight;
     }
-
+    function escapeHtml(input) {
+    return input
+        .replace(/&/g, '&amp;') 
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
     function formatTimestamp(date) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }

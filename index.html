@@ -360,7 +360,7 @@
           messageContainer.style.display = 'flex';
           messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start';
           if (!isOwnMessage)
-          messageContainer.innerHTML="<img src='https://services.tzkt.io/v1/avatars/"+currentAddress+"'/>";
+          messageContainer.innerHTML="<img style='width:32px;height:32px' src='https://services.tzkt.io/v1/avatars/"+currentAddress+"'/>";
           messageContainer.appendChild(messageDiv);
           const timestampDiv = document.createElement('div');
           const timestamp = new Date(tx.timestamp);

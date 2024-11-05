@@ -175,14 +175,14 @@ flex-direction: column;
             </a>
   </div>
   <div class="key-container">
-    <button class="btn btn-success" id="generateKeyButton">Generate Secure Keypair (in dev)</button>
+    <button class="btn btn-success" id="generateKeyButton">Secure messaging (in dev)</button>
     <div id="keyPairDisplay" class="key-display" style="display: none;">
       <h5>Public Key</h5>
       <pre id="publicKey"></pre>
       <h5>Private Key</h5>
       <pre id="privateKey"></pre>
       <button class="btn btn-secondary" id="copyPrivateKeyButton" data-bs-toggle="tooltip" title="Copy Private Key">Copy Private Key</button>
-      <button class="btn btn-secondary" id="publish" data-bs-toggle="tooltip" title="Publish public key">Publish Public Key on-chain</button>
+      <button class="btn btn-secondary" id="publish" data-bs-toggle="tooltip" title="Publish public key">Publish Public Key</button>
     </div>
   </div>
   <div class="chat-container">
@@ -255,7 +255,7 @@ flex-direction: column;
   document.getElementById('copyPrivateKeyButton').addEventListener('click', () => {
     const privateKeyText = document.getElementById('privateKey').textContent;
     navigator.clipboard.writeText(privateKeyText).then(() => {
-      alert('Private key copied to clipboard!');
+      //alert('Private key copied to clipboard!');
     }).catch(err => {
       console.error('Failed to copy private key: ', err);
     });

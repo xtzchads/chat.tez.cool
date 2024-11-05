@@ -129,6 +129,19 @@
       position: relative;
       z-index: 1;
     }
+    .key-container {
+      margin-top: 20px;
+    }
+
+    .key-display {
+      background-color: #f0f2f5;
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid #dee2e6;
+      word-wrap: break-word;
+      max-width: 400px;
+      margin-top: 20px;
+    }
 
     @media (max-width: 768px) {
       .chat-container {
@@ -177,7 +190,16 @@
       </div>
     </div>
   </div>
-
+<div class="key-container">
+    <button class="btn btn-success" id="generateKeyButton">Generate Secure Keypair</button>
+    <div id="keyPairDisplay" class="key-display" style="display: none;">
+      <h5>Public Key</h5>
+      <pre id="publicKey"></pre>
+      <h5>Private Key</h5>
+      <pre id="privateKey"></pre>
+      <button class="btn btn-secondary" id="copyPrivateKeyButton" data-bs-toggle="tooltip" title="Copy Private Key">Copy Private Key</button>
+    </div>
+  </div>
   <script type="module">
     import { EmojiButton } from '/js/emoji.min.js';
     const emojiButton = document.getElementById('emojiButton');
@@ -193,6 +215,49 @@
   </script>
 
   <script>
+    async function generateKeypair() {
+    const keyPair = await window.crypto.subtle.generateKey(
+      {
+        name: "RSA-OAEP",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256"
+      },
+      true,
+      ["encrypt", "decrypt"]
+    );
+	
+    const publicKey = await exportKey(keyPair.publicKey, "spki"); 
+    const privateKey = await exportKey(keyPair.privateKey, "pkcs8"); 
+
+    document.getElementById('publicKey').textContent = publicKey;
+    document.getElementById('privateKey').textContent = privateKey;
+    document.getElementById('keyPairDisplay').style.display = 'block';
+  }
+
+  async function exportKey(key, format) {
+    const exportedKey = await window.crypto.subtle.exportKey(format, key);
+    const binaryString = String.fromCharCode(...new Uint8Array(exportedKey));
+    const base64Key = window.btoa(binaryString);
+
+    if (format === "spki") {
+      return `-----BEGIN PUBLIC KEY-----\n${base64Key}\n-----END PUBLIC KEY-----`;
+    } else if (format === "pkcs8") {
+      return `-----BEGIN PRIVATE KEY-----\n${base64Key}\n-----END PRIVATE KEY-----`;
+    }
+    return null;
+  }
+  document.getElementById('copyPrivateKeyButton').addEventListener('click', () => {
+    const privateKeyText = document.getElementById('privateKey').textContent;
+    navigator.clipboard.writeText(privateKeyText).then(() => {
+      alert('Private key copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy private key: ', err);
+    });
+  });
+
+  document.getElementById('generateKeyButton').addEventListener('click', generateKeypair);
+    
     let client = new beacon.DAppClient({
       name: 'Chad Chat'
     });

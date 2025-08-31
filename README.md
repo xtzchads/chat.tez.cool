@@ -5,4 +5,4 @@
  - Perfect way to contact someone on-chain if there is no other way to do it
 
 # TODO
-- Encryption of messages for secure communications
+- Encryption of messages for secure and private communications

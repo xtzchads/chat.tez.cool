@@ -8,39 +8,191 @@
   <title>Chad Chat</title>
   <link href="css/bootstrap.min.css" rel="stylesheet">
   <script src="js/walletbeacon.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    @import url("https://fonts.googleapis.com/css?family=Monda:400,500,600");
+
+    /* CSS Variables */
+    :root {
+      --colorful: rgba(239, 123, 227, 1);
+      --primary-gradient: linear-gradient(180deg, rgba(162, 124, 238, 1) 0%, rgba(127, 75, 231, 1) 100%);
+      --glass-bg: rgba(255, 255, 255, 0.01);
+      --glass-border: rgba(255, 255, 255, 0.26);
+      --text-primary: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --shadow-glass: 11px 14px 39px rgba(5, 2, 13, 0.1), 45px 54px 70px rgba(5, 2, 13, 0.09), 100px 122px 95px rgba(5, 2, 13, 0.05);
+      --border-radius-sm: 16px;
+      --border-radius-md: 30px;
+      --spacing-xs: 8px;
+      --spacing-sm: 16px;
+      --spacing-md: 24px;
+      --spacing-lg: 32px;
+      --spacing-xl: 48px;
+      --my-message-bg: linear-gradient(135deg, rgba(162, 124, 238, 0.2) 0%, rgba(127, 75, 231, 0.2) 100%);
+      --other-message-bg: rgba(255, 255, 255, 0.05);
+      --hover-color: rgba(255, 255, 255, 0.1);
+      --input-bg: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Monda", Helvetica;
+      -webkit-font-smoothing: antialiased;
+    }
+
     body {
-      background-color: #f8f9fa;
+      background: radial-gradient(50% 50% at 65% 50%, rgba(36, 26, 76, 1) 0%, rgba(9, 3, 28, 1) 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: var(--spacing-md);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    /* Utility Classes */
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-glass);
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient) !important;
+      border: 2px solid var(--glass-border) !important;
+      border-radius: var(--border-radius-sm) !important;
+      color: var(--text-primary) !important;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: "Monda", Helvetica !important;
+      font-weight: 500;
+      padding: var(--spacing-sm) var(--spacing-lg);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 8px 25px rgba(127, 75, 231, 0.3) !important;
+    }
+
+    .btn-secondary {
+      background: var(--glass-bg) !important;
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border) !important;
+      border-radius: var(--border-radius-sm) !important;
+      color: var(--text-primary) !important;
+      transition: all 0.3s ease;
+      font-family: "Monda", Helvetica !important;
+    }
+
+    .btn-secondary:hover {
+      background: var(--hover-color) !important;
+      transform: translateY(-2px);
+    }
+
+    .btn-light {
+      background: var(--glass-bg) !important;
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border) !important;
+      border-radius: var(--border-radius-sm) !important;
+      color: var(--text-primary) !important;
+      transition: all 0.3s ease;
+    }
+
+    .btn-light:hover {
+      background: var(--hover-color) !important;
+      color: var(--colorful) !important;
+    }
+
+    .wallet-button-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: var(--spacing-md);
+    }
+
+    .github {
+      display: flex;
+      justify-content: center;
+      margin-bottom: var(--spacing-lg);
+    }
+
+    .wallet-button {
+      position: relative;
+      z-index: 1;
+      font-size: 16px;
+      padding: var(--spacing-sm) var(--spacing-xl);
+    }
+
+    .key-container {
+      margin-top: var(--spacing-md);
+      display: flex;
+      flex-direction: column; 
+      align-items: center;  
+      justify-content: center; 
+    }
+
+    .key-display {
+      background: var(--glass-bg);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      padding: var(--spacing-md);
+      border-radius: var(--border-radius-md);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-glass);
+      word-wrap: break-word;
+      max-width: 400px;
+      margin-top: var(--spacing-md);
+      color: var(--text-primary);
     }
 
     .chat-container {
       display: flex;
       flex-direction: column;
       max-width: 1200px;
-      margin: 10px auto 0 auto;
-      border: 1px solid #dee2e6;
-      border-radius: 10px;
+      margin: 0 auto;
+      background: var(--glass-bg);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius-md);
+      box-shadow: var(--shadow-glass);
       overflow: hidden;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
     .dialog-panel {
-      border-right: 1px solid #dee2e6;
-      padding: 15px;
-      background-color: white;
+      border-right: 1px solid var(--glass-border);
+      padding: var(--spacing-md);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       height: 400px;
       overflow-y: auto;
     }
 
     .dialog-item {
-      padding: 10px;
+      padding: var(--spacing-sm);
       cursor: pointer;
-      border-radius: 5px;
-      transition: background-color 0.2s;
+      border-radius: var(--border-radius-sm);
+      transition: all 0.3s ease;
+      color: var(--text-secondary);
+      margin-bottom: var(--spacing-xs);
+      border: 1px solid transparent;
     }
 
     .dialog-item:hover {
-      background-color: #e9ecef;
+      background: var(--hover-color);
+      color: var(--text-primary);
+      border-color: var(--glass-border);
+      transform: translateY(-1px);
     }
 
     .message-area {
@@ -49,117 +201,190 @@
       flex-direction: column;
       height: 400px;
       overflow: hidden;
-      padding: 15px;
-      background-color: #f0f2f5;
-      border-radius: 10px;
+      padding: var(--spacing-md);
+      background: rgba(255, 255, 255, 0.01);
+      border-radius: var(--border-radius-md);
     }
 
     #chatArea {
       flex-grow: 1;
       overflow-y: auto;
-      padding: 10px 0;
+      padding: var(--spacing-sm) 0;
     }
 
     .current-dialog {
-      font-size: 20px;
-      font-weight: bold;
-      padding: 10px;
-      border-bottom: 2px solid #007bff;
-      margin-bottom: 5px;
+      font-size: 18px;
+      font-weight: 600;
+      padding: var(--spacing-sm);
+      border-bottom: 2px solid var(--colorful);
+      margin-bottom: var(--spacing-sm);
+      color: var(--text-primary);
+      text-align: center;
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-radius: var(--border-radius-sm);
     }
 
     .chat-message {
-      margin-bottom: 10px;
-      padding: 10px 15px;
-      border-radius: 15px;
+      margin-bottom: var(--spacing-sm);
+      padding: var(--spacing-sm) var(--spacing-md);
+      border-radius: 18px;
       max-width: 60%;
       display: inline-block;
       word-wrap: break-word;
       position: relative;
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border);
+      transition: all 0.3s ease;
+    }
+
+    .chat-message:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(127, 75, 231, 0.2);
     }
 
     .chat-message.own-message {
-      background-color: #007bff;
-      color: white;
+      background: var(--my-message-bg);
+      color: var(--text-primary);
       align-self: flex-end;
+      border-radius: 18px 18px 4px 18px;
     }
 
     .chat-message.friend-message {
-      background-color: #e0e0e0;
-      color: black;
+      background: var(--other-message-bg);
+      color: var(--text-primary);
       align-self: flex-start;
+      border-radius: 18px 18px 18px 4px;
     }
 
     .timestamp {
       font-size: 0.75em;
-      color: #888;
-      margin-left:3px;
+      color: var(--text-muted);
+      margin-left: 3px;
       text-align: right;
       display: flex;
       align-items: center;
       justify-content: flex-end;
-      margin-bottom: 10px;
+      margin-bottom: var(--spacing-sm);
     }
 
     .input-area {
       display: flex;
-      padding: 10px;
-      background-color: #f1f1f1;
+      padding: var(--spacing-sm);
+      background: var(--input-bg);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
       margin-top: auto;
+      border-radius: var(--border-radius-sm);
+      border: 1px solid var(--glass-border);
+      gap: var(--spacing-xs);
     }
 
     .emoji-picker {
-      font-size: 24px;
+      font-size: 20px;
       cursor: pointer;
       line-height: 1;
     }
 
-    .wallet-button-container {
-      display: flex;
+    .form-control {
+      background: var(--glass-bg) !important;
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border) !important;
+      border-radius: var(--border-radius-sm) !important;
+      color: var(--text-primary) !important;
+      transition: all 0.3s ease;
+    }
+
+    .form-control::placeholder {
+      color: var(--text-muted) !important;
+    }
+
+    .form-control:focus {
+      background: var(--glass-bg) !important;
+      border-color: var(--colorful) !important;
+      box-shadow: 0 0 0 2px rgba(239, 123, 227, 0.2) !important;
+      color: var(--text-primary) !important;
+    }
+
+    .new-dialog-input {
+      margin-bottom: var(--spacing-sm) !important;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--glass-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--primary-gradient);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(162, 124, 238, 0.8);
+    }
+
+    /* Avatar styling */
+    img[style*="border-radius:50%"] {
+      border: 2px solid var(--glass-border);
+      box-shadow: 0 2px 10px rgba(127, 75, 231, 0.2);
+    }
+
+    /* GitHub icon container */
+    .icon-link {
+      display: inline-flex;
+      align-items: center;
       justify-content: center;
-      margin-top: 20px;
-    }
-    .github {
-      display: flex;
-      justify-content: center;
-      margin-top: 10px;
-    }
-
-    .wallet-button {
-      position: relative;
-      z-index: 1;
-    }
-    .key-container {
-      margin-top: 20px;
-	    display:flex;
-flex-direction: column; 
-  align-items: center;  
-  justify-content: center; 
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--glass-bg);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid var(--glass-border);
+      transition: all 0.3s ease;
     }
 
-    .key-display {
-      background-color: #f0f2f5;
-      padding: 15px;
-      border-radius: 10px;
-      border: 1px solid #dee2e6;
-      word-wrap: break-word;
-      max-width: 400px;
-      margin-top: 20px;
+    .icon-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(127, 75, 231, 0.3);
+      background: var(--hover-color);
     }
 
+    /* Responsive Design */
     @media (max-width: 768px) {
       .chat-container {
         flex-direction: column;
+        margin: var(--spacing-sm);
       }
       .dialog-panel {
         border-right: none;
-        border-bottom: 1px solid #dee2e6;
+        border-bottom: 1px solid var(--glass-border);
         height: auto;
         max-height: 300px;
       }
       .message-area {
         height: auto;
         max-height: 400px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body {
+        padding: var(--spacing-sm);
+      }
+    }
+
+    @media (max-width: 480px) {
+      body {
+        padding: var(--spacing-xs);
       }
     }
   </style>
@@ -171,9 +396,9 @@ flex-direction: column;
     <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button>
   </div>
   <div class="github">
-<a href="https://github.com/xtzchads/chat.tez.cool" target="_blank" class="icon-link">
-              <img src="https://stake.tez.cool/icons/Tezos-social-icon-black-04.png" id="githubIcon" style="height:24px;width:24px;" alt="Tezos Icon">
-            </a>
+    <a href="https://github.com/xtzchads/chat.tez.cool" target="_blank" class="icon-link">
+      <img src="https://stake.tez.cool/icons/Tezos-social-icon-black-04.png" id="githubIcon" style="height:24px;width:24px;filter: invert(100%);" alt="Tezos Icon">
+    </a>
   </div>
   <!--<div class="key-container">
     <button class="btn btn-success" id="generateKeyButton">Generate Keypair</button>
@@ -190,7 +415,7 @@ flex-direction: column;
     <div class="row flex-grow-1">
       <div class="col-12 col-md-4 dialog-panel">
         <input type="text" id="newDialogInput" class="form-control new-dialog-input"
-          placeholder="Paste address and press enter to add dialog..." onkeydown="handleKeyDown(event)">
+          placeholder="Paste 36-character address to add dialog..." oninput="handleAddressInput(event)">
       </div>
       <div class="col-12 col-md-8 message-area">
         <div class="current-dialog" id="currentDialogTitle"></div>
@@ -368,7 +593,7 @@ flex-direction: column;
         combinedTransactions.sort((a, b) => a.id - b.id);
 
         const dialogPanel = document.querySelector('.dialog-panel');
-        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste address and press enter to add dialog..." onkeydown="handleKeyDown(event)">';
+        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste 36-character address to add dialog..." oninput="handleAddressInput(event)">';
 
         const uniqueAddresses = new Set();
 
@@ -506,7 +731,22 @@ flex-direction: column;
       }
     }
 
+    function handleAddressInput(event) {
+      const inputValue = event.target.value.trim();
+      
+      // Check if the input is exactly 36 characters long (typical Tezos address length)
+      if (inputValue.length === 36) {
+        // Basic validation: check if it starts with tz1, tz2, tz3, or KT1 (common Tezos address prefixes)
+        if (inputValue.match(/^(tz1|tz2|tz3|KT1)[A-Za-z0-9]{33}$/)) {
+          addNewDialog(inputValue);
+          loadChat(inputValue, [], permissions.address);
+          event.target.value = '';
+        }
+      }
+    }
+
     function handleKeyDown(event) {
+      // Keep the old functionality as fallback for Enter key
       console.log('Key pressed:', event.key);
       if (event.key === 'Enter') {
         event.preventDefault();

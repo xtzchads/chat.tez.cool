@@ -1,768 +1,1322 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Chad Chat: A secure and user-friendly chat application. Connect your wallet, chat with friends, or troll anons - do whatever you like">
-  <title>Chad Chat</title>
-  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <title>NFTChat — On-Chain Tezos Direct Messenger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Monda:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="js/walletbeacon.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    @import url("https://fonts.googleapis.com/css?family=Monda:400,500,600");
-
-    /* CSS Variables */
     :root {
-      --colorful: rgba(239, 123, 227, 1);
-      --primary-gradient: linear-gradient(180deg, rgba(162, 124, 238, 1) 0%, rgba(127, 75, 231, 1) 100%);
-      --glass-bg: rgba(255, 255, 255, 0.01);
-      --glass-border: rgba(255, 255, 255, 0.26);
-      --text-primary: #ffffff;
-      --text-secondary: rgba(255, 255, 255, 0.7);
-      --text-muted: rgba(255, 255, 255, 0.5);
-      --shadow-glass: 11px 14px 39px rgba(5, 2, 13, 0.1), 45px 54px 70px rgba(5, 2, 13, 0.09), 100px 122px 95px rgba(5, 2, 13, 0.05);
-      --border-radius-sm: 16px;
-      --border-radius-md: 30px;
-      --spacing-xs: 8px;
-      --spacing-sm: 16px;
-      --spacing-md: 24px;
-      --spacing-lg: 32px;
-      --spacing-xl: 48px;
-      --my-message-bg: linear-gradient(135deg, rgba(162, 124, 238, 0.2) 0%, rgba(127, 75, 231, 0.2) 100%);
-      --other-message-bg: rgba(255, 255, 255, 0.05);
-      --hover-color: rgba(255, 255, 255, 0.1);
-      --input-bg: rgba(255, 255, 255, 0.05);
+      --bg-deep: #090b16;
+      --bg-surface: #0f1322;
+      --bg-glass: rgba(15, 19, 34, 0.72);
+      --bg-glass-elevated: rgba(24, 30, 52, 0.9);
+      --bg-glass-hover: rgba(34, 42, 72, 0.78);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-bright: rgba(162, 124, 238, 0.38);
+      --border-cyan: rgba(0, 242, 242, 0.35);
+
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --accent-cyan: #00f2f2;
+      --accent-purple: #a27cee;
+      --accent-indigo: #6366f1;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+
+      --font-display: 'Monda', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 22px;
+      --radius-pill: 9999px;
+
+      --shadow-glass: 0 16px 40px -8px rgba(0, 0, 0, 0.6), 0 0 1px 1px rgba(255, 255, 255, 0.05);
     }
 
-    /* Base Styles */
-    * {
+    *, *::before, *::after {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
-      font-family: "Monda", Helvetica;
       -webkit-font-smoothing: antialiased;
     }
 
-    body {
-      background: radial-gradient(50% 50% at 65% 50%, rgba(36, 26, 76, 1) 0%, rgba(9, 3, 28, 1) 100%);
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-deep);
+      background-image:
+        radial-gradient(circle at 15% 15%, rgba(162, 124, 238, 0.16) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(0, 242, 242, 0.1) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, #11152c 0%, #090b16 100%);
       color: var(--text-primary);
-      min-height: 100vh;
-      padding: var(--spacing-md);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      color-scheme: dark;
     }
 
     a {
       color: inherit;
+      text-decoration: none;
     }
 
-    /* Utility Classes */
-    .glass-card {
-      background: var(--glass-bg);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border-radius: var(--border-radius-md);
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--shadow-glass);
+    .ambient-stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(1px 1px at 18% 22%, rgba(255, 255, 255, 0.45) 50%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 76% 16%, rgba(162, 124, 238, 0.5) 50%, transparent 100%),
+        radial-gradient(1px 1px at 38% 72%, rgba(0, 242, 242, 0.45) 50%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 84% 64%, rgba(255, 255, 255, 0.35) 50%, transparent 100%);
+      background-size: 520px 520px;
+      opacity: 0.65;
     }
 
-    .btn-primary {
-      background: var(--primary-gradient) !important;
-      border: 2px solid var(--glass-border) !important;
-      border-radius: var(--border-radius-sm) !important;
-      color: var(--text-primary) !important;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      font-family: "Monda", Helvetica !important;
-      font-weight: 500;
-      padding: var(--spacing-sm) var(--spacing-lg);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px) !important;
-      box-shadow: 0 8px 25px rgba(127, 75, 231, 0.3) !important;
-    }
-
-    .btn-secondary {
-      background: var(--glass-bg) !important;
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--glass-border) !important;
-      border-radius: var(--border-radius-sm) !important;
-      color: var(--text-primary) !important;
-      transition: all 0.3s ease;
-      font-family: "Monda", Helvetica !important;
-    }
-
-    .btn-secondary:hover {
-      background: var(--hover-color) !important;
-      transform: translateY(-2px);
-    }
-
-    .btn-light {
-      background: var(--glass-bg) !important;
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--glass-border) !important;
-      border-radius: var(--border-radius-sm) !important;
-      color: var(--text-primary) !important;
-      transition: all 0.3s ease;
-    }
-
-    .btn-light:hover {
-      background: var(--hover-color) !important;
-      color: var(--colorful) !important;
-    }
-
-    .wallet-button-container {
-      display: flex;
-      justify-content: center;
-      margin-bottom: var(--spacing-md);
-    }
-
-    .github {
-      display: flex;
-      justify-content: center;
-      margin-bottom: var(--spacing-lg);
-    }
-
-    .wallet-button {
+    .app-shell {
       position: relative;
       z-index: 1;
-      font-size: 16px;
-      padding: var(--spacing-sm) var(--spacing-xl);
-    }
-
-    .key-container {
-      margin-top: var(--spacing-md);
-      display: flex;
-      flex-direction: column; 
-      align-items: center;  
-      justify-content: center; 
-    }
-
-    .key-display {
-      background: var(--glass-bg);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      padding: var(--spacing-md);
-      border-radius: var(--border-radius-md);
-      border: 1px solid var(--glass-border);
-      box-shadow: var(--shadow-glass);
-      word-wrap: break-word;
-      max-width: 400px;
-      margin-top: var(--spacing-md);
-      color: var(--text-primary);
-    }
-
-    .chat-container {
       display: flex;
       flex-direction: column;
-      max-width: 1200px;
-      margin: 0 auto;
-      background: var(--glass-bg);
-      backdrop-filter: blur(25px);
-      -webkit-backdrop-filter: blur(25px);
-      border: 1px solid var(--glass-border);
-      border-radius: var(--border-radius-md);
-      box-shadow: var(--shadow-glass);
-      overflow: hidden;
+      width: 100%;
+      height: 100vh;
     }
 
-    .dialog-panel {
-      border-right: 1px solid var(--glass-border);
-      padding: var(--spacing-md);
-      background: rgba(255, 255, 255, 0.02);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      height: 400px;
-      overflow-y: auto;
-    }
-
-    .dialog-item {
-		overflow: hidden;
-      padding: var(--spacing-sm);
-      cursor: pointer;
-      border-radius: var(--border-radius-sm);
-      transition: all 0.3s ease;
-      color: var(--text-secondary);
-      margin-bottom: var(--spacing-xs);
-      border: 1px solid transparent;
-    }
-
-    .dialog-item:hover {
-      background: var(--hover-color);
-      color: var(--text-primary);
-      border-color: var(--glass-border);
-      transform: translateY(-1px);
-    }
-
-    .message-area {
-      flex-grow: 1;
-      display: flex;
-      flex-direction: column;
-      height: 400px;
-      overflow: hidden;
-      padding: var(--spacing-md);
-      background: rgba(255, 255, 255, 0.01);
-      border-radius: var(--border-radius-md);
-    }
-
-    #chatArea {
-      flex-grow: 1;
-      overflow-y: auto;
-      padding: var(--spacing-sm) 0;
-    }
-
-    .current-dialog {
-      font-size: 18px;
-      font-weight: 600;
-      padding: var(--spacing-sm);
-      border-bottom: 2px solid var(--colorful);
-      margin-bottom: var(--spacing-sm);
-      color: var(--text-primary);
-      text-align: center;
-      background: var(--glass-bg);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border-radius: var(--border-radius-sm);
-    }
-
-    .chat-message {
-      margin-bottom: var(--spacing-sm);
-      padding: var(--spacing-sm) var(--spacing-md);
-      border-radius: 18px;
-      max-width: 60%;
-      display: inline-block;
-      word-wrap: break-word;
-      position: relative;
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--glass-border);
-      transition: all 0.3s ease;
-    }
-
-    .chat-message:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(127, 75, 231, 0.2);
-    }
-
-    .chat-message.own-message {
-      background: var(--my-message-bg);
-      color: var(--text-primary);
-      align-self: flex-end;
-      border-radius: 18px 18px 4px 18px;
-    }
-
-    .chat-message.friend-message {
-      background: var(--other-message-bg);
-      color: var(--text-primary);
-      align-self: flex-start;
-      border-radius: 18px 18px 18px 4px;
-    }
-
-    .timestamp {
-      font-size: 0.75em;
-      color: var(--text-muted);
-      margin-left: 3px;
-      text-align: right;
+    /* Original TezCool Header */
+    .header {
+      height: 80px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: 0 0;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.26);
+      padding: 16px 24px;
+      z-index: 100;
+      transition: .3s;
       display: flex;
       align-items: center;
-      justify-content: flex-end;
-      margin-bottom: var(--spacing-sm);
+      width: 100%;
     }
 
-    .input-area {
+    .header-content {
       display: flex;
-      padding: var(--spacing-sm);
-      background: var(--input-bg);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      margin-top: auto;
-      border-radius: var(--border-radius-sm);
-      border: 1px solid var(--glass-border);
-      gap: var(--spacing-xs);
-    }
-
-    .emoji-picker {
-      font-size: 20px;
-      cursor: pointer;
-      line-height: 1;
-    }
-
-    .form-control {
-      background: var(--glass-bg) !important;
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--glass-border) !important;
-      border-radius: var(--border-radius-sm) !important;
-      color: var(--text-primary) !important;
-      transition: all 0.3s ease;
-    }
-
-    .form-control::placeholder {
-      color: var(--text-muted) !important;
-    }
-
-    .form-control:focus {
-      background: var(--glass-bg) !important;
-      border-color: var(--colorful) !important;
-      box-shadow: 0 0 0 2px rgba(239, 123, 227, 0.2) !important;
-      color: var(--text-primary) !important;
-    }
-
-    .new-dialog-input {
-      margin-bottom: var(--spacing-sm) !important;
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: var(--glass-bg);
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: var(--primary-gradient);
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(162, 124, 238, 0.8);
-    }
-
-    /* Avatar styling */
-    img[style*="border-radius:50%"] {
-      border: 2px solid var(--glass-border);
-      box-shadow: 0 2px 10px rgba(127, 75, 231, 0.2);
-    }
-
-    /* GitHub icon container */
-    .icon-link {
-      display: inline-flex;
       align-items: center;
+      width: 100%;
       justify-content: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: var(--glass-bg);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      border: 1px solid var(--glass-border);
-      transition: all 0.3s ease;
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
-    .icon-link:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(127, 75, 231, 0.3);
-      background: var(--hover-color);
+    .nav-menu {
+      align-items: center;
+      display: flex;
+      gap: 24px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      justify-content: center;
     }
 
-    /* Responsive Design */
+    .nav-item {
+      color: #ffffff;
+      font-family: "Monda", Helvetica, sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      padding: 8px 16px;
+      border-radius: 16px;
+      transition: .3s;
+      cursor: pointer;
+      position: relative;
+      text-decoration: none;
+    }
+
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.01);
+      color: #a27cee;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(180deg, rgba(162, 124, 238, 1) 0%, rgba(127, 75, 231, 1) 100%);
+      color: #ffffff;
+    }
+
+    @media (max-width: 1200px) {
+      .nav-menu {
+        gap: 16px;
+      }
+
+      .nav-item {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .nav-menu {
+        gap: 12px;
+      }
+
+      .nav-item {
+        font-size: 0.85rem;
+        padding: 6px 10px;
+      }
+    }
+
     @media (max-width: 768px) {
-      .chat-container {
-        flex-direction: column;
-        margin: var(--spacing-sm);
+      .header {
+        padding: 12px 16px;
       }
-      .dialog-panel {
-        border-right: none;
-        border-bottom: 1px solid var(--glass-border);
-        height: auto;
-        max-height: 300px;
+
+      .nav-menu {
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
       }
-      .message-area {
-        height: auto;
-        max-height: 400px;
+
+      .nav-item {
+        font-size: 0.8rem;
+        padding: 4px 8px;
       }
     }
 
     @media (max-width: 640px) {
-      body {
-        padding: var(--spacing-sm);
+      .header {
+        height: 130px;
+        padding: 10px 12px;
+      }
+
+      .nav-menu {
+        gap: 6px;
+      }
+
+      .nav-item {
+        font-size: 0.75rem;
+        padding: 4px 6px;
+        border-radius: 12px;
       }
     }
 
     @media (max-width: 480px) {
-      body {
-        padding: var(--spacing-xs);
+      .header {
+        padding: 8px 10px;
       }
+
+      .nav-menu {
+        gap: 4px;
+      }
+
+      .nav-item {
+        font-size: 0.7rem;
+        padding: 3px 5px;
+        border-radius: 10px;
+      }
+    }
+
+    /* Main Workspace */
+    .messenger-workspace {
+      flex: 1;
+      min-height: 0;
+      max-width: 1180px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 96px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (max-width: 640px) {
+      .messenger-workspace {
+        padding-top: 142px;
+      }
+    }
+
+    .messenger-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 16px;
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glass);
+      flex-shrink: 0;
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .topbar-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-display);
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan);
+    }
+
+    .contract-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+
+    .contract-tag:hover {
+      color: var(--accent-cyan);
+      border-color: var(--border-cyan);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .wallet-pill {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 11px 4px 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #a7f3d0;
+    }
+    .wallet-pill.visible { display: inline-flex; }
+    .wallet-pill img {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+    }
+
+    .btn-connect {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(162, 124, 238, 0.45);
+      background: linear-gradient(135deg, rgba(162, 124, 238, 0.28), rgba(99, 102, 241, 0.28));
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-connect:hover {
+      border-color: var(--accent-purple);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(127, 75, 231, 0.3);
+    }
+
+    .btn-connect.disconnect {
+      background: rgba(244, 63, 94, 0.14);
+      border-color: rgba(244, 63, 94, 0.35);
+      color: #fda4af;
+    }
+
+    /* Two-Pane Messenger Card */
+    .messenger-grid {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 14px;
+    }
+
+    .glass-pane {
+      background: var(--bg-glass);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-glass);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* Left Sidebar: Contacts / Dialogs */
+    .sidebar-header {
+      padding: 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-heading {
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .new-chat-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .new-chat-input {
+      flex: 1;
+      min-width: 0;
+      height: 36px;
+      padding: 0 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      outline: none;
+    }
+
+    .new-chat-input:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .btn-add-chat {
+      height: 36px;
+      padding: 0 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(0, 242, 242, 0.35);
+      background: rgba(0, 242, 242, 0.12);
+      color: var(--accent-cyan);
+      font-family: var(--font-display);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .btn-add-chat:hover {
+      background: rgba(0, 242, 242, 0.22);
+    }
+
+    .dialogs-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .dialog-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.18s ease;
+    }
+
+    .dialog-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.06);
+    }
+
+    .dialog-item.active {
+      background: linear-gradient(135deg, rgba(162, 124, 238, 0.18), rgba(0, 242, 242, 0.08));
+      border-color: rgba(162, 124, 238, 0.4);
+    }
+
+    .dialog-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1.5px solid rgba(162, 124, 238, 0.35);
+      flex-shrink: 0;
+      object-fit: cover;
+    }
+
+    .dialog-meta {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dialog-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .dialog-name {
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .dialog-time {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .dialog-preview {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Right Pane: Active Conversation */
+    .chat-pane-header {
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(9, 11, 22, 0.45);
+      min-height: 60px;
+    }
+
+    .peer-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .peer-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1.5px solid var(--accent-cyan);
+    }
+
+    .peer-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .peer-sub {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .messages-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .bubble-row {
+      display: flex;
+      flex-direction: column;
+      max-width: 75%;
+    }
+
+    .bubble-row.sent {
+      align-self: flex-end;
+      align-items: flex-end;
+    }
+
+    .bubble-row.received {
+      align-self: flex-start;
+      align-items: flex-start;
+    }
+
+    .bubble-box {
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.48;
+      word-break: break-word;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .bubble-row.sent .bubble-box {
+      background: linear-gradient(135deg, rgba(162, 124, 238, 0.28), rgba(99, 102, 241, 0.24));
+      border-color: rgba(162, 124, 238, 0.42);
+      border-bottom-right-radius: 4px;
+      color: var(--text-primary);
+    }
+
+    .bubble-row.received .bubble-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      border-bottom-left-radius: 4px;
+      color: var(--text-primary);
+    }
+
+    .bubble-time {
+      margin-top: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .empty-pane-state {
+      margin: auto;
+      text-align: center;
+      max-width: 380px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-secondary);
+    }
+
+    .empty-icon-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(162, 124, 238, 0.12);
+      border: 1px solid rgba(162, 124, 238, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .empty-pane-state h3 {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+
+    .empty-pane-state p {
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    /* Composer Footer */
+    .dm-composer {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(9, 11, 22, 0.72);
+    }
+
+    .dm-emoji-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      font-size: 17px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .dm-emoji-btn:hover {
+      border-color: var(--border-cyan);
+      background: rgba(0, 242, 242, 0.1);
+    }
+
+    .dm-input {
+      flex: 1;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .dm-input:focus {
+      border-color: var(--accent-purple);
+    }
+
+    .dm-input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .dm-send-btn {
+      height: 40px;
+      padding: 0 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(0, 242, 242, 0.4);
+      background: linear-gradient(135deg, rgba(0, 242, 242, 0.22), rgba(162, 124, 238, 0.28));
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dm-send-btn:hover:not(:disabled) {
+      border-color: var(--accent-cyan);
+      transform: translateY(-1px);
+    }
+
+    .dm-send-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    /* Emoji Popover */
+    .emoji-popover {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 16px;
+      width: 320px;
+      max-height: 260px;
+      background: var(--bg-glass-elevated);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glass);
+      padding: 10px;
+      display: none;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      overflow-y: auto;
+      z-index: 50;
+    }
+
+    .emoji-popover.open {
+      display: grid;
+    }
+
+    .emoji-cell {
+      font-size: 19px;
+      padding: 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .emoji-cell:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .toast-stack {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast-msg {
+      padding: 10px 16px;
+      border-radius: var(--radius-md);
+      background: var(--bg-glass-elevated);
+      border: 1px solid var(--border-bright);
+      color: var(--text-primary);
+      font-size: 13px;
+      box-shadow: var(--shadow-glass);
+    }
+
+    @media (max-width: 820px) {
+      .messenger-grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 220px 1fr;
+      }
+      .contract-tag { display: none; }
     }
   </style>
 </head>
-
 <body>
+  <div class="ambient-stars" aria-hidden="true"></div>
 
-  <div class="wallet-button-container">
-    <button class="btn btn-secondary wallet-button" id="walletButton">Connect Wallet</button>
-  </div>
-  <div class="github">
-    <a href="https://github.com/xtzchads/chat.tez.cool" target="_blank" class="icon-link">
-      <img src="https://stake.tez.cool/icons/Tezos-social-icon-black-04.png" id="githubIcon" style="height:24px;width:24px;filter: invert(100%);" alt="Tezos Icon">
-    </a>
-  </div>
-  <!--<div class="key-container">
-    <button class="btn btn-success" id="generateKeyButton">Generate Keypair</button>
-    <div id="keyPairDisplay" class="key-display" style="display: none;">
-      <h5>Public Key</h5>
-      <pre id="publicKey"></pre>
-      <h5>Private Key</h5>
-      <pre id="privateKey"></pre>
-      <button class="btn btn-secondary" id="copyPrivateKeyButton" data-bs-toggle="tooltip" title="Copy Private Key">Copy Private Key</button>
-      <button class="btn btn-secondary" id="publish" data-bs-toggle="tooltip" title="Publish public key">Publish Public Key</button>
-    </div>
-  </div>-->
-  <div class="chat-container">
-    <div class="row flex-grow-1">
-      <div class="col-12 col-md-4 dialog-panel">
-        <input type="text" id="newDialogInput" class="form-control new-dialog-input"
-          placeholder="Paste 36-character address to add dialog..." oninput="handleAddressInput(event)">
+  <div class="app-shell">
+    <header class="header">
+      <div class="header-content">
+        <nav class="nav-menu" aria-label="Tez.Cool Suite">
+          <a class="nav-item" href="https://tez.cool/">HOME</a>
+          <a class="nav-item" href="https://tez.cool/#up">TEZCALM</a>
+          <a class="nav-item" href="https://tez.cool/#map">CHADMAP</a>
+          <a class="nav-item" href="https://tez.cool/#eye">THE EYE OF CHAD</a>
+          <a class="nav-item" href="https://tez.cool/#stake">TEZSTAKE</a>
+          <a class="nav-item" href="https://trollbox.tez.cool/">TEZTROLLBOX</a>
+          <a class="nav-item" href="https://secret.tez.cool/">TEZWHALES</a>
+          <a class="nav-item active" href="https://chat.tez.cool/">NFTCHAT</a>
+        </nav>
       </div>
-      <div class="col-12 col-md-8 message-area">
-        <div class="current-dialog" id="currentDialogTitle"></div>
-        <div id="chatArea"></div>
-        <div class="input-area">
-          <button class="btn btn-light" id="emojiButton">
-            <span class="emoji-picker">😊</span>
-          </button>
-          <input type="text" id="messageInput" class="form-control me-2" placeholder="Type your message...">
-          <button class="btn btn-primary" id="sendButton">Send</button>
+    </header>
+
+    <main class="messenger-workspace">
+      <div class="messenger-topbar">
+        <div class="topbar-left">
+          <div class="topbar-title">
+            <span class="status-dot"></span>
+            <span>On-Chain NFT Direct Messaging</span>
+          </div>
+          <a class="contract-tag" href="https://tzkt.io/KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7" target="_blank" rel="noopener noreferrer">
+            <span>KT1Nuwj…VBJz7</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+        </div>
+
+        <div class="topbar-right">
+          <div class="wallet-pill" id="walletPill">
+            <img id="myAvatar" src="" alt="" />
+            <span id="myAddressLabel"></span>
+          </div>
+          <button type="button" class="btn-connect" id="connectBtn">Connect Wallet</button>
         </div>
       </div>
-    </div>
+
+      <div class="messenger-grid">
+        <!-- Left Contacts Pane -->
+        <aside class="glass-pane">
+          <div class="sidebar-header">
+            <div class="sidebar-heading">
+              <span>Conversations</span>
+              <span id="dialogCountBadge">0</span>
+            </div>
+            <div class="new-chat-row">
+              <input type="text" id="newAddressInput" class="new-chat-input" placeholder="tz1 / tz2 / tz4 / KT1 address…" />
+              <button type="button" class="btn-add-chat" id="addChatBtn">+ New</button>
+            </div>
+          </div>
+          <div class="dialogs-list" id="dialogsList">
+            <div class="empty-pane-state" style="padding: 20px;">
+              <p>Connect your Tezos wallet to load your on-chain conversations.</p>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right Conversation Pane -->
+        <section class="glass-pane">
+          <div class="chat-pane-header" id="chatHeader">
+            <div class="peer-info">
+              <div class="peer-title">Select or start a conversation</div>
+            </div>
+          </div>
+
+          <div class="messages-scroll" id="messagesScroll">
+            <div class="empty-pane-state">
+              <div class="empty-icon-circle">💬</div>
+              <h3>Direct Wallet-to-Wallet Messaging</h3>
+              <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet.</p>
+            </div>
+          </div>
+
+          <div class="dm-composer">
+            <div class="emoji-popover" id="emojiPopover"></div>
+            <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" title="Insert Emoji">😊</button>
+            <input type="text" id="dmInput" class="dm-input" placeholder="Connect wallet & select a recipient to send a message…" disabled />
+            <button type="button" class="dm-send-btn" id="dmSendBtn" disabled>Mint & Send</button>
+          </div>
+        </section>
+      </div>
+    </main>
   </div>
 
-  <script type="module">
-    import { EmojiButton } from '/js/emoji.min.js';
-    const emojiButton = document.getElementById('emojiButton');
-    const picker = new EmojiButton();
-
-    emojiButton.addEventListener('click', () => {
-      picker.togglePicker(emojiButton);
-    });
-
-    picker.on('emoji', emoji => {
-      messageInput.value += emoji.emoji;
-    });
-  </script>
+  <div class="toast-stack" id="toastStack"></div>
 
   <script>
-    /*async function generateKeypair() {
-    const keyPair = await window.crypto.subtle.generateKey(
-      {
-        name: "RSA-OAEP",
-        modulusLength: 2048,
-        publicExponent: new Uint8Array([1, 0, 1]),
-        hash: "SHA-256"
-      },
-      true,
-      ["encrypt", "decrypt"]
-    );
-	
-    const publicKey = await exportKey(keyPair.publicKey, "spki"); 
-    const privateKey = await exportKey(keyPair.privateKey, "pkcs8"); 
+    (function () {
+      const CONTRACT = 'KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7';
+      const RPC_URL = 'https://rpc.tzbeta.net';
+      const ADDR_REGEX = /^(tz1|tz2|tz3|tz4|KT1)[1-9A-HJ-NP-Za-km-z]{33}$/;
 
-    document.getElementById('publicKey').textContent = publicKey;
-    document.getElementById('privateKey').textContent = privateKey;
-    document.getElementById('keyPairDisplay').style.display = 'block';
-  }
+      const EMOJIS = [
+        '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘',
+        '😎','🤓','🧐','🤠','🥳','🤯','🔥','🚀','💎','👑','⚡','✨','🌙','🎉','❤️','💜',
+        '💙','💚','👍','👎','🙌','👏','🤝','🙏','💪','🐸','🐳','🦄','🍕','🍺','🥂','☕'
+      ];
 
-  async function exportKey(key, format) {
-    const exportedKey = await window.crypto.subtle.exportKey(format, key);
-    const binaryString = String.fromCharCode(...new Uint8Array(exportedKey));
-    const base64Key = window.btoa(binaryString);
+      let client = null;
+      let myAddress = null;
+      let currentRecipient = null;
+      let conversations = new Map(); // peerAddress -> Array<{id, sender, recipient, text, timestamp}>
+      let aliasCache = new Map();
+      let pollTimer = null;
 
-    if (format === "spki") {
-      return `-----BEGIN PUBLIC KEY-----\n${base64Key}\n-----END PUBLIC KEY-----`;
-    } else if (format === "pkcs8") {
-      return `-----BEGIN PRIVATE KEY-----\n${base64Key}\n-----END PRIVATE KEY-----`;
-    }
-    return null;
-  }
-  document.getElementById('copyPrivateKeyButton').addEventListener('click', () => {
-    const privateKeyText = document.getElementById('privateKey').textContent;
-    navigator.clipboard.writeText(privateKeyText).then(() => {
-      //alert('Private key copied to clipboard!');
-    }).catch(err => {
-      console.error('Failed to copy private key: ', err);
-    });
-  });
+      const connectBtn = document.getElementById('connectBtn');
+      const walletPill = document.getElementById('walletPill');
+      const myAvatar = document.getElementById('myAvatar');
+      const myAddressLabel = document.getElementById('myAddressLabel');
+      const newAddressInput = document.getElementById('newAddressInput');
+      const addChatBtn = document.getElementById('addChatBtn');
+      const dialogsList = document.getElementById('dialogsList');
+      const dialogCountBadge = document.getElementById('dialogCountBadge');
+      const chatHeader = document.getElementById('chatHeader');
+      const messagesScroll = document.getElementById('messagesScroll');
+      const dmInput = document.getElementById('dmInput');
+      const dmSendBtn = document.getElementById('dmSendBtn');
+      const emojiToggleBtn = document.getElementById('emojiToggleBtn');
+      const emojiPopover = document.getElementById('emojiPopover');
+      const toastStack = document.getElementById('toastStack');
 
-  document.getElementById('generateKeyButton').addEventListener('click', generateKeypair);
-    */
-    let client = new beacon.DAppClient({
-      name: 'Chad Chat'
-    });
-    let permissions;
-    let current = '';
-
-    const chatArea = document.getElementById('chatArea');
-    const messageInput = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendButton');
-    const walletButton = document.getElementById('walletButton');
-
-    sendButton.disabled = true;
-
-    sendButton.addEventListener('click', sendMessage);
-
-    function sendMessage() {
-      const messageText = messageInput.value.trim();
-      if (messageText && !sendButton.disabled) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message own-message';
-        messageDiv.textContent = messageText;
-
-        const messageContainer = document.createElement('div');
-        messageContainer.style.display = 'flex';
-        messageContainer.style.justifyContent = 'flex-end';
-        messageContainer.appendChild(messageDiv);
-
-        const timestampDiv = document.createElement('div');
-        const timestamp = new Date(Date.now());
-        timestampDiv.className = 'timestamp';
-        timestampDiv.textContent = formatTimestamp(timestamp);
-        messageContainer.appendChild(timestampDiv);
-
-        chatArea.appendChild(messageContainer);
-
-        messageInput.value = '';
-        chatArea.scrollTop = chatArea.scrollHeight;
-        send(hex(messageText), current);
+      function shortAddr(addr) {
+        if (!addr || addr.length < 12) return addr || '';
+        return addr.slice(0, 6) + '…' + addr.slice(-4);
       }
-    }
 
-    function hex(str) {
-      return Array.from(new TextEncoder().encode(str))
-        .map(byte => byte.toString(16).padStart(2, '0'))
-        .join('');
-    }
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
 
-    async function disconnectWallet() {
-      await client.clearActiveAccount();
-      walletButton.textContent = 'Connect Wallet';
-      permissions = null;
-      document.querySelector('.dialog-panel').innerHTML = '';
-      chatArea.innerHTML = '';
-      clearSelectedDialog();
-    }
+      function stringToHex(str) {
+        const bytes = new TextEncoder().encode(str);
+        return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
 
-    async function connectWallet() {
-      try {
-        if (!permissions?.address) {
-          permissions = await client.requestPermissions();
-          checkActiveSession();
+      function hexToString(hex) {
+        if (!hex) return '';
+        try {
+          const bytes = new Uint8Array(hex.length / 2);
+          for (let i = 0; i < hex.length; i += 2) {
+            bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+          }
+          return new TextDecoder('utf-8').decode(bytes);
+        } catch (e) {
+          return '';
         }
-      } catch (error) {
-        console.error('Error connecting wallet:', error);
-        alert('Failed to connect wallet. Please try again.');
       }
-    }
 
-    walletButton.addEventListener('click', () => {
-      if (permissions?.address) {
-        disconnectWallet();
-      } else {
-        connectWallet();
+      function toast(text) {
+        const div = document.createElement('div');
+        div.className = 'toast-msg';
+        div.textContent = text;
+        toastStack.appendChild(div);
+        setTimeout(() => div.remove(), 3500);
       }
-    });
 
-    async function checkActiveSession() {
-      const activeAccount = await client.getActiveAccount();
-      if (activeAccount) {
-        permissions = { address: activeAccount.address };
-        walletButton.textContent = 'Disconnect Wallet';
-        document.querySelector('.chat-container').style.display='flex';
-        fetchTransactionHistory(permissions.address);
-      } else {
-        document.querySelector('.chat-container').style.display='none';
-        walletButton.textContent = 'Connect Wallet';
-        clearSelectedDialog();
+      async function resolveAlias(addr) {
+        if (!addr) return '';
+        if (aliasCache.has(addr)) return aliasCache.get(addr);
+        aliasCache.set(addr, shortAddr(addr));
+        try {
+          const r = await fetch(`https://api.tzkt.io/v1/accounts/${addr}`);
+          if (r.ok) {
+            const d = await r.json();
+            if (d && d.alias) {
+              aliasCache.set(addr, d.alias);
+              renderDialogs();
+              if (currentRecipient === addr) renderChatHeader();
+            }
+          }
+        } catch (e) {}
+        return aliasCache.get(addr);
       }
-    }
 
-    async function fetchTransactionHistory(address) {
-      try {
-        const [sentResponse, receivedResponse] = await Promise.all([
-          fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${address}&target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&status=applied&limit=1000&sort.desc=id`),
-          fetch(`https://api.tzkt.io/v1/operations/transactions?target=KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7&parameter.to_=${address}&status=applied&limit=1000&sort.desc=id`)
-        ]);
-
-        const sentTransactions = await sentResponse.json();
-        const receivedTransactions = await receivedResponse.json();
-        const combined = [...sentTransactions, ...receivedTransactions];
-        const combinedTransactions = Array.from(new Map(combined.map(tx => [tx.id, tx])).values());
-        combinedTransactions.sort((a, b) => a.id - b.id);
-
-        const dialogPanel = document.querySelector('.dialog-panel');
-        dialogPanel.innerHTML = '<input type="text" id="newDialogInput" class="form-control new-dialog-input" placeholder="Paste 36-character address to add dialog..." oninput="handleAddressInput(event)">';
-
-        const uniqueAddresses = new Set();
-
-        combinedTransactions.forEach(tx => {
-          const senderAddress = tx.sender?.address;
-          const receiverAddress = tx.parameter?.value?.to_;
-
-          const friendAddress = (senderAddress === address) ? receiverAddress : senderAddress;
-
-          if (!uniqueAddresses.has(friendAddress)) {
-            uniqueAddresses.add(friendAddress);
-
-            const dialogItem = document.createElement('div');
-            dialogItem.className = 'dialog-item';
-            dialogItem.textContent = friendAddress;
-            dialogItem.addEventListener('click', () => loadChat(friendAddress, combinedTransactions, address));
-            dialogPanel.appendChild(dialogItem);
+      // Emoji picker init
+      EMOJIS.forEach(em => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'emoji-cell';
+        b.textContent = em;
+        b.addEventListener('click', () => {
+          if (!dmInput.disabled) {
+            dmInput.value += em;
+            dmInput.focus();
           }
         });
-        if (current != '') {
-          loadChat(current, combinedTransactions, address);
+        emojiPopover.appendChild(b);
+      });
+
+      emojiToggleBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        emojiPopover.classList.toggle('open');
+      });
+
+      document.addEventListener('click', e => {
+        if (!emojiPopover.contains(e.target) && e.target !== emojiToggleBtn) {
+          emojiPopover.classList.remove('open');
         }
-      } catch (error) {
-        console.error('Error fetching transaction history:', error);
+      });
+
+      async function fetchAllMessages() {
+        if (!myAddress) return;
+        try {
+          const [sentRes, recRes] = await Promise.all([
+            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${myAddress}&target=${CONTRACT}&status=applied&limit=1000&sort.desc=id`),
+            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.to_=${myAddress}&status=applied&limit=1000&sort.desc=id`)
+          ]);
+          const sentOps = sentRes.ok ? await sentRes.json() : [];
+          const recOps = recRes.ok ? await recRes.json() : [];
+
+          const allOps = [...sentOps, ...recOps];
+          const seenIds = new Set();
+          const nextMap = new Map();
+
+          // Keep any manually added empty conversation
+          conversations.forEach((msgs, peer) => {
+            if (msgs.length === 0) nextMap.set(peer, []);
+          });
+
+          allOps.forEach(op => {
+            if (!op || seenIds.has(op.id)) return;
+            seenIds.add(op.id);
+            const sender = op.sender?.address;
+            const recipient = op.parameter?.value?.to_;
+            const hexName = op.parameter?.value?.metadata?.name;
+            if (!sender || !recipient || !hexName) return;
+
+            const peer = sender === myAddress ? recipient : sender;
+            const text = hexToString(hexName);
+            if (!nextMap.has(peer)) {
+              nextMap.set(peer, []);
+              resolveAlias(peer);
+            }
+            nextMap.get(peer).push({
+              id: op.id,
+              sender,
+              recipient,
+              text,
+              timestamp: op.timestamp
+            });
+          });
+
+          nextMap.forEach(list => list.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+          conversations = nextMap;
+
+          if (!currentRecipient && conversations.size > 0) {
+            currentRecipient = conversations.keys().next().value;
+          }
+
+          renderDialogs();
+          renderActiveConversation();
+        } catch (err) {
+          console.error('Error fetching NFTChat messages:', err);
+        }
       }
-    }
 
-    function loadChat(friendAddress, transactions, currentAddress) {
-      const chatArea = document.getElementById('chatArea');
-      const currentDialogTitle = document.getElementById('currentDialogTitle');
-      chatArea.innerHTML = '';
-      currentDialogTitle.textContent = `Chat with ${friendAddress}`;
-      current = friendAddress;
+      function renderDialogs() {
+        dialogCountBadge.textContent = String(conversations.size);
+        if (!myAddress) {
+          dialogsList.innerHTML = `
+            <div class="empty-pane-state" style="padding: 20px;">
+              <p>Connect your Tezos wallet to load your on-chain conversations.</p>
+            </div>
+          `;
+          return;
+        }
 
-      sendButton.disabled = false;
+        if (conversations.size === 0) {
+          dialogsList.innerHTML = `
+            <div class="empty-pane-state" style="padding: 20px;">
+              <p>No conversations yet. Paste a Tezos address above and click <strong>+ New</strong>.</p>
+            </div>
+          `;
+          return;
+        }
 
-      transactions
-        .filter(tx => {
-          const senderAddress = tx.sender?.address;
-          const receiverAddress = tx.parameter?.value?.to_;
+        dialogsList.innerHTML = '';
+        conversations.forEach((msgs, peer) => {
+          const item = document.createElement('div');
+          item.className = `dialog-item${peer === currentRecipient ? ' active' : ''}`;
+          const last = msgs[msgs.length - 1];
+          const timeStr = last ? new Date(last.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'New';
+          const preview = last ? last.text : 'Start chatting on-chain…';
+          const displayName = aliasCache.get(peer) || shortAddr(peer);
 
-          return (
-            (senderAddress === currentAddress && receiverAddress === friendAddress) ||
-            (senderAddress === friendAddress && receiverAddress === currentAddress)
-          );
-        })
-        .forEach(tx => {
-          const messageDiv = document.createElement('div');
-          messageDiv.className = 'chat-message';
+          item.innerHTML = `
+            <img class="dialog-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(peer)}" alt="" />
+            <div class="dialog-meta">
+              <div class="dialog-top">
+                <span class="dialog-name">${escapeHtml(displayName)}</span>
+                <span class="dialog-time">${escapeHtml(timeStr)}</span>
+              </div>
+              <div class="dialog-preview">${escapeHtml(preview)}</div>
+            </div>
+          `;
+          item.addEventListener('click', () => {
+            currentRecipient = peer;
+            renderDialogs();
+            renderActiveConversation();
+          });
+          dialogsList.appendChild(item);
+        });
+      }
 
-          const isOwnMessage = tx.sender?.address === currentAddress;
-          messageDiv.textContent = hexToString(tx.parameter?.value?.metadata?.name);
+      function renderChatHeader() {
+        if (!currentRecipient) {
+          chatHeader.innerHTML = `
+            <div class="peer-info">
+              <div class="peer-title">Select or start a conversation</div>
+            </div>
+          `;
+          return;
+        }
+        const displayName = aliasCache.get(currentRecipient) || shortAddr(currentRecipient);
+        chatHeader.innerHTML = `
+          <div class="peer-info">
+            <img class="peer-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(currentRecipient)}" alt="" />
+            <div>
+              <div class="peer-title">${escapeHtml(displayName)}</div>
+              <div class="peer-sub">${escapeHtml(currentRecipient)}</div>
+            </div>
+          </div>
+          <a class="contract-tag" href="https://tzkt.io/${escapeHtml(currentRecipient)}" target="_blank" rel="noopener noreferrer">
+            View on TzKT ↗
+          </a>
+        `;
+      }
 
-          if (isOwnMessage) {
-            messageDiv.classList.add('own-message');
+      function renderActiveConversation() {
+        renderChatHeader();
+        const canChat = Boolean(myAddress && currentRecipient);
+        dmInput.disabled = !canChat;
+        dmSendBtn.disabled = !canChat;
+        dmInput.placeholder = canChat
+          ? `Message ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)}…`
+          : 'Connect wallet & select a recipient to send a message…';
+
+        if (!currentRecipient) return;
+
+        const msgs = conversations.get(currentRecipient) || [];
+        if (msgs.length === 0) {
+          messagesScroll.innerHTML = `
+            <div class="empty-pane-state">
+              <div class="empty-icon-circle">✨</div>
+              <h3>New Conversation</h3>
+              <p>Send the first on-chain NFT message to <strong>${escapeHtml(shortAddr(currentRecipient))}</strong>.</p>
+            </div>
+          `;
+          return;
+        }
+
+        messagesScroll.innerHTML = '';
+        msgs.forEach(m => {
+          const row = document.createElement('div');
+          const isSent = m.sender === myAddress;
+          row.className = `bubble-row ${isSent ? 'sent' : 'received'}`;
+          const timeLabel = new Date(m.timestamp).toLocaleString([], {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          row.innerHTML = `
+            <div class="bubble-box">${escapeHtml(m.text)}</div>
+            <span class="bubble-time">${escapeHtml(timeLabel)}</span>
+          `;
+          messagesScroll.appendChild(row);
+        });
+        messagesScroll.scrollTop = messagesScroll.scrollHeight;
+      }
+
+      addChatBtn.addEventListener('click', () => {
+        const addr = newAddressInput.value.trim();
+        if (!ADDR_REGEX.test(addr)) {
+          toast('Please enter a valid 36-character Tezos address.');
+          return;
+        }
+        if (!conversations.has(addr)) {
+          conversations.set(addr, []);
+          resolveAlias(addr);
+        }
+        currentRecipient = addr;
+        newAddressInput.value = '';
+        renderDialogs();
+        renderActiveConversation();
+      });
+
+      async function sendDm() {
+        if (!client || !myAddress || !currentRecipient) return;
+        const text = dmInput.value.trim();
+        if (!text) return;
+
+        try {
+          dmSendBtn.disabled = true;
+          dmSendBtn.textContent = 'Minting…';
+
+          await client.requestOperation({
+            operationDetails: [
+              {
+                kind: beacon.TezosOperationType.TRANSACTION,
+                amount: '0',
+                destination: CONTRACT,
+                parameters: {
+                  entrypoint: 'mint',
+                  value: {
+                    prim: 'Pair',
+                    args: [
+                      {
+                        prim: 'Pair',
+                        args: [
+                          { int: '1' },
+                          [
+                            {
+                              prim: 'Elt',
+                              args: [
+                                { string: 'artifactUri' },
+                                { bytes: stringToHex(`https://services.tzkt.io/v1/avatars/${myAddress}`) }
+                              ]
+                            },
+                            {
+                              prim: 'Elt',
+                              args: [
+                                { string: 'decimals' },
+                                { bytes: '30' }
+                              ]
+                            },
+                            {
+                              prim: 'Elt',
+                              args: [
+                                { string: 'name' },
+                                { bytes: stringToHex(text) }
+                              ]
+                            }
+                          ]
+                        ]
+                      },
+                      { string: currentRecipient }
+                    ]
+                  }
+                }
+              }
+            ]
+          });
+
+          dmInput.value = '';
+          toast('Message minted! It will appear once confirmed on-chain.');
+          setTimeout(fetchAllMessages, 4000);
+        } catch (err) {
+          toast('Transaction cancelled or failed.');
+        } finally {
+          dmSendBtn.disabled = false;
+          dmSendBtn.textContent = 'Mint & Send';
+        }
+      }
+
+      dmSendBtn.addEventListener('click', sendDm);
+      dmInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendDm();
+        }
+      });
+
+      function updateAuthUI() {
+        if (myAddress) {
+          walletPill.classList.add('visible');
+          myAvatar.src = `https://services.tzkt.io/v1/avatars/${myAddress}`;
+          myAddressLabel.textContent = shortAddr(myAddress);
+          connectBtn.textContent = 'Disconnect';
+          connectBtn.classList.add('disconnect');
+          fetchAllMessages();
+          if (!pollTimer) pollTimer = setInterval(fetchAllMessages, 8000);
+        } else {
+          walletPill.classList.remove('visible');
+          connectBtn.textContent = 'Connect Wallet';
+          connectBtn.classList.remove('disconnect');
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+          conversations.clear();
+          currentRecipient = null;
+          renderDialogs();
+          renderActiveConversation();
+        }
+      }
+
+      if (typeof beacon !== 'undefined' && beacon.DAppClient) {
+        client = new beacon.DAppClient({
+          name: 'NFTChat',
+          preferredNetwork: beacon.NetworkType.MAINNET
+        });
+
+        client.getActiveAccount().then(acc => {
+          if (acc && acc.address) {
+            myAddress = acc.address;
+            updateAuthUI();
+          }
+        }).catch(() => {});
+      }
+
+      connectBtn.addEventListener('click', async () => {
+        if (!client) return;
+        try {
+          if (myAddress) {
+            await client.clearActiveAccount();
+            myAddress = null;
+            updateAuthUI();
           } else {
-            messageDiv.classList.add('friend-message');
+            const perms = await client.requestPermissions({
+              network: { type: beacon.NetworkType.MAINNET, rpcUrl: RPC_URL }
+            });
+            myAddress = perms.account?.address || (await client.getActiveAccount())?.address;
+            updateAuthUI();
           }
-
-          const messageContainer = document.createElement('div');
-          messageContainer.style.display = 'flex';
-          messageContainer.style.justifyContent = isOwnMessage ? 'flex-end' : 'flex-start';
-          if (!isOwnMessage)
-          messageContainer.innerHTML='<img style="width:45px;height:45px;border-radius:50%;object-fit:cover;margin-right:5px;" src="https://services.tzkt.io/v1/avatars/'+escapeHtml(friendAddress)+'"/>';
-          messageContainer.appendChild(messageDiv);
-          const timestampDiv = document.createElement('div');
-          const timestamp = new Date(tx.timestamp);
-          timestampDiv.className = 'timestamp';
-          timestampDiv.textContent = formatTimestamp(timestamp);
-          messageContainer.appendChild(timestampDiv);
-
-          chatArea.appendChild(messageContainer);
-        });
-
-      chatArea.scrollTop = chatArea.scrollHeight;
-    }
-    function escapeHtml(input) {
-    return input
-        .replace(/&/g, '&amp;') 
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-    }
-    function formatTimestamp(date) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-
-    function clearSelectedDialog() {
-      sendButton.disabled = true;
-    }
-
-    function addNewDialog(address) {
-      const dialogPanel = document.querySelector('.dialog-panel');
-      const dialogItem = document.createElement('div');
-      dialogItem.className = 'dialog-item';
-      dialogItem.textContent = address;
-      dialogItem.addEventListener('click', () => loadChat(address, [], permissions.address));
-      dialogPanel.appendChild(dialogItem);
-    }
-
-    client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, (account) => {
-      checkActiveSession();
-    });
-
-    function hexToString(hex) {
-      const bytes = [];
-      for (let i = 0; i < hex.length; i += 2) {
-        bytes.push(parseInt(hex.substr(i, 2), 16));
-      }
-      return new TextDecoder('utf-8').decode(new Uint8Array(bytes));
-    }
-
-    async function send(message, recipient) {
-      try {
-        if (!permissions?.address) {
-          permissions = await client.requestPermissions();
+        } catch (e) {
+          toast('Wallet connection cancelled.');
         }
-        const operation = [{
-          amount: "0",
-          kind: beacon.TezosOperationType.TRANSACTION,
-          source: permissions.address,
-          destination: "KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7",
-          parameters: {
-            entrypoint: "mint",
-            value: {"prim":"Pair","args":[[{"prim":"Elt","args":[{"string":"artifactUri"},{"bytes":hex("https://services.tzkt.io/v1/avatars/"+permissions.address)}]},{"prim":"Elt","args":[{"string":"name"},{"bytes":message}]}],{"string":recipient}]}
-          }
-        }];
-
-        const response = await client.requestOperation({
-          operationDetails: operation
-        });
-      } catch (error) {
-        console.error('Error sending message:', error);
-      }
-    }
-
-    function handleAddressInput(event) {
-      const inputValue = event.target.value.trim();
-      
-      // Check if the input is exactly 36 characters long (typical Tezos address length)
-      if (inputValue.length === 36) {
-        // Basic validation: check if it starts with tz1, tz2, tz3, or KT1 (common Tezos address prefixes)
-        if (inputValue.match(/^(tz1|tz2|tz3|KT1)[A-Za-z0-9]{33}$/)) {
-          addNewDialog(inputValue);
-          loadChat(inputValue, [], permissions.address);
-          event.target.value = '';
-        }
-      }
-    }
-
-    function handleKeyDown(event) {
-      // Keep the old functionality as fallback for Enter key
-      console.log('Key pressed:', event.key);
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        const inputValue = event.target.value.trim();
-        if (inputValue) {
-          addNewDialog(inputValue);
-          loadChat(inputValue, [], permissions.address)
-          event.target.value = '';
-        }
-      }
-    }
-
-    setInterval(checkActiveSession, 60000);
+      });
+    })();
   </script>
 </body>
-
 </html>
-

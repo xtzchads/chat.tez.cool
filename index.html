@@ -738,9 +738,10 @@
       box-shadow: var(--shadow-glass);
       padding: 10px;
       display: none;
-      grid-template-columns: repeat(8, 1fr);
+      grid-template-columns: repeat(8, minmax(0, 1fr));
       gap: 4px;
       overflow-y: auto;
+      overflow-x: hidden;
       z-index: 50;
     }
 

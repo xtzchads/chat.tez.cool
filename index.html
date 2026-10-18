@@ -925,7 +925,8 @@
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;');
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       }
 
       function stringToHex(str) {
@@ -955,11 +956,11 @@
       }
 
       async function resolveAlias(addr) {
-        if (!addr) return '';
+        if (!addr || !ADDR_REGEX.test(addr)) return '';
         if (aliasCache.has(addr)) return aliasCache.get(addr);
         aliasCache.set(addr, shortAddr(addr));
         try {
-          const r = await fetch(`https://api.tzkt.io/v1/accounts/${addr}`);
+          const r = await fetch(`https://api.tzkt.io/v1/accounts/${encodeURIComponent(addr)}`);
           if (r.ok) {
             const d = await r.json();
             if (d && d.alias) {
@@ -1002,8 +1003,8 @@
         if (!myAddress) return;
         try {
           const [sentRes, recRes] = await Promise.all([
-            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${myAddress}&target=${CONTRACT}&status=applied&limit=1000&sort.desc=id`),
-            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.to_=${myAddress}&status=applied&limit=1000&sort.desc=id`)
+            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${encodeURIComponent(myAddress)}&target=${CONTRACT}&status=applied&limit=1000&sort.desc=id`),
+            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.to_=${encodeURIComponent(myAddress)}&status=applied&limit=1000&sort.desc=id`)
           ]);
           const sentOps = sentRes.ok ? await sentRes.json() : [];
           const recOps = recRes.ok ? await recRes.json() : [];
@@ -1024,6 +1025,7 @@
             const recipient = op.parameter?.value?.to_;
             const hexName = op.parameter?.value?.metadata?.name;
             if (!sender || !recipient || !hexName) return;
+            if (!ADDR_REGEX.test(sender) || !ADDR_REGEX.test(recipient)) return;
 
             const peer = sender === myAddress ? recipient : sender;
             const text = hexToString(hexName);

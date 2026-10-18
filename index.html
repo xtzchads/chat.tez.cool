@@ -1314,9 +1314,7 @@
             myAddress = null;
             updateAuthUI();
           } else {
-            const perms = await client.requestPermissions({
-              network: { type: beacon.NetworkType.MAINNET, rpcUrl: RPC_URL }
-            });
+            const perms = await client.requestPermissions();
             myAddress = perms.address || perms.account?.address || (await client.getActiveAccount())?.address;
             updateAuthUI();
           }

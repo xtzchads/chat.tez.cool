@@ -1294,12 +1294,10 @@
           preferredNetwork: beacon.NetworkType.MAINNET
         });
 
-        client.getActiveAccount().then(acc => {
-          if (acc && acc.address) {
-            myAddress = acc.address;
-            updateAuthUI();
-          }
-        }).catch(() => {});
+        client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, acc => {
+          myAddress = acc?.address || null;
+          updateAuthUI();
+        });
       }
 
       connectBtn.addEventListener('click', async () => {

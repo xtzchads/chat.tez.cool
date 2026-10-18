@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Monda:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="js/walletbeacon.min.js"></script>
+  <script src="js/octez.connect.min.js"></script>
   <style>
     :root {
       --bg-deep: #090b16;
@@ -1290,6 +1290,7 @@
       if (typeof beacon !== 'undefined' && beacon.DAppClient) {
         client = new beacon.DAppClient({
           name: 'NFTChat',
+          network: { type: beacon.NetworkType.MAINNET, rpcUrl: RPC_URL },
           preferredNetwork: beacon.NetworkType.MAINNET
         });
 
@@ -1305,14 +1306,18 @@
         if (!client) return;
         try {
           if (myAddress) {
-            await client.clearActiveAccount();
+            if (typeof client.disconnect === 'function') {
+              await client.disconnect();
+            } else {
+              await client.clearActiveAccount();
+            }
             myAddress = null;
             updateAuthUI();
           } else {
             const perms = await client.requestPermissions({
               network: { type: beacon.NetworkType.MAINNET, rpcUrl: RPC_URL }
             });
-            myAddress = perms.account?.address || (await client.getActiveAccount())?.address;
+            myAddress = perms.address || perms.account?.address || (await client.getActiveAccount())?.address;
             updateAuthUI();
           }
         } catch (e) {

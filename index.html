@@ -3,11 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://services.tzkt.io https:; frame-src 'self' https:; connect-src 'self' https://api.tzkt.io https://services.tzkt.io https://tcinfra.net https: wss:; object-src 'none'; base-uri 'self';">
   <title>NFTChat — On-Chain Tezos Direct Messenger</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Monda:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="js/octez.connect.min.js"></script>
+  <script src="js/octez.connect.min.js" integrity="sha384-5qehDBehwCczE5pAmyKibPoAxZuM1McXazFYorYtifpzYPMifmeMndMKNt5JQ+UF"></script>
   <style>
     :root {
       --bg-deep: #090b16;
@@ -903,6 +904,54 @@
       cursor: not-allowed;
     }
 
+    .dm-pq-toggle {
+      height: 38px;
+      padding: 0 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .dm-pq-toggle:hover:not(:disabled) {
+      border-color: var(--border-bright);
+      color: var(--text-primary);
+    }
+
+    .dm-pq-toggle.active {
+      background: linear-gradient(135deg, rgba(162, 124, 238, 0.24), rgba(0, 242, 242, 0.16));
+      border: 1px solid rgba(162, 124, 238, 0.68);
+      color: #e9d5ff;
+      box-shadow: 0 0 14px rgba(162, 124, 238, 0.28);
+    }
+
+    .dm-pq-toggle:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-publish-key.pq-mode {
+      background: linear-gradient(135deg, rgba(162, 124, 238, 0.22), rgba(0, 242, 242, 0.16));
+      border: 1px solid rgba(162, 124, 238, 0.6);
+      color: #e9d5ff;
+      box-shadow: 0 0 12px rgba(162, 124, 238, 0.22);
+    }
+
+    .peer-e2ee-badge.pq-ready {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(162, 124, 238, 0.2));
+      border: 1px solid rgba(162, 124, 238, 0.52);
+      color: #d8b4fe;
+    }
+
     .dm-input.encrypted-mode {
       border-color: rgba(16, 185, 129, 0.45);
       background: rgba(16, 185, 129, 0.05);
@@ -988,6 +1037,12 @@
       color: #6ee7b7;
       font-size: 9.5px;
       cursor: help;
+    }
+
+    .bubble-e2ee-tag.pq-tag {
+      background: linear-gradient(135deg, rgba(162, 124, 238, 0.2), rgba(0, 242, 242, 0.14));
+      border-color: rgba(162, 124, 238, 0.48);
+      color: #e9d5ff;
     }
 
     /* Custom Glassmorphic Tooltip System */
@@ -1181,14 +1236,14 @@
             <span class="status-dot"></span>
             <span>On-Chain NFT Direct Messaging</span>
           </div>
-          <a class="contract-tag" href="https://tzkt.io/KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7" target="_blank" rel="noopener noreferrer" data-tooltip-title="NFTChat Smart Contract" data-tooltip="Inspect all minted message tokens on TzKT Explorer" data-tooltip-mono="KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7" data-tooltip-variant="cyan">
-            <span>KT1Nuwj…VBJz7</span>
+          <a class="contract-tag" href="https://tzkt.io/KT1DenRaZdNgm1WM4vREJ2Zgx5EiH3aogDYZ" target="_blank" rel="noopener noreferrer" data-tooltip-title="NFTChat Smart Contract (Permissionless)" data-tooltip="Inspect all minted message tokens on TzKT Explorer" data-tooltip-mono="KT1DenRaZdNgm1WM4vREJ2Zgx5EiH3aogDYZ" data-tooltip-variant="cyan">
+            <span>KT1DenR…ogDYZ</span>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
         </div>
 
         <div class="topbar-right">
-          <button type="button" class="btn-publish-key" id="publishKeyBtn" data-tooltip-title="Publish Public Key On-Chain" data-tooltip="Mint a 1-time self-registration token so anyone can send you encrypted messages immediately" data-tooltip-variant="cyan">📡 Publish Key</button>
+          <button type="button" class="btn-publish-key" id="publishKeyBtn" data-tooltip-title="Publish Public Key On-Chain" data-tooltip="Broadcast a 0-storage registration call (~0.001 XTZ) so anyone can send you encrypted messages immediately" data-tooltip-variant="cyan">📡 Publish Key</button>
           <button type="button" class="btn-e2ee locked" id="e2eeBtn" data-tooltip-title="End-to-End Encryption Locked" data-tooltip="Sign a free off-chain message with your wallet to unlock your X25519 encryption keypair" data-tooltip-variant="amber">🔓 Unlock E2EE</button>
           <div class="wallet-pill" id="walletPill" data-tooltip-title="Connected Tezos Wallet" data-tooltip="Active account for minting and decrypting messages" data-tooltip-variant="emerald">
             <img id="myAvatar" src="" alt="" />
@@ -1207,7 +1262,7 @@
               <span id="dialogCountBadge">0</span>
             </div>
             <div class="new-chat-row">
-              <input type="text" id="newAddressInput" class="new-chat-input" placeholder="tz1 / tz2 / tz4 / KT1 address…" />
+              <input type="text" id="newAddressInput" class="new-chat-input" maxlength="36" placeholder="tz1 / tz2 / tz4 / KT1 address…" />
               <button type="button" class="btn-add-chat" id="addChatBtn" data-tooltip-title="Start New Chat" data-tooltip="Open a direct conversation with any Tezos address" data-tooltip-variant="cyan">+ New</button>
             </div>
           </div>
@@ -1238,7 +1293,8 @@
             <div class="emoji-popover" id="emojiPopover"></div>
             <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" data-tooltip="Insert Emoji">😊</button>
             <button type="button" class="dm-encrypt-toggle" id="encryptToggleBtn" data-tooltip-title="Public On-Chain Mode" data-tooltip="Message is readable on-chain. Click to enable End-to-End Encryption." disabled>🌐 Public</button>
-            <input type="text" id="dmInput" class="dm-input" placeholder="Connect wallet & select a recipient to send a message…" disabled />
+            <button type="button" class="dm-pq-toggle" id="pqToggleBtn" data-tooltip-title="Post-Quantum Shield (Optional)" data-tooltip="Toggle NIST ML-KEM-512 Post-Quantum Hybrid encryption (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth)" disabled>⚛️ PQ: Off</button>
+            <input type="text" id="dmInput" class="dm-input" maxlength="4000" placeholder="Connect wallet & select a recipient to send a message…" disabled />
             <button type="button" class="dm-send-btn" id="dmSendBtn" disabled>Mint & Send</button>
           </div>
         </section>
@@ -1251,10 +1307,14 @@
 
   <script>
     (function () {
-      const CONTRACT = 'KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7';
-      const RPC_URL = 'https://rpc.tzbeta.net';
+      const CONTRACT = 'KT1DenRaZdNgm1WM4vREJ2Zgx5EiH3aogDYZ';
+      const RPC_URL = 'https://tcinfra.net/rpc/tezos/mainnet';
       const ADDR_REGEX = /^(tz1|tz2|tz3|tz4|KT1)[1-9A-HJ-NP-Za-km-z]{33}$/;
       const HEX32_REGEX = /^[0-9a-fA-F]{64}$/;
+      const HEX800_REGEX = /^[0-9a-fA-F]{1600}$/;
+      const HEX_EVEN_REGEX = /^(?:[0-9a-fA-F]{2})+$/;
+      const MAX_ENC_HEX_LEN = 32768;
+      const MAX_DM_BYTES = 4000;
 
       const EMOJIS = [
         '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘',
@@ -1269,13 +1329,23 @@
       let aliasCache = new Map();
       let pollTimer = null;
 
-      // End-to-End Encryption state
-      let myKeyPair = null; // { secretKey: Uint8Array(32), publicKey: Uint8Array(32), publicKeyHex: string }
+      // End-to-End Encryption & Post-Quantum Hybrid state
+      let myKeyPair = null; // { secretKey, publicKey, publicKeyHex, pqSeedD, pqSeedZ, selfSeed, pqPublicKey, pqSecretKey, pqPublicKeyHex }
       let myKeyPublishedOnChain = false;
+      let myPqKeyPublishedOnChain = false;
       let peerPublicKeys = new Map(); // address -> 64-char hex X25519 public key
-      let peerKeyFetchPending = new Set();
+      let peerPqPublicKeys = new Map(); // address -> 1600-char hex ML-KEM-512 public key
+      let pkOwnerAddresses = new Map(); // lowerPkHex -> { address, minOpId }
+      let pqPkOwnerAddresses = new Map(); // lowerPqPkHex -> { address, minOpId }
+      let validatedPqPkCache = new Map(); // lowerPqPkHex -> boolean (memoizes FIPS 203 modulus validation)
+      let processedOpsCache = new Map(); // cacheKey -> { skip: boolean, entry?: object }
       let encryptMode = false;
       let stealthMode = false;
+      let pqMode = false;
+      let authStateVersion = 0;
+      let unlockPendingPromise = null;
+      let isPublishingKey = false;
+      let isSendingDm = false;
 
       const connectBtn = document.getElementById('connectBtn');
       const e2eeBtn = document.getElementById('e2eeBtn');
@@ -1292,6 +1362,7 @@
       const dmInput = document.getElementById('dmInput');
       const dmSendBtn = document.getElementById('dmSendBtn');
       const encryptToggleBtn = document.getElementById('encryptToggleBtn');
+      const pqToggleBtn = document.getElementById('pqToggleBtn');
       const emojiToggleBtn = document.getElementById('emojiToggleBtn');
       const emojiPopover = document.getElementById('emojiPopover');
       const toastStack = document.getElementById('toastStack');
@@ -1315,7 +1386,7 @@
       }
 
       function hexToBytes(hex) {
-        if (!hex || hex.length % 2 !== 0) return new Uint8Array(0);
+        if (!hex || typeof hex !== 'string' || !HEX_EVEN_REGEX.test(hex)) return new Uint8Array(0);
         const bytes = new Uint8Array(hex.length / 2);
         for (let i = 0; i < hex.length; i += 2) {
           bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
@@ -1356,7 +1427,7 @@
       }
 
       /* =========================================================================
-       * RFC 7748 X25519 ECDH + WebCrypto AES-256-GCM End-to-End Encryption Engine
+       * RFC 7748 X25519 ECDH + NIST FIPS 203 ML-KEM-512 + WebCrypto AES-256-GCM
        * ========================================================================= */
       const P_25519 = (1n << 255n) - 19n;
       const A24_25519 = 121665n;
@@ -1379,6 +1450,9 @@
       }
 
       function x25519(kBytes, uBytes) {
+        if (!kBytes || !uBytes || kBytes.length !== 32 || uBytes.length !== 32) {
+          throw new Error('Invalid X25519 key length');
+        }
         const k = new Uint8Array(kBytes);
         k[0] &= 248;
         k[31] = (k[31] & 127) | 64;
@@ -1392,6 +1466,8 @@
           kBig = (kBig << 8n) | BigInt(k[i]);
           uBig = (uBig << 8n) | BigInt(u[i]);
         }
+        k.fill(0);
+        uBig = modP(uBig);
 
         const x1 = uBig;
         let x2 = 1n, z2 = 0n;
@@ -1400,10 +1476,11 @@
 
         for (let t = 254n; t >= 0n; t--) {
           const kt = (kBig >> t) & 1n;
-          if ((swap ^ kt) === 1n) {
-            let tmp = x2; x2 = x3; x3 = tmp;
-            tmp = z2; z2 = z3; z3 = tmp;
-          }
+          const cswapMask = -(swap ^ kt);
+          const dx = cswapMask & (x2 ^ x3);
+          x2 ^= dx; x3 ^= dx;
+          const dz = cswapMask & (z2 ^ z3);
+          z2 ^= dz; z3 ^= dz;
           swap = kt;
 
           const A = modP(x2 + z2);
@@ -1422,10 +1499,11 @@
           z2 = modP(E * (AA + modP(A24_25519 * E)));
         }
 
-        if (swap === 1n) {
-          let tmp = x2; x2 = x3; x3 = tmp;
-          tmp = z2; z2 = z3; z3 = tmp;
-        }
+        const finalMask = -swap;
+        const dxFinal = finalMask & (x2 ^ x3);
+        x2 ^= dxFinal; x3 ^= dxFinal;
+        const dzFinal = finalMask & (z2 ^ z3);
+        z2 ^= dzFinal; z3 ^= dzFinal;
 
         let res = modP(x2 * modPowP(z2, P_25519 - 2n));
         const out = new Uint8Array(32);
@@ -1442,6 +1520,596 @@
         return x25519(secretKeyBytes, basePoint);
       }
 
+      /* --- NIST FIPS 202 Keccak-f[1600] (SHA3-256, SHA3-512, SHAKE-128, SHAKE-256) --- */
+      const KECCAK_ROUNDS = 24;
+      const KECCAK_RC = [
+        0x0000000000000001n, 0x0000000000008082n, 0x800000000000808an, 0x8000000080008000n,
+        0x000000000000808bn, 0x0000000080000001n, 0x8000000080008081n, 0x8000000000008009n,
+        0x000000000000008an, 0x0000000000000088n, 0x0000000080008009n, 0x000000008000000an,
+        0x000000008000808bn, 0x800000000000008bn, 0x8000000000008089n, 0x8000000000008003n,
+        0x8000000000008002n, 0x8000000000000080n, 0x000000000000800an, 0x800000008000000an,
+        0x8000000080008081n, 0x8000000000008080n, 0x0000000080000001n, 0x8000000080008008n
+      ];
+      const KECCAK_ROTC = [
+        1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62, 18, 39, 61, 20, 44
+      ];
+      const KECCAK_PILN = [
+        10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20, 14, 22, 9, 6, 1
+      ];
+      const MASK64 = 0xffffffffffffffffn;
+
+      function rotl64(x, n) {
+        return ((x << BigInt(n)) | (x >> BigInt(64 - n))) & MASK64;
+      }
+
+      function keccakF1600(stateWords) {
+        const bc = new Array(5);
+        for (let round = 0; round < KECCAK_ROUNDS; round++) {
+          for (let i = 0; i < 5; i++) {
+            bc[i] = stateWords[i] ^ stateWords[i + 5] ^ stateWords[i + 10] ^ stateWords[i + 15] ^ stateWords[i + 20];
+          }
+          for (let i = 0; i < 5; i++) {
+            const t = bc[(i + 4) % 5] ^ rotl64(bc[(i + 1) % 5], 1);
+            for (let j = 0; j < 25; j += 5) {
+              stateWords[j + i] ^= t;
+            }
+          }
+          let t = stateWords[1];
+          for (let i = 0; i < 24; i++) {
+            const j = KECCAK_PILN[i];
+            const tmp = stateWords[j];
+            stateWords[j] = rotl64(t, KECCAK_ROTC[i]);
+            t = tmp;
+          }
+          for (let j = 0; j < 25; j += 5) {
+            for (let i = 0; i < 5; i++) bc[i] = stateWords[j + i];
+            for (let i = 0; i < 5; i++) {
+              stateWords[j + i] ^= (~bc[(i + 1) % 5] & MASK64) & bc[(i + 2) % 5];
+            }
+          }
+          stateWords[0] ^= KECCAK_RC[round];
+        }
+      }
+
+      function keccakAbsorb(inputBytes, rateBytes, dsByte) {
+        const stateBytes = new Uint8Array(200);
+        const stateWords = new Array(25).fill(0n);
+
+        function bytesToWords() {
+          for (let i = 0; i < 25; i++) {
+            let w = 0n;
+            for (let b = 0; b < 8; b++) {
+              w |= BigInt(stateBytes[i * 8 + b]) << BigInt(b * 8);
+            }
+            stateWords[i] = w;
+          }
+        }
+        function wordsToBytes() {
+          for (let i = 0; i < 25; i++) {
+            const w = stateWords[i];
+            for (let b = 0; b < 8; b++) {
+              stateBytes[i * 8 + b] = Number((w >> BigInt(b * 8)) & 0xffn);
+            }
+          }
+        }
+
+        let offset = 0;
+        while (offset + rateBytes <= inputBytes.length) {
+          for (let i = 0; i < rateBytes; i++) stateBytes[i] ^= inputBytes[offset + i];
+          bytesToWords();
+          keccakF1600(stateWords);
+          wordsToBytes();
+          offset += rateBytes;
+        }
+        const rem = inputBytes.length - offset;
+        for (let i = 0; i < rem; i++) stateBytes[i] ^= inputBytes[offset + i];
+        stateBytes[rem] ^= dsByte;
+        stateBytes[rateBytes - 1] ^= 0x80;
+        bytesToWords();
+        keccakF1600(stateWords);
+        wordsToBytes();
+
+        return {
+          squeeze(numBytes) {
+            const out = new Uint8Array(numBytes);
+            let outOffset = 0;
+            while (outOffset < numBytes) {
+              const take = Math.min(rateBytes, numBytes - outOffset);
+              for (let i = 0; i < take; i++) out[outOffset + i] = stateBytes[i];
+              outOffset += take;
+              if (outOffset < numBytes) {
+                bytesToWords();
+                keccakF1600(stateWords);
+                wordsToBytes();
+              }
+            }
+            return out;
+          },
+          squeezeBlock() {
+            const block = stateBytes.slice(0, rateBytes);
+            bytesToWords();
+            keccakF1600(stateWords);
+            wordsToBytes();
+            return block;
+          }
+        };
+      }
+
+      function sha3_256(data) {
+        return keccakAbsorb(data, 136, 0x06).squeeze(32);
+      }
+      function sha3_512(data) {
+        return keccakAbsorb(data, 72, 0x06).squeeze(64);
+      }
+      function shake128Xof(data) {
+        return keccakAbsorb(data, 168, 0x1f);
+      }
+      function shake256(data, outLen) {
+        return keccakAbsorb(data, 136, 0x1f).squeeze(outLen);
+      }
+
+      /* --- NIST FIPS 203 ML-KEM-512 (n=256, q=3329, k=2, eta1=3, eta2=2, du=10, dv=4) --- */
+      const MLKEM_Q = 3329;
+      const MLKEM_K = 2;
+      const MLKEM_ZETAS = [
+        1, 1729, 2580, 3289, 2642, 630, 1897, 848, 1062, 1919, 193, 797, 2786, 3260, 569, 1746,
+        296, 2447, 1339, 1476, 3046, 56, 2240, 1333, 1426, 2094, 535, 2882, 2393, 2879, 1974, 821,
+        289, 331, 3253, 1756, 1197, 2304, 2277, 2055, 650, 1977, 2513, 632, 2865, 33, 1320, 1915,
+        2319, 1435, 807, 452, 1438, 2868, 1534, 2402, 2647, 2617, 1481, 648, 2474, 3110, 1227, 910,
+        17, 2761, 583, 2649, 1637, 723, 2288, 1100, 1409, 2662, 3281, 233, 756, 2156, 3015, 3050,
+        1703, 1651, 2789, 1789, 1847, 952, 1461, 2687, 939, 2308, 2437, 2388, 733, 2337, 268, 641,
+        1584, 2298, 2037, 3220, 375, 2549, 2090, 1645, 1063, 319, 2773, 757, 2099, 561, 2466, 2594,
+        2804, 1092, 403, 1026, 1143, 2150, 2775, 886, 1722, 1212, 1874, 1029, 2110, 2935, 885, 2154
+      ];
+
+      function modQ(x) {
+        const r = x % MLKEM_Q;
+        return r < 0 ? r + MLKEM_Q : r;
+      }
+
+      function polyNtt(f) {
+        const r = Int16Array.from(f);
+        let k = 1;
+        for (let len = 128; len >= 2; len >>= 1) {
+          for (let start = 0; start < 256; start += 2 * len) {
+            const zeta = MLKEM_ZETAS[k++];
+            for (let j = start; j < start + len; j++) {
+              const t = modQ(zeta * r[j + len]);
+              r[j + len] = modQ(r[j] - t);
+              r[j] = modQ(r[j] + t);
+            }
+          }
+        }
+        return r;
+      }
+
+      function polyInvNtt(f) {
+        const r = Int16Array.from(f);
+        let k = 127;
+        for (let len = 2; len <= 128; len <<= 1) {
+          for (let start = 0; start < 256; start += 2 * len) {
+            const zeta = MLKEM_ZETAS[k--];
+            for (let j = start; j < start + len; j++) {
+              const t = r[j];
+              r[j] = modQ(t + r[j + len]);
+              r[j + len] = modQ(zeta * (r[j + len] - t));
+            }
+          }
+        }
+        for (let j = 0; j < 256; j++) {
+          r[j] = modQ(r[j] * 3303);
+        }
+        return r;
+      }
+
+      function polyMultiplyNtt(f, g) {
+        const h = new Int16Array(256);
+        for (let i = 0; i < 128; i++) {
+          const sign = (i & 1) === 0 ? 1 : -1;
+          const gamma = modQ(sign * MLKEM_ZETAS[64 + (i >> 1)]);
+          const a0 = f[2 * i], a1 = f[2 * i + 1];
+          const b0 = g[2 * i], b1 = g[2 * i + 1];
+          h[2 * i] = modQ(a0 * b0 + modQ(a1 * b1) * gamma);
+          h[2 * i + 1] = modQ(a0 * b1 + a1 * b0);
+        }
+        return h;
+      }
+
+      function polyAdd(a, b) {
+        const r = new Int16Array(256);
+        for (let i = 0; i < 256; i++) r[i] = modQ(a[i] + b[i]);
+        return r;
+      }
+
+      function polySub(a, b) {
+        const r = new Int16Array(256);
+        for (let i = 0; i < 256; i++) r[i] = modQ(a[i] - b[i]);
+        return r;
+      }
+
+      function sampleNtt(rho, i, j) {
+        const seed = new Uint8Array(34);
+        seed.set(rho, 0);
+        seed[32] = i;
+        seed[33] = j;
+        const xof = shake128Xof(seed);
+        const a = new Int16Array(256);
+        let coeff = 0;
+        while (coeff < 256) {
+          const block = xof.squeezeBlock();
+          for (let pos = 0; pos + 3 <= block.length && coeff < 256; pos += 3) {
+            const d1 = block[pos] + 256 * (block[pos + 1] & 0x0f);
+            const d2 = (block[pos + 1] >> 4) + 16 * block[pos + 2];
+            if (d1 < MLKEM_Q) a[coeff++] = d1;
+            if (d2 < MLKEM_Q && coeff < 256) a[coeff++] = d2;
+          }
+        }
+        return a;
+      }
+
+      function samplePolyCbd(bytes, eta) {
+        const f = new Int16Array(256);
+        let bitIdx = 0;
+        for (let i = 0; i < 256; i++) {
+          let x = 0, y = 0;
+          for (let j = 0; j < eta; j++) {
+            x += (bytes[bitIdx >> 3] >> (bitIdx & 7)) & 1;
+            bitIdx++;
+          }
+          for (let j = 0; j < eta; j++) {
+            y += (bytes[bitIdx >> 3] >> (bitIdx & 7)) & 1;
+            bitIdx++;
+          }
+          f[i] = modQ(x - y);
+        }
+        return f;
+      }
+
+      function prfEta(eta, sigma, nByte) {
+        const input = new Uint8Array(33);
+        input.set(sigma, 0);
+        input[32] = nByte;
+        const out = shake256(input, 64 * eta);
+        input.fill(0);
+        return out;
+      }
+
+      function byteEncode12(poly) {
+        const out = new Uint8Array(384);
+        for (let i = 0; i < 128; i++) {
+          const a = poly[2 * i];
+          const b = poly[2 * i + 1];
+          out[3 * i] = a & 0xff;
+          out[3 * i + 1] = ((a >> 8) & 0x0f) | ((b & 0x0f) << 4);
+          out[3 * i + 2] = (b >> 4) & 0xff;
+        }
+        return out;
+      }
+
+      function byteDecode12(bytes) {
+        const poly = new Int16Array(256);
+        for (let i = 0; i < 128; i++) {
+          poly[2 * i] = (bytes[3 * i] | ((bytes[3 * i + 1] & 0x0f) << 8)) % MLKEM_Q;
+          poly[2 * i + 1] = ((bytes[3 * i + 1] >> 4) | (bytes[3 * i + 2] << 4)) % MLKEM_Q;
+        }
+        return poly;
+      }
+
+      const X25519_LOW_ORDER_U = new Set([
+        0n,
+        1n,
+        325606250916557431795983626356110631294008115727848805560023387167927233504n,
+        39382357235489614581723060781553021112529911719440698176882885853963445705823n,
+        P_25519 - 1n
+      ]);
+
+      function isValidX25519PublicKeyHex(pkHex) {
+        if (!pkHex || !HEX32_REGEX.test(pkHex)) return false;
+        const uBytes = hexToBytes(pkHex);
+        if (uBytes.length !== 32) return false;
+        uBytes[31] &= 127;
+        let uBig = 0n;
+        for (let i = 31; i >= 0; i--) {
+          uBig = (uBig << 8n) | BigInt(uBytes[i]);
+        }
+        uBig = modP(uBig);
+        return !X25519_LOW_ORDER_U.has(uBig);
+      }
+
+      function isValidMlKem512PublicKey(ek) {
+        if (!ek || ek.length !== 800) return false;
+        for (let i = 0; i < 256; i++) {
+          const d1 = ek[3 * i] | ((ek[3 * i + 1] & 0x0f) << 8);
+          const d2 = (ek[3 * i + 1] >> 4) | (ek[3 * i + 2] << 4);
+          if (d1 >= MLKEM_Q || d2 >= MLKEM_Q) return false;
+        }
+        return true;
+      }
+
+      function isValidMlKem512PublicKeyHex(pqPkHex) {
+        if (!pqPkHex || !HEX800_REGEX.test(pqPkHex)) return false;
+        const lower = pqPkHex.toLowerCase();
+        if (validatedPqPkCache.has(lower)) return validatedPqPkCache.get(lower);
+        const ok = isValidMlKem512PublicKey(hexToBytes(lower));
+        validatedPqPkCache.set(lower, ok);
+        return ok;
+      }
+
+      function zeroizeKeyPair(kp) {
+        if (!kp) return;
+        try {
+          if (kp.secretKey instanceof Uint8Array) kp.secretKey.fill(0);
+          if (kp.pqSeedD instanceof Uint8Array) kp.pqSeedD.fill(0);
+          if (kp.pqSeedZ instanceof Uint8Array) kp.pqSeedZ.fill(0);
+          if (kp.selfSeed instanceof Uint8Array) kp.selfSeed.fill(0);
+          if (kp.pqSecretKey instanceof Uint8Array) kp.pqSecretKey.fill(0);
+        } catch (e) {}
+      }
+
+      function tryRegisterPeerPk(address, pkHex, opId = Infinity) {
+        if (!address || !ADDR_REGEX.test(address) || !isValidX25519PublicKeyHex(pkHex)) return false;
+        const lowerPk = pkHex.toLowerCase();
+        if (myKeyPair) {
+          const myPk = myKeyPair.publicKeyHex.toLowerCase();
+          if (address !== myAddress && lowerPk === myPk) return false;
+          if (address === myAddress && lowerPk !== myPk) return false;
+        }
+        const numericOpId = typeof opId === 'number' && Number.isFinite(opId) ? opId : Infinity;
+        const existing = pkOwnerAddresses.get(lowerPk);
+        if (existing && existing.address !== address) {
+          if (numericOpId >= existing.minOpId) {
+            return false;
+          }
+          if (peerPublicKeys.get(existing.address) === lowerPk) {
+            peerPublicKeys.delete(existing.address);
+          }
+          processedOpsCache.clear();
+        }
+        const prevMin = existing && existing.address === address ? existing.minOpId : Infinity;
+        pkOwnerAddresses.set(lowerPk, { address, minOpId: Math.min(prevMin, numericOpId) });
+        peerPublicKeys.set(address, lowerPk);
+        return true;
+      }
+
+      function tryRegisterPeerPqPk(address, pqPkHex, opId = Infinity) {
+        if (!address || !ADDR_REGEX.test(address) || !isValidMlKem512PublicKeyHex(pqPkHex)) return false;
+        const lowerPqPk = pqPkHex.toLowerCase();
+        if (myKeyPair) {
+          const myPqPk = myKeyPair.pqPublicKeyHex.toLowerCase();
+          if (address !== myAddress && lowerPqPk === myPqPk) return false;
+          if (address === myAddress && lowerPqPk !== myPqPk) return false;
+        }
+        const numericOpId = typeof opId === 'number' && Number.isFinite(opId) ? opId : Infinity;
+        const existing = pqPkOwnerAddresses.get(lowerPqPk);
+        if (existing && existing.address !== address) {
+          if (numericOpId >= existing.minOpId) {
+            return false;
+          }
+          if (peerPqPublicKeys.get(existing.address) === lowerPqPk) {
+            peerPqPublicKeys.delete(existing.address);
+          }
+          processedOpsCache.clear();
+        }
+        const prevMin = existing && existing.address === address ? existing.minOpId : Infinity;
+        pqPkOwnerAddresses.set(lowerPqPk, { address, minOpId: Math.min(prevMin, numericOpId) });
+        peerPqPublicKeys.set(address, lowerPqPk);
+        return true;
+      }
+
+      function isValidWalletSignature(sig) {
+        if (typeof sig !== 'string') return false;
+        const trimmed = sig.trim();
+        if (trimmed.length < 64 || trimmed.length > 512) return false;
+        if (!/^[1-9A-HJ-NP-Za-km-z0-9a-fA-F]+$/.test(trimmed)) return false;
+        return new Set(trimmed).size >= 12;
+      }
+
+      function compressPoly(poly, d) {
+        const mask = (1 << d) - 1;
+        const out = new Uint8Array((256 * d) >> 3);
+        let bitPos = 0;
+        for (let i = 0; i < 256; i++) {
+          const val = Math.floor(((poly[i] << d) + 1664) / MLKEM_Q) & mask;
+          for (let b = 0; b < d; b++) {
+            if ((val >> b) & 1) out[bitPos >> 3] |= 1 << (bitPos & 7);
+            bitPos++;
+          }
+        }
+        return out;
+      }
+
+      function decompressPoly(bytes, d) {
+        const poly = new Int16Array(256);
+        let bitPos = 0;
+        for (let i = 0; i < 256; i++) {
+          let val = 0;
+          for (let b = 0; b < d; b++) {
+            if ((bytes[bitPos >> 3] >> (bitPos & 7)) & 1) val |= 1 << b;
+            bitPos++;
+          }
+          poly[i] = Math.floor((val * MLKEM_Q + (1 << (d - 1))) >> d);
+        }
+        return poly;
+      }
+
+      function mlKem512KeyGenFromSeed(dSeed32, zSeed32) {
+        const gIn = new Uint8Array(33);
+        gIn.set(dSeed32, 0);
+        gIn[32] = MLKEM_K;
+        const gOut = sha3_512(gIn);
+        gIn.fill(0);
+        const rho = gOut.slice(0, 32);
+        const sigma = gOut.slice(32, 64);
+        gOut.fill(0);
+
+        const A = [
+          [sampleNtt(rho, 0, 0), sampleNtt(rho, 1, 0)],
+          [sampleNtt(rho, 0, 1), sampleNtt(rho, 1, 1)]
+        ];
+
+        let n = 0;
+        const s = [
+          polyNtt(samplePolyCbd(prfEta(3, sigma, n++), 3)),
+          polyNtt(samplePolyCbd(prfEta(3, sigma, n++), 3))
+        ];
+        const e = [
+          polyNtt(samplePolyCbd(prfEta(3, sigma, n++), 3)),
+          polyNtt(samplePolyCbd(prfEta(3, sigma, n++), 3))
+        ];
+        sigma.fill(0);
+
+        const t = new Array(2);
+        for (let i = 0; i < 2; i++) {
+          const as0 = polyMultiplyNtt(A[i][0], s[0]);
+          const as1 = polyMultiplyNtt(A[i][1], s[1]);
+          t[i] = polyAdd(polyAdd(as0, as1), e[i]);
+        }
+
+        const ek = new Uint8Array(800);
+        ek.set(byteEncode12(t[0]), 0);
+        ek.set(byteEncode12(t[1]), 384);
+        ek.set(rho, 768);
+
+        const s0Bytes = byteEncode12(s[0]);
+        const s1Bytes = byteEncode12(s[1]);
+        const dk = new Uint8Array(1632);
+        dk.set(s0Bytes, 0);
+        dk.set(s1Bytes, 384);
+        dk.set(ek, 768);
+        dk.set(sha3_256(ek), 1568);
+        dk.set(zSeed32, 1600);
+        s0Bytes.fill(0);
+        s1Bytes.fill(0);
+        s[0].fill(0);
+        s[1].fill(0);
+        e[0].fill(0);
+        e[1].fill(0);
+
+        return { publicKey: ek, secretKey: dk };
+      }
+
+      function kpkeEncrypt512(ek, mBytes32, rBytes32) {
+        const t = [
+          byteDecode12(ek.slice(0, 384)),
+          byteDecode12(ek.slice(384, 768))
+        ];
+        const rho = ek.slice(768, 800);
+        const A = [
+          [sampleNtt(rho, 0, 0), sampleNtt(rho, 1, 0)],
+          [sampleNtt(rho, 0, 1), sampleNtt(rho, 1, 1)]
+        ];
+
+        let n = 0;
+        const rVec = [
+          polyNtt(samplePolyCbd(prfEta(3, rBytes32, n++), 3)),
+          polyNtt(samplePolyCbd(prfEta(3, rBytes32, n++), 3))
+        ];
+        const e1 = [
+          samplePolyCbd(prfEta(2, rBytes32, n++), 2),
+          samplePolyCbd(prfEta(2, rBytes32, n++), 2)
+        ];
+        const e2 = samplePolyCbd(prfEta(2, rBytes32, n++), 2);
+
+        const u = new Array(2);
+        for (let i = 0; i < 2; i++) {
+          const atr0 = polyMultiplyNtt(A[0][i], rVec[0]);
+          const atr1 = polyMultiplyNtt(A[1][i], rVec[1]);
+          u[i] = polyAdd(polyInvNtt(polyAdd(atr0, atr1)), e1[i]);
+        }
+
+        const mu = decompressPoly(mBytes32, 1);
+        const tr0 = polyMultiplyNtt(t[0], rVec[0]);
+        const tr1 = polyMultiplyNtt(t[1], rVec[1]);
+        const v = polyAdd(polyAdd(polyInvNtt(polyAdd(tr0, tr1)), e2), mu);
+        rVec[0].fill(0);
+        rVec[1].fill(0);
+        e1[0].fill(0);
+        e1[1].fill(0);
+        e2.fill(0);
+        mu.fill(0);
+
+        const c = new Uint8Array(768);
+        c.set(compressPoly(u[0], 10), 0);
+        c.set(compressPoly(u[1], 10), 320);
+        c.set(compressPoly(v, 4), 640);
+        return c;
+      }
+
+      function kpkeDecrypt512(dkPke, c) {
+        const u = [
+          decompressPoly(c.slice(0, 320), 10),
+          decompressPoly(c.slice(320, 640), 10)
+        ];
+        const v = decompressPoly(c.slice(640, 768), 4);
+        const s = [
+          byteDecode12(dkPke.slice(0, 384)),
+          byteDecode12(dkPke.slice(384, 768))
+        ];
+        const su0 = polyMultiplyNtt(s[0], polyNtt(u[0]));
+        const su1 = polyMultiplyNtt(s[1], polyNtt(u[1]));
+        s[0].fill(0);
+        s[1].fill(0);
+        const w = polySub(v, polyInvNtt(polyAdd(su0, su1)));
+        const out = compressPoly(w, 1);
+        w.fill(0);
+        return out;
+      }
+
+      // NIST FIPS 203 Algorithm 17: ML-KEM.Encaps with CSPRNG mSeed32
+      function mlKem512Encaps(ek, mSeed32 = crypto.getRandomValues(new Uint8Array(32))) {
+        if (!isValidMlKem512PublicKey(ek)) {
+          throw new Error('Invalid peer ML-KEM-512 public key');
+        }
+        const hEk = sha3_256(ek);
+        const gIn = new Uint8Array(64);
+        gIn.set(mSeed32, 0);
+        gIn.set(hEk, 32);
+        const kr = sha3_512(gIn);
+        gIn.fill(0);
+        const sharedSecret = kr.slice(0, 32);
+        const r = kr.slice(32, 64);
+        const cipherText = kpkeEncrypt512(ek, mSeed32, r);
+        r.fill(0);
+        kr.fill(0);
+        return { cipherText, sharedSecret };
+      }
+
+      // NIST FIPS 203 Algorithm 18: ML-KEM.Decaps with constant-time implicit rejection
+      function mlKem512Decaps(dk, cipherText) {
+        if (!dk || !cipherText || cipherText.length !== 768 || dk.length !== 1632) return null;
+        const dkPke = dk.slice(0, 768);
+        const ek = dk.slice(768, 1568);
+        const hEk = dk.slice(1568, 1600);
+        const z = dk.slice(1600, 1632);
+        const mPrime = kpkeDecrypt512(dkPke, cipherText);
+        const gIn = new Uint8Array(64);
+        gIn.set(mPrime, 0);
+        gIn.set(hEk, 32);
+        const krPrime = sha3_512(gIn);
+        gIn.fill(0);
+        const kPrime = krPrime.slice(0, 32);
+        const rPrime = krPrime.slice(32, 64);
+        const cPrime = kpkeEncrypt512(ek, mPrime, rPrime);
+        const zCt = concatBytes(z, cipherText);
+        const kBar = shake256(zCt, 32);
+        zCt.fill(0);
+        let diff = 0;
+        for (let i = 0; i < 768; i++) diff |= cipherText[i] ^ cPrime[i];
+        const mask = ((diff - 1) >> 31) & 0xff;
+        const out = new Uint8Array(32);
+        for (let i = 0; i < 32; i++) {
+          out[i] = (kPrime[i] & mask) | (kBar[i] & (~mask & 0xff));
+        }
+        dkPke.fill(0);
+        z.fill(0);
+        mPrime.fill(0);
+        krPrime.fill(0);
+        kPrime.fill(0);
+        rPrime.fill(0);
+        kBar.fill(0);
+        return out;
+      }
+
       function buildMichelineSignPayload(messageText) {
         const msgHex = stringToHex(messageText);
         const byteLenHex = (msgHex.length / 2).toString(16).padStart(8, '0');
@@ -1449,17 +2117,52 @@
       }
 
       async function deriveKeyPairFromSignature(address, signature) {
-        const domainInput = new TextEncoder().encode(`chat.tez.cool:e2ee:x25519:v1:${address}:${signature}`);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', domainInput);
+        const cleanSig = String(signature).trim();
+        const domainInput = new TextEncoder().encode(`chat.tez.cool:e2ee:x25519:v1:${address}:${cleanSig}`);
+        const pqDInput = new TextEncoder().encode(`chat.tez.cool:e2ee:mlkem512:d:v1:${address}:${cleanSig}`);
+        const pqZInput = new TextEncoder().encode(`chat.tez.cool:e2ee:mlkem512:z:v1:${address}:${cleanSig}`);
+        const selfSeedInput = new TextEncoder().encode(`chat.tez.cool:e2ee:pq-self:v1:${address}:${cleanSig}`);
+
+        const [hashBuffer, dBuf, zBuf, selfBuf] = await Promise.all([
+          crypto.subtle.digest('SHA-256', domainInput),
+          crypto.subtle.digest('SHA-256', pqDInput),
+          crypto.subtle.digest('SHA-256', pqZInput),
+          crypto.subtle.digest('SHA-256', selfSeedInput)
+        ]);
+        domainInput.fill(0);
+        pqDInput.fill(0);
+        pqZInput.fill(0);
+        selfSeedInput.fill(0);
+
         const secretKey = new Uint8Array(hashBuffer);
         secretKey[0] &= 248;
         secretKey[31] = (secretKey[31] & 127) | 64;
         const publicKey = x25519PublicKeyFromPrivate(secretKey);
         const publicKeyHex = bytesToHex(publicKey);
-        return { secretKey, publicKey, publicKeyHex };
+
+        const pqSeedD = new Uint8Array(dBuf);
+        const pqSeedZ = new Uint8Array(zBuf);
+        const selfSeed = new Uint8Array(selfBuf);
+        const pqKp = mlKem512KeyGenFromSeed(pqSeedD, pqSeedZ);
+        const pqPublicKeyHex = bytesToHex(pqKp.publicKey);
+
+        return {
+          secretKey,
+          publicKey,
+          publicKeyHex,
+          pqSeedD,
+          pqSeedZ,
+          selfSeed,
+          pqPublicKey: pqKp.publicKey,
+          pqSecretKey: pqKp.secretKey,
+          pqPublicKeyHex
+        };
       }
 
       async function deriveSharedAesKey(mySecretKey, myPkHex, peerPkHex) {
+        if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '')) {
+          throw new Error('Invalid X25519 public key format');
+        }
         const peerPkBytes = hexToBytes(peerPkHex);
         const sharedSecret = x25519(mySecretKey, peerPkBytes);
         let nonZero = 0;
@@ -1472,16 +2175,74 @@
           new TextEncoder().encode(`chat.tez.cool:aes-gcm:v1:${firstPk}:${secondPk}:`),
           sharedSecret
         );
+        sharedSecret.fill(0);
         const keyHash = await crypto.subtle.digest('SHA-256', kdfInput);
-        return crypto.subtle.importKey('raw', keyHash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+        kdfInput.fill(0);
+        const keyBytes = new Uint8Array(keyHash);
+        const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+        keyBytes.fill(0);
+        return cryptoKey;
       }
 
-      async function encryptChatMessage(plaintext, keyPair, recipientPkHex) {
+      async function deriveHybridPqAesKey(mySecretKey, myPkHex, peerPkHex, pqSharedBytes) {
+        if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '') || !pqSharedBytes || pqSharedBytes.length !== 32) {
+          throw new Error('Invalid hybrid key parameters');
+        }
+        const peerPkBytes = hexToBytes(peerPkHex);
+        const x25519Shared = x25519(mySecretKey, peerPkBytes);
+        let nonZero = 0;
+        for (let i = 0; i < x25519Shared.length; i++) nonZero |= x25519Shared[i];
+        if (nonZero === 0) throw new Error('Invalid peer X25519 public key');
+
+        const firstPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? myPkHex.toLowerCase() : peerPkHex.toLowerCase();
+        const secondPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? peerPkHex.toLowerCase() : myPkHex.toLowerCase();
+        const kdfInput = concatBytes(
+          new TextEncoder().encode(`chat.tez.cool:pq-aes-gcm:v1:${firstPk}:${secondPk}:`),
+          x25519Shared,
+          pqSharedBytes
+        );
+        x25519Shared.fill(0);
+        const keyHash = await crypto.subtle.digest('SHA-256', kdfInput);
+        kdfInput.fill(0);
+        const keyBytes = new Uint8Array(keyHash);
+        const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+        keyBytes.fill(0);
+        return cryptoKey;
+      }
+
+      async function derivePqSelfWrapMask(selfSeedBytes, ivBytes, recipientPkBytes) {
+        const input = concatBytes(
+          new TextEncoder().encode('chat.tez.cool:pq-self-wrap:v1:'),
+          selfSeedBytes,
+          ivBytes,
+          recipientPkBytes
+        );
+        const hashBuf = await crypto.subtle.digest('SHA-256', input);
+        input.fill(0);
+        return new Uint8Array(hashBuf);
+      }
+
+      async function derivePqStealthMask(selfSeedBytes, ivBytes) {
+        const input = concatBytes(
+          new TextEncoder().encode('chat.tez.cool:pq-stealth-mask:v1:'),
+          selfSeedBytes,
+          ivBytes
+        );
+        const hashBuf = await crypto.subtle.digest('SHA-256', input);
+        input.fill(0);
+        return new Uint8Array(hashBuf);
+      }
+
+      async function encryptChatMessage(plaintext, keyPair, recipientPkHex, senderAddr, recipientAddr) {
+        if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddr || '')) {
+          throw new Error('Invalid sender or recipient Tezos address for AAD binding');
+        }
         const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex);
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const senderPkBytes = keyPair.publicKey;
         const recipientPkBytes = hexToBytes(recipientPkHex);
-        const additionalData = concatBytes(senderPkBytes, recipientPkBytes);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:${recipientAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x01]), addrBindBytes, senderPkBytes, recipientPkBytes);
         const plainBytes = new TextEncoder().encode(plaintext);
 
         const cipherBuf = await crypto.subtle.encrypt(
@@ -1489,25 +2250,43 @@
           aesKey,
           plainBytes
         );
+        plainBytes.fill(0);
         const cipherBytes = new Uint8Array(cipherBuf);
         // Binary envelope: [version=0x01 (1B) || recipientPk (32B) || iv (12B) || ciphertext+tag]
         const packet = concatBytes(new Uint8Array([0x01]), recipientPkBytes, iv, cipherBytes);
         return bytesToHex(packet);
       }
 
-      async function decryptChatMessage(encHex, senderPkHex, keyPair, isSentByMe) {
-        if (!keyPair || !encHex || !HEX32_REGEX.test(senderPkHex || '')) return null;
+      async function decryptChatMessage(encHex, senderPkHex, keyPair, isSentByMe, senderAddr, recipientAddr) {
+        if (
+          !keyPair ||
+          !encHex ||
+          encHex.length > MAX_ENC_HEX_LEN ||
+          !HEX_EVEN_REGEX.test(encHex) ||
+          !HEX32_REGEX.test(senderPkHex || '') ||
+          !ADDR_REGEX.test(senderAddr || '') ||
+          !ADDR_REGEX.test(recipientAddr || '')
+        ) {
+          return null;
+        }
         const packet = hexToBytes(encHex);
         if (packet.length < 1 + 32 + 12 + 16 || packet[0] !== 0x01) return null;
 
+        const myPkLower = keyPair.publicKeyHex.toLowerCase();
+        const senderPkLower = senderPkHex.toLowerCase();
         const recipientPkBytes = packet.slice(1, 33);
         const recipientPkHex = bytesToHex(recipientPkBytes);
+        if (isSentByMe && senderPkLower !== myPkLower) return null;
+        if (!isSentByMe && (recipientPkHex !== myPkLower || senderPkLower === myPkLower)) return null;
+
         const iv = packet.slice(33, 45);
         const cipherBytes = packet.slice(45);
 
-        const peerPkHex = isSentByMe ? recipientPkHex : senderPkHex;
+        const peerPkHex = isSentByMe ? recipientPkHex : senderPkLower;
         const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex);
-        const additionalData = concatBytes(hexToBytes(senderPkHex), recipientPkBytes);
+        const senderPkBytes = hexToBytes(senderPkLower);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:${recipientAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x01]), addrBindBytes, senderPkBytes, recipientPkBytes);
 
         const plainBuf = await crypto.subtle.decrypt(
           { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
@@ -1524,10 +2303,14 @@
           ivBytes
         );
         const hashBuf = await crypto.subtle.digest('SHA-256', maskInput);
+        maskInput.fill(0);
         return new Uint8Array(hashBuf);
       }
 
-      async function encryptStealthMessage(plaintext, recipientAddress, keyPair, recipientPkHex) {
+      async function encryptStealthMessage(plaintext, recipientAddress, keyPair, recipientPkHex, senderAddr) {
+        if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddress || '')) {
+          throw new Error('Invalid sender or recipient Tezos address for stealth AAD binding');
+        }
         const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex);
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const senderPkBytes = keyPair.publicKey;
@@ -1537,8 +2320,10 @@
         for (let i = 0; i < 32; i++) {
           maskedRecipientPk[i] = recipientPkBytes[i] ^ mask[i];
         }
+        mask.fill(0);
 
-        const additionalData = concatBytes(new Uint8Array([0x02]), senderPkBytes, recipientPkBytes);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x02]), addrBindBytes, senderPkBytes, recipientPkBytes, maskedRecipientPk);
         const innerPayload = JSON.stringify({ to: recipientAddress, text: plaintext });
         const plainBytes = new TextEncoder().encode(innerPayload);
 
@@ -1547,14 +2332,29 @@
           aesKey,
           plainBytes
         );
+        plainBytes.fill(0);
         const cipherBytes = new Uint8Array(cipherBuf);
         // Stealth binary envelope: [version=0x02 (1B) || maskedRecipientPk (32B) || iv (12B) || ciphertext+tag]
         const packet = concatBytes(new Uint8Array([0x02]), maskedRecipientPk, iv, cipherBytes);
         return bytesToHex(packet);
       }
 
-      async function decryptStealthMessage(encHex, senderPkHex, keyPair, isSentByMe, myAddr) {
-        if (!keyPair || !encHex || !HEX32_REGEX.test(senderPkHex || '')) return null;
+      async function decryptStealthMessage(encHex, senderPkHex, keyPair, isSentByMe, myAddr, senderAddr) {
+        if (
+          !keyPair ||
+          !encHex ||
+          encHex.length > MAX_ENC_HEX_LEN ||
+          !HEX_EVEN_REGEX.test(encHex) ||
+          !HEX32_REGEX.test(senderPkHex || '') ||
+          !ADDR_REGEX.test(myAddr || '') ||
+          !ADDR_REGEX.test(senderAddr || '')
+        ) {
+          return null;
+        }
+        const myPkLower = keyPair.publicKeyHex.toLowerCase();
+        const senderPkLower = senderPkHex.toLowerCase();
+        if (isSentByMe && senderPkLower !== myPkLower) return null;
+        if (!isSentByMe && senderPkLower === myPkLower) return null;
         const packet = hexToBytes(encHex);
         if (packet.length < 1 + 32 + 12 + 16 || packet[0] !== 0x02) return null;
 
@@ -1570,14 +2370,17 @@
           for (let i = 0; i < 32; i++) {
             recipientPkBytes[i] = maskedRecipientPk[i] ^ mask[i];
           }
+          mask.fill(0);
           peerPkHex = bytesToHex(recipientPkBytes);
         } else {
           recipientPkBytes = keyPair.publicKey;
-          peerPkHex = senderPkHex.toLowerCase();
+          peerPkHex = senderPkLower;
         }
 
         const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex);
-        const additionalData = concatBytes(new Uint8Array([0x02]), hexToBytes(senderPkHex), recipientPkBytes);
+        const senderPkBytes = hexToBytes(senderPkLower);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x02]), addrBindBytes, senderPkBytes, recipientPkBytes, maskedRecipientPk);
 
         const plainBuf = await crypto.subtle.decrypt(
           { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
@@ -1586,10 +2389,225 @@
         );
         const decoded = new TextDecoder('utf-8').decode(plainBuf);
         const parsed = JSON.parse(decoded);
-        if (!parsed || typeof parsed.text !== 'string' || !ADDR_REGEX.test(parsed.to || '')) {
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || typeof parsed.text !== 'string' || !ADDR_REGEX.test(parsed.to || '')) {
           return null;
         }
-        if (!isSentByMe && myAddr && parsed.to !== myAddr) {
+        if (!isSentByMe && parsed.to !== myAddr) {
+          return null;
+        }
+        return {
+          recipientAddress: parsed.to,
+          recipientPkHex: bytesToHex(recipientPkBytes),
+          text: parsed.text
+        };
+      }
+
+      async function encryptPqChatMessage(plaintext, keyPair, recipientPkHex, recipientPqPkHex, senderAddr, recipientAddr) {
+        if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddr || '')) {
+          throw new Error('Invalid sender or recipient Tezos address for PQ AAD binding');
+        }
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const mSeed = crypto.getRandomValues(new Uint8Array(32));
+        const senderPkBytes = keyPair.publicKey;
+        const recipientPkBytes = hexToBytes(recipientPkHex);
+        const recipientPqPkBytes = hexToBytes(recipientPqPkHex);
+
+        const { cipherText: pqCt, sharedSecret: pqShared } = mlKem512Encaps(recipientPqPkBytes, mSeed);
+        mSeed.fill(0);
+        const selfWrapMask = await derivePqSelfWrapMask(keyPair.selfSeed, iv, recipientPkBytes);
+        const wrappedPqShared = new Uint8Array(32);
+        for (let i = 0; i < 32; i++) {
+          wrappedPqShared[i] = pqShared[i] ^ selfWrapMask[i];
+        }
+        selfWrapMask.fill(0);
+
+        const aesKey = await deriveHybridPqAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, pqShared);
+        pqShared.fill(0);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:${recipientAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x03]), addrBindBytes, senderPkBytes, recipientPkBytes, wrappedPqShared, pqCt);
+        const plainBytes = new TextEncoder().encode(plaintext);
+
+        const cipherBuf = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          plainBytes
+        );
+        plainBytes.fill(0);
+        const cipherBytes = new Uint8Array(cipherBuf);
+        // PQ Hybrid envelope: [version=0x03 (1B) || recipientPk (32B) || iv (12B) || wrappedPqShared (32B) || mlKemCt (768B) || ciphertext+tag]
+        const packet = concatBytes(new Uint8Array([0x03]), recipientPkBytes, iv, wrappedPqShared, pqCt, cipherBytes);
+        return bytesToHex(packet);
+      }
+
+      async function decryptPqChatMessage(encHex, senderPkHex, keyPair, isSentByMe, senderAddr, recipientAddr) {
+        if (
+          !keyPair ||
+          !keyPair.selfSeed ||
+          !keyPair.pqSecretKey ||
+          !encHex ||
+          encHex.length > MAX_ENC_HEX_LEN ||
+          !HEX_EVEN_REGEX.test(encHex) ||
+          !HEX32_REGEX.test(senderPkHex || '') ||
+          !ADDR_REGEX.test(senderAddr || '') ||
+          !ADDR_REGEX.test(recipientAddr || '')
+        ) {
+          return null;
+        }
+        const packet = hexToBytes(encHex);
+        if (packet.length < 1 + 32 + 12 + 32 + 768 + 16 || packet[0] !== 0x03) return null;
+
+        const myPkLower = keyPair.publicKeyHex.toLowerCase();
+        const senderPkLower = senderPkHex.toLowerCase();
+        const recipientPkBytes = packet.slice(1, 33);
+        const recipientPkHex = bytesToHex(recipientPkBytes);
+        if (isSentByMe && senderPkLower !== myPkLower) return null;
+        if (!isSentByMe && (recipientPkHex !== myPkLower || senderPkLower === myPkLower)) return null;
+
+        const iv = packet.slice(33, 45);
+        const wrappedPqShared = packet.slice(45, 77);
+        const pqCt = packet.slice(77, 845);
+        const cipherBytes = packet.slice(845);
+
+        let pqShared;
+        if (isSentByMe) {
+          const selfWrapMask = await derivePqSelfWrapMask(keyPair.selfSeed, iv, recipientPkBytes);
+          pqShared = new Uint8Array(32);
+          for (let i = 0; i < 32; i++) {
+            pqShared[i] = wrappedPqShared[i] ^ selfWrapMask[i];
+          }
+          selfWrapMask.fill(0);
+        } else {
+          pqShared = mlKem512Decaps(keyPair.pqSecretKey, pqCt);
+          if (!pqShared) return null;
+        }
+
+        const peerPkHex = isSentByMe ? recipientPkHex : senderPkLower;
+        const aesKey = await deriveHybridPqAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex, pqShared);
+        pqShared.fill(0);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:${recipientAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x03]), addrBindBytes, hexToBytes(senderPkLower), recipientPkBytes, wrappedPqShared, pqCt);
+
+        const plainBuf = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          cipherBytes
+        );
+        return new TextDecoder('utf-8').decode(plainBuf);
+      }
+
+      async function encryptPqStealthMessage(plaintext, recipientAddress, keyPair, recipientPkHex, recipientPqPkHex, senderAddr) {
+        if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddress || '')) {
+          throw new Error('Invalid sender or recipient Tezos address for PQ stealth AAD binding');
+        }
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const mSeed = crypto.getRandomValues(new Uint8Array(32));
+        const senderPkBytes = keyPair.publicKey;
+        const recipientPkBytes = hexToBytes(recipientPkHex);
+        const recipientPqPkBytes = hexToBytes(recipientPqPkHex);
+
+        const mask = await derivePqStealthMask(keyPair.selfSeed, iv);
+        const maskedRecipientPk = new Uint8Array(32);
+        for (let i = 0; i < 32; i++) {
+          maskedRecipientPk[i] = recipientPkBytes[i] ^ mask[i];
+        }
+        mask.fill(0);
+
+        const { cipherText: pqCt, sharedSecret: pqShared } = mlKem512Encaps(recipientPqPkBytes, mSeed);
+        mSeed.fill(0);
+        const selfWrapMask = await derivePqSelfWrapMask(keyPair.selfSeed, iv, recipientPkBytes);
+        const wrappedPqShared = new Uint8Array(32);
+        for (let i = 0; i < 32; i++) {
+          wrappedPqShared[i] = pqShared[i] ^ selfWrapMask[i];
+        }
+        selfWrapMask.fill(0);
+
+        const aesKey = await deriveHybridPqAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, pqShared);
+        pqShared.fill(0);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x04]), addrBindBytes, senderPkBytes, recipientPkBytes, maskedRecipientPk, wrappedPqShared, pqCt);
+        const innerPayload = JSON.stringify({ to: recipientAddress, text: plaintext });
+        const plainBytes = new TextEncoder().encode(innerPayload);
+
+        const cipherBuf = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          plainBytes
+        );
+        plainBytes.fill(0);
+        const cipherBytes = new Uint8Array(cipherBuf);
+        // PQ Stealth envelope: [version=0x04 (1B) || maskedRecipientPk (32B) || iv (12B) || wrappedPqShared (32B) || mlKemCt (768B) || ciphertext+tag]
+        const packet = concatBytes(new Uint8Array([0x04]), maskedRecipientPk, iv, wrappedPqShared, pqCt, cipherBytes);
+        return bytesToHex(packet);
+      }
+
+      async function decryptPqStealthMessage(encHex, senderPkHex, keyPair, isSentByMe, myAddr, senderAddr) {
+        if (
+          !keyPair ||
+          !keyPair.selfSeed ||
+          !keyPair.pqSecretKey ||
+          !encHex ||
+          encHex.length > MAX_ENC_HEX_LEN ||
+          !HEX_EVEN_REGEX.test(encHex) ||
+          !HEX32_REGEX.test(senderPkHex || '') ||
+          !ADDR_REGEX.test(myAddr || '') ||
+          !ADDR_REGEX.test(senderAddr || '')
+        ) {
+          return null;
+        }
+        const myPkLower = keyPair.publicKeyHex.toLowerCase();
+        const senderPkLower = senderPkHex.toLowerCase();
+        if (isSentByMe && senderPkLower !== myPkLower) return null;
+        if (!isSentByMe && senderPkLower === myPkLower) return null;
+        const packet = hexToBytes(encHex);
+        if (packet.length < 1 + 32 + 12 + 32 + 768 + 16 || packet[0] !== 0x04) return null;
+
+        const maskedRecipientPk = packet.slice(1, 33);
+        const iv = packet.slice(33, 45);
+        const wrappedPqShared = packet.slice(45, 77);
+        const pqCt = packet.slice(77, 845);
+        const cipherBytes = packet.slice(845);
+
+        let recipientPkBytes;
+        let peerPkHex;
+        let pqShared;
+
+        if (isSentByMe) {
+          const mask = await derivePqStealthMask(keyPair.selfSeed, iv);
+          recipientPkBytes = new Uint8Array(32);
+          for (let i = 0; i < 32; i++) {
+            recipientPkBytes[i] = maskedRecipientPk[i] ^ mask[i];
+          }
+          mask.fill(0);
+          peerPkHex = bytesToHex(recipientPkBytes);
+          const selfWrapMask = await derivePqSelfWrapMask(keyPair.selfSeed, iv, recipientPkBytes);
+          pqShared = new Uint8Array(32);
+          for (let i = 0; i < 32; i++) {
+            pqShared[i] = wrappedPqShared[i] ^ selfWrapMask[i];
+          }
+          selfWrapMask.fill(0);
+        } else {
+          recipientPkBytes = keyPair.publicKey;
+          peerPkHex = senderPkLower;
+          pqShared = mlKem512Decaps(keyPair.pqSecretKey, pqCt);
+          if (!pqShared) return null;
+        }
+
+        const aesKey = await deriveHybridPqAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex, pqShared);
+        pqShared.fill(0);
+        const addrBindBytes = new TextEncoder().encode(`${senderAddr}:`);
+        const additionalData = concatBytes(new Uint8Array([0x04]), addrBindBytes, hexToBytes(senderPkLower), recipientPkBytes, maskedRecipientPk, wrappedPqShared, pqCt);
+
+        const plainBuf = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          cipherBytes
+        );
+        const decoded = new TextDecoder('utf-8').decode(plainBuf);
+        const parsed = JSON.parse(decoded);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || typeof parsed.text !== 'string' || !ADDR_REGEX.test(parsed.to || '')) {
+          return null;
+        }
+        if (!isSentByMe && parsed.to !== myAddr) {
           return null;
         }
         return {
@@ -1603,7 +2621,10 @@
         try {
           sessionStorage.setItem(`nftchat_e2ee_${address}`, JSON.stringify({
             secretKeyHex: bytesToHex(kp.secretKey),
-            publicKeyHex: kp.publicKeyHex
+            publicKeyHex: kp.publicKeyHex,
+            pqSeedDHex: bytesToHex(kp.pqSeedD),
+            pqSeedZHex: bytesToHex(kp.pqSeedZ),
+            selfSeedHex: bytesToHex(kp.selfSeed)
           }));
         } catch (e) {}
       }
@@ -1613,11 +2634,37 @@
           const raw = sessionStorage.getItem(`nftchat_e2ee_${address}`);
           if (!raw) return null;
           const parsed = JSON.parse(raw);
-          if (!HEX32_REGEX.test(parsed.secretKeyHex) || !HEX32_REGEX.test(parsed.publicKeyHex)) return null;
+          if (
+            !HEX32_REGEX.test(parsed.secretKeyHex) ||
+            !HEX32_REGEX.test(parsed.publicKeyHex) ||
+            !HEX32_REGEX.test(parsed.pqSeedDHex) ||
+            !HEX32_REGEX.test(parsed.pqSeedZHex) ||
+            !HEX32_REGEX.test(parsed.selfSeedHex)
+          ) {
+            return null;
+          }
+          const secretKey = hexToBytes(parsed.secretKeyHex);
+          const publicKey = x25519PublicKeyFromPrivate(secretKey);
+          const publicKeyHex = bytesToHex(publicKey);
+          if (publicKeyHex !== parsed.publicKeyHex.toLowerCase()) {
+            return null;
+          }
+          const pqSeedD = hexToBytes(parsed.pqSeedDHex);
+          const pqSeedZ = hexToBytes(parsed.pqSeedZHex);
+          const selfSeed = hexToBytes(parsed.selfSeedHex);
+          const pqKp = mlKem512KeyGenFromSeed(pqSeedD, pqSeedZ);
+          const pqPublicKeyHex = bytesToHex(pqKp.publicKey);
+          validatedPqPkCache.set(pqPublicKeyHex, true);
           return {
-            secretKey: hexToBytes(parsed.secretKeyHex),
-            publicKey: hexToBytes(parsed.publicKeyHex),
-            publicKeyHex: parsed.publicKeyHex
+            secretKey,
+            publicKey,
+            publicKeyHex,
+            pqSeedD,
+            pqSeedZ,
+            selfSeed,
+            pqPublicKey: pqKp.publicKey,
+            pqSecretKey: pqKp.secretKey,
+            pqPublicKeyHex
           };
         } catch (e) {
           return null;
@@ -1632,58 +2679,112 @@
 
       async function unlockEncryption() {
         if (!client || !myAddress) return false;
-        try {
-          const signMessage = [
-            'Tezos Signed Message: chat.tez.cool',
-            'Action: Derive End-to-End Encryption Key (v1)',
-            `Account: ${myAddress}`,
-            'Security Warning: ONLY sign this message on https://chat.tez.cool'
-          ].join('\n');
+        if (unlockPendingPromise) return unlockPendingPromise;
+        const activeAddr = myAddress;
+        unlockPendingPromise = (async () => {
+          try {
+            const signMessage = [
+              'Tezos Signed Message: chat.tez.cool',
+              'Action: Derive End-to-End Encryption Key (v1)',
+              `Account: ${activeAddr}`,
+              'Security Warning: ONLY sign this message on https://chat.tez.cool'
+            ].join('\n');
 
-          const payload = buildMichelineSignPayload(signMessage);
-          const response = await client.requestSignPayload({
-            signingType: beacon.SigningType ? beacon.SigningType.MICHELINE : 'micheline',
-            payload
-          });
+            const payload = buildMichelineSignPayload(signMessage);
+            const response = await client.requestSignPayload({
+              signingType: beacon.SigningType ? beacon.SigningType.MICHELINE : 'micheline',
+              payload
+            });
 
-          if (!response || !response.signature) {
-            throw new Error('No signature returned');
+            if (!myAddress || myAddress !== activeAddr) return false;
+            if (!response || !isValidWalletSignature(response.signature)) {
+              throw new Error('Invalid or missing wallet signature');
+            }
+
+            const priorOnChainPk = peerPublicKeys.get(activeAddr);
+            const priorOnChainPqPk = peerPqPublicKeys.get(activeAddr);
+            authStateVersion++;
+            zeroizeKeyPair(myKeyPair);
+            myKeyPair = await deriveKeyPairFromSignature(activeAddr, response.signature);
+            if (!myAddress || myAddress !== activeAddr) {
+              zeroizeKeyPair(myKeyPair);
+              myKeyPair = null;
+              return false;
+            }
+            if (priorOnChainPk && priorOnChainPk !== myKeyPair.publicKeyHex) {
+              const owner = pkOwnerAddresses.get(priorOnChainPk);
+              if (owner && owner.address === activeAddr) pkOwnerAddresses.delete(priorOnChainPk);
+            }
+            if (priorOnChainPqPk && priorOnChainPqPk !== myKeyPair.pqPublicKeyHex) {
+              const pqOwner = pqPkOwnerAddresses.get(priorOnChainPqPk);
+              if (pqOwner && pqOwner.address === activeAddr) pqPkOwnerAddresses.delete(priorOnChainPqPk);
+            }
+            validatedPqPkCache.set(myKeyPair.pqPublicKeyHex, true);
+            pkOwnerAddresses.set(myKeyPair.publicKeyHex, { address: activeAddr, minOpId: 0 });
+            pqPkOwnerAddresses.set(myKeyPair.pqPublicKeyHex, { address: activeAddr, minOpId: 0 });
+            peerPublicKeys.set(activeAddr, myKeyPair.publicKeyHex);
+            peerPqPublicKeys.set(activeAddr, myKeyPair.pqPublicKeyHex);
+            saveSessionKeyPair(activeAddr, myKeyPair);
+            processedOpsCache.clear();
+            myKeyPublishedOnChain = false;
+            myPqKeyPublishedOnChain = false;
+
+            await decryptAllLoadedMessages();
+            updateE2EEControlsUI();
+            renderDialogs();
+            renderActiveConversation();
+            await fetchAllMessages();
+
+            if (priorOnChainPk && priorOnChainPk !== myKeyPair.publicKeyHex && !myKeyPublishedOnChain) {
+              toast('⚠️ Note: Your wallet returned a different signature format than your previously published on-chain key.');
+            } else if (myKeyPair) {
+              toast(`🔐 E2EE + Post-Quantum keys unlocked! X25519: ${myKeyPair.publicKeyHex.slice(0, 6)}…${myKeyPair.publicKeyHex.slice(-4)}`);
+            }
+            return true;
+          } catch (err) {
+            toast('E2EE signature request cancelled or invalid.');
+            return false;
+          } finally {
+            unlockPendingPromise = null;
           }
-
-          myKeyPair = await deriveKeyPairFromSignature(myAddress, response.signature);
-          peerPublicKeys.set(myAddress, myKeyPair.publicKeyHex);
-          saveSessionKeyPair(myAddress, myKeyPair);
-
-          await decryptAllLoadedMessages();
-          await fetchAllMessages();
-          updateE2EEControlsUI();
-          renderDialogs();
-          renderActiveConversation();
-          toast(`🔐 E2EE unlocked! Key: ${myKeyPair.publicKeyHex.slice(0, 6)}…${myKeyPair.publicKeyHex.slice(-4)}`);
-          return true;
-        } catch (err) {
-          toast('E2EE signature request cancelled.');
-          return false;
-        }
+        })();
+        return unlockPendingPromise;
       }
 
       async function publishKeyOnChain() {
-        if (!client || !myAddress) return;
-        if (!myKeyPair) {
-          const ok = await unlockEncryption();
-          if (!ok) return;
-        }
+        if (!client || !myAddress || isPublishingKey) return;
+        const activeAddr = myAddress;
+        isPublishingKey = true;
         try {
+          if (!myKeyPair) {
+            const ok = await unlockEncryption();
+            if (!ok || !myAddress || myAddress !== activeAddr || !myKeyPair) return;
+          }
+          const activeKeyPair = myKeyPair;
+          const includePqKey = Boolean(pqMode || myKeyPublishedOnChain);
           publishKeyBtn.disabled = true;
-          publishKeyBtn.textContent = 'Publishing…';
+          publishKeyBtn.textContent = includePqKey ? 'Publishing PQ Key…' : 'Publishing…';
 
           const metadataEntries = [
-            { key: 'artifactUri', hex: stringToHex(`https://services.tzkt.io/v1/avatars/${myAddress}`) },
+            { key: 'artifactUri', hex: stringToHex(`https://services.tzkt.io/v1/avatars/${activeAddr}`) },
             { key: 'decimals', hex: '30' },
             { key: 'key_reg', hex: '31' },
-            { key: 'name', hex: stringToHex('🔐 NFTChat E2EE Public Key Registration') },
-            { key: 'pk', hex: myKeyPair.publicKeyHex }
-          ].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+            {
+              key: 'name',
+              hex: stringToHex(
+                includePqKey
+                  ? '🛡️ NFTChat Post-Quantum Hybrid Key Registration (X25519 + ML-KEM-512)'
+                  : '🔐 NFTChat E2EE Public Key Registration'
+              )
+            },
+            { key: 'pk', hex: activeKeyPair.publicKeyHex }
+          ];
+
+          if (includePqKey && activeKeyPair.pqPublicKeyHex) {
+            metadataEntries.push({ key: 'pq_pk', hex: activeKeyPair.pqPublicKeyHex });
+          }
+
+          metadataEntries.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 
           await client.requestOperation({
             operationDetails: [
@@ -1700,7 +2801,7 @@
                         prim: 'Elt',
                         args: [{ string: e.key }, { bytes: e.hex }]
                       })),
-                      { string: myAddress }
+                      { string: activeAddr }
                     ]
                   }
                 }
@@ -1708,61 +2809,49 @@
             ]
           });
 
-          myKeyPublishedOnChain = true;
+          if (myAddress === activeAddr && myKeyPair === activeKeyPair) {
+            myKeyPublishedOnChain = true;
+            peerPublicKeys.set(activeAddr, activeKeyPair.publicKeyHex);
+            pkOwnerAddresses.set(activeKeyPair.publicKeyHex, { address: activeAddr, minOpId: 0 });
+            if (includePqKey && activeKeyPair.pqPublicKeyHex) {
+              myPqKeyPublishedOnChain = true;
+              peerPqPublicKeys.set(activeAddr, activeKeyPair.pqPublicKeyHex);
+              pqPkOwnerAddresses.set(activeKeyPair.pqPublicKeyHex, { address: activeAddr, minOpId: 0 });
+            }
+          }
           updateE2EEControlsUI();
-          toast('📡 E2EE public key published on-chain! Anyone can now message you encrypted.');
+          toast(
+            includePqKey
+              ? '🛡️ Post-Quantum Hybrid key (X25519 + ML-KEM-512) published on-chain!'
+              : '📡 E2EE public key published on-chain! Anyone can now message you encrypted.'
+          );
           setTimeout(fetchAllMessages, 4000);
         } catch (err) {
           toast('Key publication cancelled or failed.');
         } finally {
+          isPublishingKey = false;
           publishKeyBtn.disabled = false;
-          publishKeyBtn.textContent = '📡 Publish Key';
           updateE2EEControlsUI();
         }
       }
 
-      async function resolvePeerPublicKey(peer) {
-        if (!peer || !ADDR_REGEX.test(peer)) return null;
-        if (peerPublicKeys.has(peer)) return peerPublicKeys.get(peer);
-        if (peerKeyFetchPending.has(peer)) return null;
-
-        peerKeyFetchPending.add(peer);
-        try {
-          const res = await fetch(
-            `https://api.tzkt.io/v1/operations/transactions?sender=${encodeURIComponent(peer)}&target=${CONTRACT}&status=applied&limit=100&sort.desc=id`
-          );
-          if (res.ok) {
-            const ops = await res.json();
-            for (const op of ops) {
-              const pk = op?.parameter?.value?.metadata?.pk;
-              if (pk && HEX32_REGEX.test(pk)) {
-                peerPublicKeys.set(peer, pk.toLowerCase());
-                if (currentRecipient === peer) {
-                  renderChatHeader();
-                  updateComposerState();
-                }
-                break;
-              }
-            }
-          }
-        } catch (e) {
-        } finally {
-          peerKeyFetchPending.delete(peer);
-        }
-        return peerPublicKeys.get(peer) || null;
-      }
-
       async function decryptAllLoadedMessages() {
-        if (!myKeyPair) return;
+        const activeKeyPair = myKeyPair;
+        const activeAddr = myAddress;
+        const startVersion = authStateVersion;
+        if (!activeKeyPair || !activeAddr) return;
         const tasks = [];
         conversations.forEach(msgs => {
           msgs.forEach(m => {
             if (m.isEncrypted && !m.decrypted && m.encHex && m.senderPkHex) {
-              const isSent = m.sender === myAddress;
+              const isSent = m.sender === activeAddr;
+              const prefix = m.encHex.slice(0, 2);
+              if (prefix !== '01' && prefix !== '03') return;
+              const fn = prefix === '03' ? decryptPqChatMessage : decryptChatMessage;
               tasks.push(
-                decryptChatMessage(m.encHex, m.senderPkHex, myKeyPair, isSent)
+                fn(m.encHex, m.senderPkHex, activeKeyPair, isSent, m.sender, m.recipient)
                   .then(plain => {
-                    if (plain !== null) {
+                    if (plain !== null && authStateVersion === startVersion && myKeyPair === activeKeyPair) {
                       m.text = plain;
                       m.decrypted = true;
                     }
@@ -1917,7 +3006,7 @@
         if (!myAddress) {
           e2eeBtn.classList.remove('visible', 'unlocked');
           e2eeBtn.classList.add('locked');
-          publishKeyBtn.classList.remove('visible');
+          publishKeyBtn.classList.remove('visible', 'pq-mode');
           hideCustomTooltip();
           return;
         }
@@ -1926,25 +3015,54 @@
           e2eeBtn.classList.remove('locked');
           e2eeBtn.classList.add('unlocked');
           const shortKey = `${myKeyPair.publicKeyHex.slice(0, 4)}…${myKeyPair.publicKeyHex.slice(-4)}`;
-          e2eeBtn.textContent = `🔐 E2EE (${shortKey})`;
-          e2eeBtn.setAttribute('data-tooltip-title', 'End-to-End Encryption Active');
-          e2eeBtn.setAttribute('data-tooltip', 'Your X25519 keypair is unlocked in memory. Click to lock E2EE for this session.');
+          e2eeBtn.textContent = myPqKeyPublishedOnChain ? `🛡️ E2EE+PQ (${shortKey})` : `🔐 E2EE (${shortKey})`;
+          e2eeBtn.setAttribute(
+            'data-tooltip-title',
+            myPqKeyPublishedOnChain ? 'Post-Quantum Hybrid E2EE Active' : 'End-to-End Encryption Active'
+          );
+          e2eeBtn.setAttribute(
+            'data-tooltip',
+            myPqKeyPublishedOnChain
+              ? 'Your X25519 + NIST ML-KEM-512 Post-Quantum keys are unlocked and published on-chain. Click to lock E2EE for this session.'
+              : 'Your X25519 + ML-KEM-512 keys are unlocked in memory. Click to lock E2EE for this session.'
+          );
           e2eeBtn.setAttribute('data-tooltip-mono', `X25519: ${myKeyPair.publicKeyHex}`);
           e2eeBtn.setAttribute('data-tooltip-variant', 'emerald');
-          if (!myKeyPublishedOnChain) {
+
+          if (!myKeyPublishedOnChain && !pqMode) {
             publishKeyBtn.classList.add('visible');
+            publishKeyBtn.classList.remove('pq-mode');
+            publishKeyBtn.textContent = '📡 Publish Key';
+            publishKeyBtn.setAttribute('data-tooltip-title', 'Publish Standard E2EE Key (~0.001 XTZ)');
+            publishKeyBtn.setAttribute(
+              'data-tooltip',
+              'Broadcast a 1-time 0-storage registration call with your 32-byte X25519 key so anyone can send you encrypted messages (~0.001 XTZ).'
+            );
+            publishKeyBtn.setAttribute('data-tooltip-variant', 'cyan');
+          } else if (!myPqKeyPublishedOnChain && (pqMode || !myKeyPublishedOnChain)) {
+            publishKeyBtn.classList.add('visible', 'pq-mode');
+            publishKeyBtn.textContent = '🛡️ Publish PQ Key';
+            publishKeyBtn.setAttribute('data-tooltip-title', 'Publish Post-Quantum Hybrid Key (~0.001 XTZ once)');
+            publishKeyBtn.setAttribute(
+              'data-tooltip',
+              'Registers both your 32-byte X25519 key and 800-byte NIST ML-KEM-512 Post-Quantum key on-chain with zero storage burn (~0.001 XTZ once) so anyone can send you quantum-resistant messages.'
+            );
+            publishKeyBtn.setAttribute('data-tooltip-variant', 'purple');
           } else {
-            publishKeyBtn.classList.remove('visible');
+            publishKeyBtn.classList.remove('visible', 'pq-mode');
           }
         } else {
           e2eeBtn.classList.remove('unlocked');
           e2eeBtn.classList.add('locked');
           e2eeBtn.textContent = '🔓 Unlock E2EE';
           e2eeBtn.setAttribute('data-tooltip-title', 'End-to-End Encryption Locked');
-          e2eeBtn.setAttribute('data-tooltip', 'Sign a free off-chain message with your wallet to unlock your X25519 encryption keypair.');
+          e2eeBtn.setAttribute(
+            'data-tooltip',
+            'Sign a free off-chain message with your wallet to unlock your X25519 + ML-KEM-512 encryption keys.'
+          );
           e2eeBtn.removeAttribute('data-tooltip-mono');
           e2eeBtn.setAttribute('data-tooltip-variant', 'amber');
-          publishKeyBtn.classList.remove('visible');
+          publishKeyBtn.classList.remove('visible', 'pq-mode');
         }
         updateComposerState();
         refreshActiveTooltip();
@@ -1953,20 +3071,45 @@
       e2eeBtn.addEventListener('click', async () => {
         if (!myAddress) return;
         if (myKeyPair) {
+          const lockedPk = myKeyPair.publicKeyHex;
+          const lockedPqPk = myKeyPair.pqPublicKeyHex;
+          authStateVersion++;
+          zeroizeKeyPair(myKeyPair);
           myKeyPair = null;
           encryptMode = false;
           stealthMode = false;
+          pqMode = false;
           clearSessionKeyPair(myAddress);
+          processedOpsCache.clear();
+          if (!myKeyPublishedOnChain && lockedPk) {
+            peerPublicKeys.delete(myAddress);
+            pkOwnerAddresses.delete(lockedPk);
+          }
+          if (!myPqKeyPublishedOnChain && lockedPqPk) {
+            peerPqPublicKeys.delete(myAddress);
+            pqPkOwnerAddresses.delete(lockedPqPk);
+          }
           conversations.forEach((msgs, peer) => {
+            const hadStealth = msgs.some(m => m.isStealth);
             const remaining = msgs.filter(m => !m.isStealth);
             remaining.forEach(m => {
               if (m.isEncrypted) {
                 m.decrypted = false;
-                m.text = '🔒 End-to-End Encrypted Message';
+                m.text = m.isPq ? '🛡️ Post-Quantum Encrypted Message' : '🔒 End-to-End Encrypted Message';
               }
             });
-            conversations.set(peer, remaining);
+            if (remaining.length === 0 && (hadStealth || peer !== currentRecipient)) {
+              conversations.delete(peer);
+              if (peer === currentRecipient) {
+                currentRecipient = null;
+              }
+            } else {
+              conversations.set(peer, remaining);
+            }
           });
+          if (!currentRecipient && conversations.size > 0) {
+            currentRecipient = conversations.keys().next().value;
+          }
           updateE2EEControlsUI();
           renderDialogs();
           renderActiveConversation();
@@ -1978,6 +3121,19 @@
 
       publishKeyBtn.addEventListener('click', publishKeyOnChain);
 
+      function sanitizeAlias(rawAlias, addr) {
+        if (typeof rawAlias !== 'string') return '';
+        const cleaned = rawAlias
+          .replace(/[\u0000-\u001F\u007F-\u009F\u200E\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '')
+          .trim()
+          .slice(0, 48);
+        if (!cleaned) return '';
+        if (/^(tz1|tz2|tz3|tz4|KT1)/i.test(cleaned) && cleaned !== addr && cleaned !== shortAddr(addr)) {
+          return '';
+        }
+        return cleaned;
+      }
+
       async function resolveAlias(addr) {
         if (!addr || !ADDR_REGEX.test(addr)) return '';
         if (aliasCache.has(addr)) return aliasCache.get(addr);
@@ -1986,8 +3142,9 @@
           const r = await fetch(`https://api.tzkt.io/v1/accounts/${encodeURIComponent(addr)}`);
           if (r.ok) {
             const d = await r.json();
-            if (d && d.alias) {
-              aliasCache.set(addr, d.alias);
+            const safeAlias = d && d.alias ? sanitizeAlias(d.alias, addr) : '';
+            if (safeAlias) {
+              aliasCache.set(addr, safeAlias);
               renderDialogs();
               if (currentRecipient === addr) renderChatHeader();
             }
@@ -2024,15 +3181,19 @@
 
       encryptToggleBtn.addEventListener('click', async () => {
         if (!myAddress || !currentRecipient) return;
+        const activeAddr = myAddress;
+        const targetRecipient = currentRecipient;
         if (!encryptMode) {
           if (!myKeyPair) {
             const unlocked = await unlockEncryption();
-            if (!unlocked) return;
+            if (!unlocked || myAddress !== activeAddr || currentRecipient !== targetRecipient) return;
           }
-          let peerPk = peerPublicKeys.get(currentRecipient);
+          let peerPk = peerPublicKeys.get(targetRecipient);
           if (!peerPk) {
             toast('Checking on-chain E2EE public key for recipient…');
-            peerPk = await resolvePeerPublicKey(currentRecipient);
+            await fetchAllMessages();
+            if (myAddress !== activeAddr || currentRecipient !== targetRecipient) return;
+            peerPk = peerPublicKeys.get(targetRecipient);
           }
           if (!peerPk) {
             toast('Recipient has not published an E2EE key on-chain yet. Send a public message first (your key will be attached automatically) or ask them to click Publish Key.');
@@ -2049,46 +3210,133 @@
         updateComposerState();
       });
 
+      pqToggleBtn.addEventListener('click', async () => {
+        if (!myAddress || !currentRecipient) return;
+        const activeAddr = myAddress;
+        const targetRecipient = currentRecipient;
+        if (!pqMode) {
+          if (!myKeyPair) {
+            const unlocked = await unlockEncryption();
+            if (!unlocked || myAddress !== activeAddr || currentRecipient !== targetRecipient) return;
+          }
+          let peerPk = peerPublicKeys.get(targetRecipient);
+          if (!peerPk || !peerPqPublicKeys.has(targetRecipient)) {
+            await fetchAllMessages();
+            if (myAddress !== activeAddr || currentRecipient !== targetRecipient) return;
+            peerPk = peerPublicKeys.get(targetRecipient);
+          }
+          const peerPqPk =
+            peerPqPublicKeys.get(targetRecipient) ||
+            (targetRecipient === myAddress && myKeyPair ? myKeyPair.pqPublicKeyHex : null);
+
+          pqMode = true;
+          if (peerPk && peerPqPk && !encryptMode) {
+            encryptMode = true;
+          }
+          updateE2EEControlsUI();
+          if (!myPqKeyPublishedOnChain) {
+            toast('🛡️ Post-Quantum (ML-KEM-512) mode enabled! Click "🛡️ Publish PQ Key" in the top bar (~0.001 XTZ once) so others can send you PQ messages too.');
+          } else if (peerPk && !peerPqPk) {
+            toast('Recipient only has a standard X25519 key on-chain so far. Ask them to click "🛡️ Publish PQ Key", or toggle PQ Off to send standard E2EE.');
+          } else {
+            toast('🛡️ Post-Quantum Hybrid (X25519 + ML-KEM-512) active (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth).');
+          }
+        } else {
+          pqMode = false;
+          updateE2EEControlsUI();
+          toast('⚛️ Switched to standard X25519 encryption (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth).');
+        }
+      });
+
       function updateComposerState() {
         const canChat = Boolean(myAddress && currentRecipient);
         dmInput.disabled = !canChat;
         dmSendBtn.disabled = !canChat;
         encryptToggleBtn.disabled = !canChat;
+        pqToggleBtn.disabled = !canChat;
 
         const peerHasKey = Boolean(currentRecipient && peerPublicKeys.has(currentRecipient));
+        const peerHasPqKey = Boolean(
+          currentRecipient &&
+            (peerPqPublicKeys.has(currentRecipient) || (currentRecipient === myAddress && myKeyPair?.pqPublicKeyHex))
+        );
+
+        if (!myKeyPair && pqMode) {
+          pqMode = false;
+        }
         if (encryptMode && (!myKeyPair || !peerHasKey)) {
           encryptMode = false;
           stealthMode = false;
         }
 
+        if (pqMode) {
+          pqToggleBtn.classList.add('active');
+          pqToggleBtn.textContent = '🛡️ PQ-512';
+          pqToggleBtn.setAttribute('data-tooltip-title', 'Post-Quantum Hybrid Shield: ON');
+          pqToggleBtn.setAttribute(
+            'data-tooltip',
+            peerHasPqKey
+              ? 'Uses X25519 + NIST ML-KEM-512 + AES-256-GCM (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Click to switch back to standard X25519.'
+              : 'PQ Shield is enabled, but this recipient has not published an ML-KEM-512 key (pq_pk) yet. Click to toggle off or ask them to click "🛡️ Publish PQ Key" (~0.001 XTZ).'
+          );
+          pqToggleBtn.setAttribute('data-tooltip-variant', peerHasPqKey ? 'purple' : 'amber');
+        } else {
+          pqToggleBtn.classList.remove('active');
+          pqToggleBtn.textContent = '⚛️ PQ: Off';
+          pqToggleBtn.setAttribute('data-tooltip-title', 'Post-Quantum Hybrid Shield: OFF');
+          pqToggleBtn.setAttribute(
+            'data-tooltip',
+            'Click to enable optional NIST ML-KEM-512 Post-Quantum Hybrid protection (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth).'
+          );
+          pqToggleBtn.setAttribute('data-tooltip-variant', 'purple');
+        }
+
+        const usePqLabel = Boolean(pqMode && encryptMode);
+
         if (encryptMode && stealthMode) {
           encryptToggleBtn.classList.add('active', 'stealth');
           encryptToggleBtn.textContent = '🕵️ Stealth';
-          encryptToggleBtn.setAttribute('data-tooltip-title', 'Stealth E2EE Mode (Hidden Recipient)');
-          encryptToggleBtn.setAttribute('data-tooltip', 'Content + recipient address are encrypted (0x02 envelope) and minted to your own wallet so outsiders on-chain cannot see whom you are messaging. Click to switch to Public mode.');
+          encryptToggleBtn.setAttribute(
+            'data-tooltip-title',
+            usePqLabel ? 'PQ-Hybrid Stealth Mode (0x04 Envelope)' : 'Stealth E2EE Mode (Hidden Recipient)'
+          );
+          encryptToggleBtn.setAttribute(
+            'data-tooltip',
+            usePqLabel
+              ? 'Quantum-resistant X25519 + ML-KEM-512 + AES-256-GCM content & hidden recipient (0x04 envelope, ~0.001 XTZ/mint, 0 storage burn). Note: Self-minted to your wallet to hide the recipient on-chain, so the recipient will not see an incoming NFT in their wallet/indexer and will only see it when they open chat.tez.cool.'
+              : 'Content + recipient address are encrypted (0x02 envelope, ~0.001 XTZ/mint, 0 storage burn) and self-minted to your own wallet so outsiders cannot see whom you are messaging. Note: Unlike Public/Encrypted modes, the recipient will not see an incoming NFT in their wallet/indexer and will only know about it if they open chat.tez.cool.'
+          );
           encryptToggleBtn.setAttribute('data-tooltip-variant', 'cyan');
           dmInput.classList.remove('encrypted-mode');
           dmInput.classList.add('stealth-mode');
           dmSendBtn.classList.remove('encrypted-mode');
           dmSendBtn.classList.add('stealth-mode');
-          dmSendBtn.textContent = '🕵️ Stealth Mint';
+          dmSendBtn.textContent = usePqLabel ? '🕵️🛡️ PQ Stealth Mint' : '🕵️ Stealth Mint';
           dmInput.placeholder = canChat
-            ? `Stealth E2EE message to ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} (recipient hidden on-chain)…`
+            ? `${usePqLabel ? 'PQ-Stealth' : 'Stealth E2EE'} message to ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} (recipient hidden on-chain)…`
             : 'Connect wallet & select a recipient…';
         } else if (encryptMode) {
           encryptToggleBtn.classList.add('active');
           encryptToggleBtn.classList.remove('stealth');
           encryptToggleBtn.textContent = '🔒 Encrypted';
-          encryptToggleBtn.setAttribute('data-tooltip-title', 'End-to-End Encrypted Mode');
-          encryptToggleBtn.setAttribute('data-tooltip', 'Encrypted client-side with X25519 ECDH + AES-256-GCM. Only you and the recipient can decrypt the content. Click again for Stealth Mode (hides recipient address on-chain).');
+          encryptToggleBtn.setAttribute(
+            'data-tooltip-title',
+            usePqLabel ? 'Post-Quantum Hybrid E2EE Mode (0x03 Envelope)' : 'End-to-End Encrypted Mode'
+          );
+          encryptToggleBtn.setAttribute(
+            'data-tooltip',
+            usePqLabel
+              ? 'Encrypted with X25519 + NIST ML-KEM-512 + AES-256-GCM (~0.084 XTZ/mint). Click again for Stealth Mode (~0.001 XTZ, hides recipient address on-chain).'
+              : 'Encrypted client-side with X25519 ECDH + AES-256-GCM (~0.084 XTZ/mint). Click again for Stealth Mode (~0.001 XTZ, hides recipient address on-chain).'
+          );
           encryptToggleBtn.setAttribute('data-tooltip-variant', 'emerald');
           dmInput.classList.remove('stealth-mode');
           dmInput.classList.add('encrypted-mode');
           dmSendBtn.classList.remove('stealth-mode');
           dmSendBtn.classList.add('encrypted-mode');
-          dmSendBtn.textContent = '🔒 Encrypt & Mint';
+          dmSendBtn.textContent = usePqLabel ? '🛡️ PQ Encrypt & Mint' : '🔒 Encrypt & Mint';
           dmInput.placeholder = canChat
-            ? `Encrypted message to ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} (only recipient can decrypt)…`
+            ? `${usePqLabel ? 'PQ-Hybrid encrypted' : 'Encrypted'} message to ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} (only recipient can decrypt)…`
             : 'Connect wallet & select a recipient…';
         } else {
           encryptToggleBtn.classList.remove('active', 'stealth');
@@ -2108,24 +3356,21 @@
 
       async function fetchAllMessages() {
         const activeAddress = myAddress;
+        const startVersion = authStateVersion;
+        const activeKeyPair = myKeyPair;
         if (!activeAddress) return;
         try {
-          const [sentRes, recRes, encRes] = await Promise.all([
-            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${encodeURIComponent(activeAddress)}&target=${CONTRACT}&status=applied&limit=1000&sort.desc=id`),
-            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.to_=${encodeURIComponent(activeAddress)}&status=applied&limit=1000&sort.desc=id`),
-            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.metadata.enc.null=false&status=applied&limit=500&sort.desc=id`)
-          ]);
-          if (!myAddress || myAddress !== activeAddress) return;
-          const sentOps = sentRes.ok ? await sentRes.json() : [];
-          const recOps = recRes.ok ? await recRes.json() : [];
-          const encOps = encRes.ok ? await encRes.json() : [];
-          if (!myAddress || myAddress !== activeAddress) return;
+          const res = await fetch(
+            `https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&entrypoint=mint&status=applied&limit=10000&sort.asc=id`
+          );
+          if (!res.ok || !myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+          const allOps = await res.json();
+          if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
 
-          const allOps = [...sentOps, ...recOps, ...encOps];
-          // Sort ascending by id so newer public keys overwrite older ones
-          allOps.sort((a, b) => a.id - b.id);
+          if (processedOpsCache.size > 5000) {
+            processedOpsCache.clear();
+          }
 
-          const seenIds = new Set();
           const nextMap = new Map();
 
           // Keep any manually added empty conversation
@@ -2133,90 +3378,128 @@
             if (msgs.length === 0) nextMap.set(peer, []);
           });
 
+          const sessionKeyTag = activeKeyPair ? activeKeyPair.publicKeyHex : 'locked';
+
           for (const op of allOps) {
-            if (!op || seenIds.has(op.id)) continue;
-            seenIds.add(op.id);
+            if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+            if (!op) continue;
             const sender = op.sender?.address;
             let recipient = op.parameter?.value?.to_;
             const metadata = op.parameter?.value?.metadata || {};
             const hexName = metadata.name;
             const senderPk = metadata.pk;
+            const senderPqPk = metadata.pq_pk;
             const encHex = metadata.enc;
             const isKeyReg = metadata.key_reg === '31';
 
             if (!sender || !recipient || !hexName) continue;
             if (!ADDR_REGEX.test(sender) || !ADDR_REGEX.test(recipient)) continue;
 
-            if (senderPk && HEX32_REGEX.test(senderPk)) {
-              peerPublicKeys.set(sender, senderPk.toLowerCase());
-              if (sender === activeAddress) {
+            // Register authentic public keys published directly by op.sender.address in chronological order
+            if (senderPk && tryRegisterPeerPk(sender, senderPk, op.id)) {
+              const lowerPk = senderPk.toLowerCase();
+              if (sender === activeAddress && (!activeKeyPair || lowerPk === activeKeyPair.publicKeyHex.toLowerCase())) {
                 myKeyPublishedOnChain = true;
               }
             }
-
-            // Also extract recipient public key embedded in 0x01 encrypted packet header (bytes 1..33)
-            if (encHex && encHex.length >= 90 && encHex.slice(0, 2) === '01') {
-              const embeddedRecipientPk = encHex.slice(2, 66);
-              if (HEX32_REGEX.test(embeddedRecipientPk) && !peerPublicKeys.has(recipient)) {
-                peerPublicKeys.set(recipient, embeddedRecipientPk.toLowerCase());
+            if (senderPqPk && tryRegisterPeerPqPk(sender, senderPqPk, op.id)) {
+              const lowerPqPk = senderPqPk.toLowerCase();
+              if (sender === activeAddress && (!activeKeyPair || lowerPqPk === activeKeyPair.pqPublicKeyHex.toLowerCase())) {
+                myPqKeyPublishedOnChain = true;
               }
             }
 
-            // Skip self key-registration transactions from appearing as chat bubbles
-            if (isKeyReg && sender === activeAddress && recipient === activeAddress) {
+            // Skip key-registration transactions from appearing as chat bubbles
+            if (isKeyReg && sender === recipient) {
               continue;
             }
 
-            const isStealthPacket = Boolean(encHex && encHex.length >= 90 && encHex.slice(0, 2) === '02' && senderPk && HEX32_REGEX.test(senderPk));
-            const isEncrypted = Boolean(encHex && senderPk && HEX32_REGEX.test(senderPk));
+            const cacheKey = `${activeAddress}:${sessionKeyTag}:${op.id}`;
+            if (processedOpsCache.has(cacheKey)) {
+              const cached = processedOpsCache.get(cacheKey);
+              if (cached.skip) continue;
+              const cachedEntry = { ...cached.entry };
+              const peer = cachedEntry.sender === activeAddress ? cachedEntry.recipient : cachedEntry.sender;
+              if (!nextMap.has(peer)) {
+                nextMap.set(peer, []);
+                resolveAlias(peer);
+              }
+              nextMap.get(peer).push(cachedEntry);
+              continue;
+            }
+
+            const envVer = encHex && encHex.length >= 90 ? encHex.slice(0, 2) : '';
+            const hasValidSenderPk = Boolean(senderPk && HEX32_REGEX.test(senderPk));
+            const isStealth02 = Boolean(envVer === '02' && hasValidSenderPk);
+            const isStealth04 = Boolean(envVer === '04' && encHex.length >= 1722 && hasValidSenderPk);
+            const isStealthPacket = isStealth02 || isStealth04;
+            const isPqPacket = Boolean((envVer === '03' || envVer === '04') && encHex.length >= 1722);
+            const isEncrypted = Boolean(encHex && hasValidSenderPk);
             let text = hexToString(hexName);
             let decrypted = false;
             let isStealth = false;
 
             if (isStealthPacket) {
-              if (!myKeyPair) {
+              if (!activeKeyPair) {
                 continue;
               }
               try {
-                const stealthRes = await decryptStealthMessage(
+                const stealthFn = isStealth04 ? decryptPqStealthMessage : decryptStealthMessage;
+                const stealthRes = await stealthFn(
                   encHex,
                   senderPk.toLowerCase(),
-                  myKeyPair,
+                  activeKeyPair,
                   sender === activeAddress,
-                  activeAddress
+                  activeAddress,
+                  sender
                 );
+                if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
                 if (!stealthRes) {
+                  processedOpsCache.set(cacheKey, { skip: true });
                   continue;
                 }
                 recipient = stealthRes.recipientAddress;
-                if (stealthRes.recipientPkHex && !peerPublicKeys.has(recipient)) {
-                  peerPublicKeys.set(recipient, stealthRes.recipientPkHex.toLowerCase());
-                }
                 text = stealthRes.text;
                 decrypted = true;
                 isStealth = true;
               } catch (e) {
+                if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+                processedOpsCache.set(cacheKey, { skip: true });
                 continue;
               }
             } else {
               if (sender !== activeAddress && recipient !== activeAddress) {
+                processedOpsCache.set(cacheKey, { skip: true });
                 continue;
               }
               if (isEncrypted) {
-                if (myKeyPair) {
+                const fallbackLockedText = isPqPacket
+                  ? '🛡️ Post-Quantum Encrypted Message'
+                  : '🔒 End-to-End Encrypted Message';
+                if (activeKeyPair) {
                   try {
-                    const plain = await decryptChatMessage(encHex, senderPk.toLowerCase(), myKeyPair, sender === activeAddress);
+                    const decFn = isPqPacket ? decryptPqChatMessage : decryptChatMessage;
+                    const plain = await decFn(
+                      encHex,
+                      senderPk.toLowerCase(),
+                      activeKeyPair,
+                      sender === activeAddress,
+                      sender,
+                      recipient
+                    );
+                    if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
                     if (plain !== null) {
                       text = plain;
                       decrypted = true;
                     } else {
-                      text = '🔒 End-to-End Encrypted Message';
+                      text = fallbackLockedText;
                     }
                   } catch (e) {
-                    text = '🔒 End-to-End Encrypted Message';
+                    if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+                    text = fallbackLockedText;
                   }
                 } else {
-                  text = '🔒 End-to-End Encrypted Message';
+                  text = fallbackLockedText;
                 }
               }
             }
@@ -2225,33 +3508,33 @@
             if (!nextMap.has(peer)) {
               nextMap.set(peer, []);
               resolveAlias(peer);
-              if (!peerPublicKeys.has(peer)) {
-                resolvePeerPublicKey(peer);
-              }
             }
 
-            nextMap.get(peer).push({
+            const msgEntry = {
               id: op.id,
               sender,
               recipient,
               text,
               isEncrypted,
               isStealth,
+              isPq: isPqPacket,
               decrypted,
               encHex: encHex || null,
               senderPkHex: senderPk ? senderPk.toLowerCase() : null,
               timestamp: op.timestamp
-            });
+            };
+            processedOpsCache.set(cacheKey, { skip: false, entry: msgEntry });
+            nextMap.get(peer).push(msgEntry);
           }
 
-          nextMap.forEach(list => list.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
+          if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
           conversations = nextMap;
 
+          if (currentRecipient && !conversations.has(currentRecipient)) {
+            currentRecipient = null;
+          }
           if (!currentRecipient && conversations.size > 0) {
             currentRecipient = conversations.keys().next().value;
-          }
-          if (currentRecipient && !peerPublicKeys.has(currentRecipient)) {
-            resolvePeerPublicKey(currentRecipient);
           }
 
           updateE2EEControlsUI();
@@ -2289,16 +3572,27 @@
           const last = msgs[msgs.length - 1];
           const timeStr = last ? new Date(last.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'New';
           const preview = last
-            ? (last.isStealth && last.decrypted ? `🕵️ ${last.text}` : last.isEncrypted && last.decrypted ? `🔒 ${last.text}` : last.text)
+            ? (last.isStealth && last.decrypted
+              ? `${last.isPq ? '🕵️🛡️' : '🕵️'} ${last.text}`
+              : last.isEncrypted && last.decrypted
+                ? `${last.isPq ? '🛡️' : '🔒'} ${last.text}`
+                : last.text)
             : 'Start chatting on-chain…';
           const displayName = aliasCache.get(peer) || shortAddr(peer);
           const peerPk = peerPublicKeys.get(peer);
+          const peerPq = peerPqPublicKeys.get(peer);
+
+          const keyIconHtml = peerPq
+            ? ` <span data-tooltip-title="Post-Quantum Hybrid E2EE Ready" data-tooltip="This contact has published both X25519 and NIST ML-KEM-512 Post-Quantum keys on-chain" data-tooltip-mono="X25519: ${escapeHtml(peerPk || '')} | ML-KEM-512: ${escapeHtml(peerPq.slice(0, 16))}…" data-tooltip-variant="purple" style="font-size:11px;">🛡️</span>`
+            : peerPk
+              ? ` <span data-tooltip-title="E2EE Ready" data-tooltip="This contact has published a standard X25519 encryption key on-chain" data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald" style="font-size:11px;">🔐</span>`
+              : '';
 
           item.innerHTML = `
             <img class="dialog-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(peer)}" alt="" />
             <div class="dialog-meta">
               <div class="dialog-top">
-                <span class="dialog-name">${escapeHtml(displayName)}${peerPk ? ` <span data-tooltip-title="E2EE Ready" data-tooltip="This contact has published an X25519 encryption key on-chain" data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald" style="font-size:11px;">🔐</span>` : ''}</span>
+                <span class="dialog-name">${escapeHtml(displayName)}${keyIconHtml}</span>
                 <span class="dialog-time">${escapeHtml(timeStr)}</span>
               </div>
               <div class="dialog-preview">${escapeHtml(preview)}</div>
@@ -2306,9 +3600,6 @@
           `;
           item.addEventListener('click', () => {
             currentRecipient = peer;
-            if (!peerPublicKeys.has(peer)) {
-              resolvePeerPublicKey(peer);
-            }
             updateComposerState();
             renderDialogs();
             renderActiveConversation();
@@ -2332,13 +3623,16 @@
         }
         const displayName = aliasCache.get(currentRecipient) || shortAddr(currentRecipient);
         const peerPk = peerPublicKeys.get(currentRecipient) || '';
-        const nextState = `${currentRecipient}|${displayName}|${peerPk}`;
+        const peerPq = peerPqPublicKeys.get(currentRecipient) || '';
+        const nextState = `${currentRecipient}|${displayName}|${peerPk}|${peerPq ? peerPq.slice(0, 16) : ''}`;
         if (nextState === lastChatHeaderState) return;
         lastChatHeaderState = nextState;
 
-        const badgeHtml = peerPk
-          ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. You can send Encrypted or Stealth E2EE messages to this wallet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
-          : `<span class="peer-e2ee-badge unavailable" data-tooltip-title="Peer E2EE Key Not Published" data-tooltip="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically attaches your public key so they can reply encrypted." data-tooltip-variant="amber">🔓 Peer Key Not Published</span>`;
+        const badgeHtml = peerPk && peerPq
+          ? `<span class="peer-e2ee-badge pq-ready" data-tooltip-title="Recipient Post-Quantum Hybrid Key Verified" data-tooltip="Both X25519 (32B) and NIST ML-KEM-512 (800B) public keys discovered on-chain. Supports Encrypted NFT (~0.084 XTZ) and Stealth (~0.001 XTZ) in both Standard and Post-Quantum Hybrid modes." data-tooltip-mono="X25519: ${escapeHtml(peerPk)} | ML-KEM-512: ${escapeHtml(peerPq.slice(0, 24))}…" data-tooltip-variant="purple">🛡️ E2EE + PQ Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
+          : peerPk
+            ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient Standard E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. Supports Encrypted NFT (~0.084 XTZ) or Stealth E2EE (~0.001 XTZ). Recipient has not published an optional ML-KEM-512 PQ key yet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
+            : `<span class="peer-e2ee-badge unavailable" data-tooltip-title="Peer E2EE Key Not Published" data-tooltip="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically attaches your public key so they can reply encrypted." data-tooltip-variant="amber">🔓 Peer Key Not Published</span>`;
 
         chatHeader.innerHTML = `
           <div class="peer-info">
@@ -2366,7 +3660,7 @@
             <div class="empty-pane-state">
               <div class="empty-icon-circle">💬</div>
               <h3>Direct Wallet-to-Wallet Messaging</h3>
-              <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet. Enable optional End-to-End Encryption (X25519 + AES-256-GCM) or Stealth Mode so only your recipient can decrypt it.</p>
+              <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet. Enable optional End-to-End Encryption (X25519 + AES-256-GCM), Stealth Mode, or Post-Quantum Hybrid (NIST ML-KEM-512) protection.</p>
             </div>
           `;
           return;
@@ -2400,15 +3694,23 @@
           box.className = `bubble-box${m.isEncrypted ? ' encrypted-bubble' : ''}`;
 
           if (m.isEncrypted && !m.decrypted) {
-            box.innerHTML = `
-              <div class="bubble-locked-card">
-                <span>🔒 <strong>End-to-End Encrypted Message</strong></span>
-                <button type="button" class="btn-unlock-inline" data-tooltip-title="Decrypt Message" data-tooltip="Sign a free off-chain message with your wallet to unlock your X25519 key and read this message" data-tooltip-variant="cyan">🔑 Sign with Wallet to Decrypt</button>
-              </div>
-            `;
-            const btn = box.querySelector('.btn-unlock-inline');
-            if (btn) {
-              btn.addEventListener('click', () => unlockEncryption());
+            if (!myKeyPair) {
+              box.innerHTML = `
+                <div class="bubble-locked-card">
+                  <span>${m.isPq ? '🛡️ <strong>Post-Quantum Encrypted Message</strong>' : '🔒 <strong>End-to-End Encrypted Message</strong>'}</span>
+                  <button type="button" class="btn-unlock-inline" data-tooltip-title="Decrypt Message" data-tooltip="Sign a free off-chain message with your wallet to unlock your X25519 + ML-KEM-512 keys and read this message" data-tooltip-variant="cyan">🔑 Sign with Wallet to Decrypt</button>
+                </div>
+              `;
+              const btn = box.querySelector('.btn-unlock-inline');
+              if (btn) {
+                btn.addEventListener('click', () => unlockEncryption());
+              }
+            } else {
+              box.innerHTML = `
+                <div class="bubble-locked-card">
+                  <span>⚠️ <strong>Unable to decrypt with current E2EE key</strong></span>
+                </div>
+              `;
             }
           } else {
             box.textContent = m.text;
@@ -2418,20 +3720,45 @@
           meta.className = 'bubble-meta';
           if (m.isEncrypted) {
             const tag = document.createElement('span');
-            tag.className = 'bubble-e2ee-tag';
-            if (m.isStealth) {
+            tag.className = `bubble-e2ee-tag${m.isPq ? ' pq-tag' : ''}`;
+            if (m.isStealth && m.isPq) {
+              tag.textContent = '🕵️🛡️ PQ-Stealth E2EE';
+              tag.setAttribute('data-tooltip-title', 'Post-Quantum Stealth E2EE (0x04)');
+              tag.setAttribute(
+                'data-tooltip',
+                'Quantum-resistant X25519 + NIST ML-KEM-512 + AES-256-GCM. Self-minted to sender so both message content and recipient identity are hidden on-chain (only visible inside chat.tez.cool, not in recipient wallet/indexer).'
+              );
+              tag.setAttribute('data-tooltip-variant', 'purple');
+            } else if (m.isStealth) {
               tag.textContent = '🕵️ Stealth E2EE';
-              tag.setAttribute('data-tooltip-title', 'Stealth End-to-End Encrypted');
-              tag.setAttribute('data-tooltip', 'Both the message content and recipient wallet address are hidden from outsiders on-chain (0x02 Stealth envelope).');
+              tag.setAttribute('data-tooltip-title', 'Stealth End-to-End Encrypted (0x02)');
+              tag.setAttribute(
+                'data-tooltip',
+                'Self-minted to sender so both message content and recipient address are hidden on-chain (0x02 Stealth envelope). Only visible inside chat.tez.cool — does not appear in the recipient wallet/indexer.'
+              );
               tag.setAttribute('data-tooltip-variant', 'cyan');
+            } else if (m.isPq) {
+              tag.textContent = m.decrypted ? '🛡️ PQ-Hybrid E2EE' : myKeyPair ? '⚠️ PQ Decryption Failed' : '🛡️ PQ-Hybrid Locked';
+              tag.setAttribute('data-tooltip-title', m.decrypted ? 'Post-Quantum Hybrid E2EE (0x03)' : 'Post-Quantum Ciphertext');
+              tag.setAttribute(
+                'data-tooltip',
+                m.decrypted
+                  ? 'Decrypted locally using Hybrid X25519 ECDH + NIST ML-KEM-512 + AES-256-GCM'
+                  : myKeyPair
+                    ? 'Ciphertext could not be authenticated with your current E2EE key (encrypted for a different key or malformed)'
+                    : 'Unlock E2EE with your wallet signature to decapsulate ML-KEM-512 and decrypt this message'
+              );
+              tag.setAttribute('data-tooltip-variant', m.decrypted ? 'purple' : 'amber');
             } else {
-              tag.textContent = m.decrypted ? '🔒 E2EE Decrypted' : '🔒 E2EE Locked';
+              tag.textContent = m.decrypted ? '🔒 E2EE Decrypted' : myKeyPair ? '⚠️ E2EE Decryption Failed' : '🔒 E2EE Locked';
               tag.setAttribute('data-tooltip-title', m.decrypted ? 'Verified End-to-End Encrypted' : 'Encrypted Ciphertext');
               tag.setAttribute(
                 'data-tooltip',
                 m.decrypted
                   ? 'Decrypted locally in your browser using X25519 ECDH + AES-256-GCM'
-                  : 'Unlock E2EE with your wallet signature to decrypt this message'
+                  : myKeyPair
+                    ? 'Ciphertext could not be authenticated with your current E2EE key (encrypted for a different key or malformed)'
+                    : 'Unlock E2EE with your wallet signature to decrypt this message'
               );
               tag.setAttribute('data-tooltip-variant', m.decrypted ? 'emerald' : 'amber');
             }
@@ -2460,51 +3787,93 @@
         }
         currentRecipient = addr;
         newAddressInput.value = '';
-        resolvePeerPublicKey(addr);
         renderDialogs();
         renderActiveConversation();
       });
 
       async function sendDm() {
-        if (!client || !myAddress || !currentRecipient) return;
+        if (!client || !myAddress || !currentRecipient || isSendingDm) return;
         const text = dmInput.value.trim();
         if (!text) return;
+        if (new TextEncoder().encode(text).length > MAX_DM_BYTES) {
+          toast(`Message is too long (maximum ${MAX_DM_BYTES} UTF-8 bytes).`);
+          return;
+        }
+
+        const activeAddr = myAddress;
+        const targetRecipient = currentRecipient;
+        isSendingDm = true;
 
         try {
           dmSendBtn.disabled = true;
           dmSendBtn.textContent = stealthMode
-            ? 'Stealth Minting…'
+            ? (pqMode ? 'PQ Stealth Minting…' : 'Stealth Minting…')
             : encryptMode
-              ? 'Encrypting & Minting…'
+              ? (pqMode ? 'PQ Encrypting & Minting…' : 'Encrypting & Minting…')
               : 'Minting…';
 
           let nameHex = stringToHex(text);
           let encHex = null;
-          let mintDestinationAddress = currentRecipient;
+          let mintDestinationAddress = targetRecipient;
+          let usedPq = false;
 
           if (encryptMode) {
             if (!myKeyPair) {
               const ok = await unlockEncryption();
-              if (!ok) return;
+              if (!ok || myAddress !== activeAddr || currentRecipient !== targetRecipient || !myKeyPair) return;
             }
-            const peerPk = peerPublicKeys.get(currentRecipient) || (await resolvePeerPublicKey(currentRecipient));
+            let peerPk = peerPublicKeys.get(targetRecipient);
+            if (!peerPk) {
+              await fetchAllMessages();
+              if (myAddress !== activeAddr || currentRecipient !== targetRecipient || !myKeyPair) return;
+              peerPk = peerPublicKeys.get(targetRecipient);
+            }
             if (!peerPk) {
               toast('Cannot encrypt: recipient has not published an E2EE public key on-chain yet.');
               return;
             }
-            if (stealthMode) {
-              encHex = await encryptStealthMessage(text, currentRecipient, myKeyPair, peerPk);
-              mintDestinationAddress = myAddress;
+
+            if (pqMode) {
+              if (!peerPqPublicKeys.has(targetRecipient) && targetRecipient !== activeAddr) {
+                await fetchAllMessages();
+                if (myAddress !== activeAddr || currentRecipient !== targetRecipient || !myKeyPair) return;
+              }
+              const peerPqPk =
+                peerPqPublicKeys.get(targetRecipient) ||
+                (targetRecipient === activeAddr ? myKeyPair.pqPublicKeyHex : null);
+              if (!peerPqPk) {
+                toast(
+                  'Cannot send PQ-Hybrid: recipient has not published an ML-KEM-512 key (pq_pk) on-chain yet. Ask them to click "🛡️ Publish PQ Key" or toggle "⚛️ PQ" off to send standard X25519.'
+                );
+                return;
+              }
+              usedPq = true;
+              if (stealthMode) {
+                encHex = await encryptPqStealthMessage(text, targetRecipient, myKeyPair, peerPk, peerPqPk, activeAddr);
+                mintDestinationAddress = activeAddr;
+              } else {
+                encHex = await encryptPqChatMessage(text, myKeyPair, peerPk, peerPqPk, activeAddr, targetRecipient);
+                mintDestinationAddress = targetRecipient;
+              }
+              nameHex = stringToHex('🛡️ Post-Quantum Encrypted Message (chat.tez.cool)');
             } else {
-              encHex = await encryptChatMessage(text, myKeyPair, peerPk);
-              mintDestinationAddress = currentRecipient;
+              if (stealthMode) {
+                encHex = await encryptStealthMessage(text, targetRecipient, myKeyPair, peerPk, activeAddr);
+                mintDestinationAddress = activeAddr;
+              } else {
+                encHex = await encryptChatMessage(text, myKeyPair, peerPk, activeAddr, targetRecipient);
+                mintDestinationAddress = targetRecipient;
+              }
+              nameHex = stringToHex('🔒 Encrypted Message (chat.tez.cool)');
             }
-            nameHex = stringToHex('🔒 Encrypted Message (chat.tez.cool)');
           }
+
+          if (myAddress !== activeAddr || currentRecipient !== targetRecipient) return;
+          const activeKeyPair = myKeyPair;
 
           // Build Michelson metadata map sorted strictly in ASCII key order
           const metadataEntries = [
-            { key: 'artifactUri', hex: stringToHex(`https://services.tzkt.io/v1/avatars/${myAddress}`) },
+            { key: 'artifactUri', hex: stringToHex(`https://services.tzkt.io/v1/avatars/${activeAddr}`) },
             { key: 'decimals', hex: '30' },
             { key: 'name', hex: nameHex }
           ];
@@ -2512,8 +3881,8 @@
           if (encHex) {
             metadataEntries.push({ key: 'enc', hex: encHex });
           }
-          if (myKeyPair && myKeyPair.publicKeyHex) {
-            metadataEntries.push({ key: 'pk', hex: myKeyPair.publicKeyHex });
+          if (activeKeyPair && activeKeyPair.publicKeyHex) {
+            metadataEntries.push({ key: 'pk', hex: activeKeyPair.publicKeyHex });
           }
 
           metadataEntries.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
@@ -2544,21 +3913,30 @@
             ]
           });
 
-          if (myKeyPair) {
+          if (myAddress === activeAddr && activeKeyPair && myKeyPair === activeKeyPair) {
             myKeyPublishedOnChain = true;
+            peerPublicKeys.set(activeAddr, activeKeyPair.publicKeyHex);
+            pkOwnerAddresses.set(activeKeyPair.publicKeyHex, { address: activeAddr, minOpId: 0 });
           }
-          dmInput.value = '';
+          if (currentRecipient === targetRecipient) {
+            dmInput.value = '';
+          }
           toast(
             stealthMode
-              ? '🕵️ Stealth E2EE message minted! Both content and recipient address are hidden on-chain.'
+              ? (usedPq
+                  ? '🕵️🛡️ Post-Quantum Stealth message minted! Content & recipient are quantum-resistantly hidden on-chain.'
+                  : '🕵️ Stealth E2EE message minted! Both content and recipient address are hidden on-chain.')
               : encHex
-                ? '🔒 Encrypted message minted! Only you and the recipient can decrypt it.'
+                ? (usedPq
+                    ? '🛡️ Post-Quantum Hybrid (X25519 + ML-KEM-512) message minted!'
+                    : '🔒 Encrypted message minted! Only you and the recipient can decrypt it.')
                 : 'Message minted! It will appear once confirmed on-chain.'
           );
           setTimeout(fetchAllMessages, 4000);
         } catch (err) {
           toast('Transaction cancelled or failed.');
         } finally {
+          isSendingDm = false;
           dmSendBtn.disabled = false;
           updateComposerState();
         }
@@ -2573,6 +3951,14 @@
       });
 
       function updateAuthUI() {
+        authStateVersion++;
+        processedOpsCache.clear();
+        peerPublicKeys.clear();
+        peerPqPublicKeys.clear();
+        pkOwnerAddresses.clear();
+        pqPkOwnerAddresses.clear();
+        zeroizeKeyPair(myKeyPair);
+        myKeyPair = null;
         if (myAddress) {
           walletPill.classList.add('visible');
           walletPill.setAttribute('data-tooltip-mono', myAddress);
@@ -2585,8 +3971,12 @@
           myKeyPair = loadSessionKeyPair(myAddress);
           if (myKeyPair) {
             peerPublicKeys.set(myAddress, myKeyPair.publicKeyHex);
+            peerPqPublicKeys.set(myAddress, myKeyPair.pqPublicKeyHex);
+            pkOwnerAddresses.set(myKeyPair.publicKeyHex, { address: myAddress, minOpId: 0 });
+            pqPkOwnerAddresses.set(myKeyPair.pqPublicKeyHex, { address: myAddress, minOpId: 0 });
           }
           myKeyPublishedOnChain = false;
+          myPqKeyPublishedOnChain = false;
           updateE2EEControlsUI();
 
           fetchAllMessages();
@@ -2600,10 +3990,11 @@
             clearInterval(pollTimer);
             pollTimer = null;
           }
-          myKeyPair = null;
           myKeyPublishedOnChain = false;
+          myPqKeyPublishedOnChain = false;
           encryptMode = false;
           stealthMode = false;
+          pqMode = false;
           conversations.clear();
           currentRecipient = null;
           dmInput.value = '';
@@ -2624,7 +4015,9 @@
         });
 
         client.subscribeToEvent(beacon.BeaconEvent.ACTIVE_ACCOUNT_SET, acc => {
-          myAddress = acc?.address || null;
+          const nextAddr = acc?.address || null;
+          if (nextAddr === myAddress) return;
+          myAddress = nextAddr;
           updateAuthUI();
         });
       }
@@ -2639,12 +4032,17 @@
             } else {
               await client.clearActiveAccount();
             }
-            myAddress = null;
-            updateAuthUI();
+            if (myAddress !== null) {
+              myAddress = null;
+              updateAuthUI();
+            }
           } else {
             const perms = await client.requestPermissions();
-            myAddress = perms.address || perms.account?.address || (await client.getActiveAccount())?.address;
-            updateAuthUI();
+            const nextAddr = perms.address || perms.account?.address || (await client.getActiveAccount())?.address || null;
+            if (nextAddr !== myAddress) {
+              myAddress = nextAddr;
+              updateAuthUI();
+            }
           }
         } catch (e) {
           toast('Wallet connection cancelled.');

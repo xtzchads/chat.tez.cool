@@ -972,6 +972,161 @@
       border: 1px solid rgba(16, 185, 129, 0.32);
       color: #6ee7b7;
       font-size: 9.5px;
+      cursor: help;
+    }
+
+    /* Custom Glassmorphic Tooltip System */
+    .custom-tooltip {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 350;
+      max-width: 310px;
+      padding: 10px 13px;
+      border-radius: var(--radius-md);
+      background: rgba(13, 17, 32, 0.94);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid var(--border-bright);
+      box-shadow: 0 16px 38px -6px rgba(0, 0, 0, 0.78), 0 0 20px rgba(162, 124, 238, 0.18);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      line-height: 1.45;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate3d(0, 6px, 0) scale(0.96);
+      transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+                  visibility 0.16s;
+      overflow: visible;
+    }
+
+    .custom-tooltip::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 12px;
+      right: 12px;
+      height: 1.5px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+      opacity: 0.85;
+    }
+
+    .custom-tooltip.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    .custom-tooltip[data-variant="emerald"] {
+      border-color: rgba(16, 185, 129, 0.48);
+      box-shadow: 0 16px 38px -6px rgba(0, 0, 0, 0.78), 0 0 20px rgba(16, 185, 129, 0.18);
+    }
+    .custom-tooltip[data-variant="emerald"]::before {
+      background: linear-gradient(90deg, var(--accent-emerald), var(--accent-cyan));
+    }
+
+    .custom-tooltip[data-variant="amber"] {
+      border-color: rgba(245, 158, 11, 0.48);
+      box-shadow: 0 16px 38px -6px rgba(0, 0, 0, 0.78), 0 0 20px rgba(245, 158, 11, 0.16);
+    }
+    .custom-tooltip[data-variant="amber"]::before {
+      background: linear-gradient(90deg, var(--accent-amber), var(--accent-purple));
+    }
+
+    .custom-tooltip[data-variant="cyan"] {
+      border-color: rgba(0, 242, 242, 0.45);
+      box-shadow: 0 16px 38px -6px rgba(0, 0, 0, 0.78), 0 0 20px rgba(0, 242, 242, 0.18);
+    }
+    .custom-tooltip[data-variant="cyan"]::before {
+      background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+    }
+
+    .custom-tooltip-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-display);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 4px;
+      letter-spacing: 0.02em;
+    }
+
+    .custom-tooltip-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent-purple);
+      box-shadow: 0 0 8px var(--accent-purple);
+      flex-shrink: 0;
+    }
+
+    .custom-tooltip[data-variant="emerald"] .custom-tooltip-dot {
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+    }
+
+    .custom-tooltip[data-variant="amber"] .custom-tooltip-dot {
+      background: var(--accent-amber);
+      box-shadow: 0 0 8px var(--accent-amber);
+    }
+
+    .custom-tooltip[data-variant="cyan"] .custom-tooltip-dot {
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    .custom-tooltip-body {
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      line-height: 1.45;
+    }
+
+    .custom-tooltip-mono {
+      margin-top: 6px;
+      padding: 4px 7px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--accent-cyan);
+      word-break: break-all;
+    }
+
+    .custom-tooltip-arrow {
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      background: rgba(13, 17, 32, 0.95);
+      border-right: 1px solid var(--border-bright);
+      border-bottom: 1px solid var(--border-bright);
+      transform: rotate(45deg);
+    }
+
+    .custom-tooltip[data-variant="emerald"] .custom-tooltip-arrow {
+      border-color: rgba(16, 185, 129, 0.48);
+    }
+    .custom-tooltip[data-variant="amber"] .custom-tooltip-arrow {
+      border-color: rgba(245, 158, 11, 0.48);
+    }
+    .custom-tooltip[data-variant="cyan"] .custom-tooltip-arrow {
+      border-color: rgba(0, 242, 242, 0.45);
+    }
+
+    .custom-tooltip[data-placement="top"] .custom-tooltip-arrow {
+      bottom: -5.5px;
+      transform: rotate(45deg);
+    }
+
+    .custom-tooltip[data-placement="bottom"] .custom-tooltip-arrow {
+      top: -5.5px;
+      transform: rotate(225deg);
     }
 
     @media (max-width: 820px) {
@@ -1009,16 +1164,16 @@
             <span class="status-dot"></span>
             <span>On-Chain NFT Direct Messaging</span>
           </div>
-          <a class="contract-tag" href="https://tzkt.io/KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7" target="_blank" rel="noopener noreferrer">
+          <a class="contract-tag" href="https://tzkt.io/KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7" target="_blank" rel="noopener noreferrer" data-tooltip-title="NFTChat Smart Contract" data-tooltip="Inspect all minted message tokens on TzKT Explorer" data-tooltip-mono="KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7" data-tooltip-variant="cyan">
             <span>KT1Nuwj…VBJz7</span>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
           </a>
         </div>
 
         <div class="topbar-right">
-          <button type="button" class="btn-publish-key" id="publishKeyBtn" title="Publish your E2EE public key on-chain so anyone can send you encrypted messages immediately">📡 Publish Key</button>
-          <button type="button" class="btn-e2ee locked" id="e2eeBtn" title="Unlock End-to-End Encryption with a deterministic wallet signature">🔓 Unlock E2EE</button>
-          <div class="wallet-pill" id="walletPill">
+          <button type="button" class="btn-publish-key" id="publishKeyBtn" data-tooltip-title="Publish Public Key On-Chain" data-tooltip="Mint a 1-time self-registration token so anyone can send you encrypted messages immediately" data-tooltip-variant="cyan">📡 Publish Key</button>
+          <button type="button" class="btn-e2ee locked" id="e2eeBtn" data-tooltip-title="End-to-End Encryption Locked" data-tooltip="Sign a free off-chain message with your wallet to unlock your X25519 encryption keypair" data-tooltip-variant="amber">🔓 Unlock E2EE</button>
+          <div class="wallet-pill" id="walletPill" data-tooltip-title="Connected Tezos Wallet" data-tooltip="Active account for minting and decrypting messages" data-tooltip-variant="emerald">
             <img id="myAvatar" src="" alt="" />
             <span id="myAddressLabel"></span>
           </div>
@@ -1036,7 +1191,7 @@
             </div>
             <div class="new-chat-row">
               <input type="text" id="newAddressInput" class="new-chat-input" placeholder="tz1 / tz2 / tz4 / KT1 address…" />
-              <button type="button" class="btn-add-chat" id="addChatBtn">+ New</button>
+              <button type="button" class="btn-add-chat" id="addChatBtn" data-tooltip-title="Start New Chat" data-tooltip="Open a direct conversation with any Tezos address" data-tooltip-variant="cyan">+ New</button>
             </div>
           </div>
           <div class="dialogs-list" id="dialogsList">
@@ -1064,8 +1219,8 @@
 
           <div class="dm-composer">
             <div class="emoji-popover" id="emojiPopover"></div>
-            <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" title="Insert Emoji">😊</button>
-            <button type="button" class="dm-encrypt-toggle" id="encryptToggleBtn" title="Toggle End-to-End Encryption for this message" disabled>🌐 Public</button>
+            <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" data-tooltip="Insert Emoji">😊</button>
+            <button type="button" class="dm-encrypt-toggle" id="encryptToggleBtn" data-tooltip-title="Public On-Chain Mode" data-tooltip="Message is readable on-chain. Click to enable End-to-End Encryption." disabled>🌐 Public</button>
             <input type="text" id="dmInput" class="dm-input" placeholder="Connect wallet & select a recipient to send a message…" disabled />
             <button type="button" class="dm-send-btn" id="dmSendBtn" disabled>Mint & Send</button>
           </div>
@@ -1075,6 +1230,7 @@
   </div>
 
   <div class="toast-stack" id="toastStack"></div>
+  <div class="custom-tooltip" id="customTooltip" role="tooltip" aria-hidden="true"></div>
 
   <script>
     (function () {
@@ -1524,11 +1680,144 @@
         await Promise.all(tasks);
       }
 
+      /* =========================================================================
+       * Custom Glassmorphic Tooltip Controller
+       * ========================================================================= */
+      const customTooltip = document.getElementById('customTooltip');
+      let activeTooltipTarget = null;
+
+      function positionCustomTooltip(targetEl) {
+        if (!customTooltip || !targetEl) return;
+        const rect = targetEl.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) {
+          hideCustomTooltip();
+          return;
+        }
+
+        const tipRect = customTooltip.getBoundingClientRect();
+        const gap = 10;
+        const pad = 12;
+
+        let placement = 'top';
+        let top = rect.top - tipRect.height - gap;
+        if (top < pad) {
+          placement = 'bottom';
+          top = rect.bottom + gap;
+        }
+
+        let left = rect.left + rect.width / 2 - tipRect.width / 2;
+        if (left < pad) left = pad;
+        if (left + tipRect.width > window.innerWidth - pad) {
+          left = window.innerWidth - pad - tipRect.width;
+        }
+
+        customTooltip.setAttribute('data-placement', placement);
+        customTooltip.style.top = `${Math.round(top)}px`;
+        customTooltip.style.left = `${Math.round(left)}px`;
+
+        const arrow = customTooltip.querySelector('.custom-tooltip-arrow');
+        if (arrow) {
+          const targetCenter = rect.left + rect.width / 2;
+          const arrowOffset = Math.max(14, Math.min(tipRect.width - 18, targetCenter - left - 4.5));
+          arrow.style.left = `${Math.round(arrowOffset)}px`;
+        }
+      }
+
+      function renderTooltipContent(targetEl) {
+        if (!customTooltip || !targetEl) return false;
+        // Convert any remaining native title attribute automatically
+        if (targetEl.hasAttribute('title')) {
+          const t = targetEl.getAttribute('title');
+          if (t && !targetEl.hasAttribute('data-tooltip')) {
+            targetEl.setAttribute('data-tooltip', t);
+          }
+          targetEl.removeAttribute('title');
+        }
+
+        const body = targetEl.getAttribute('data-tooltip');
+        const title = targetEl.getAttribute('data-tooltip-title');
+        const mono = targetEl.getAttribute('data-tooltip-mono');
+        const variant = targetEl.getAttribute('data-tooltip-variant') || 'purple';
+
+        if (!body && !title && !mono) return false;
+
+        customTooltip.setAttribute('data-variant', variant);
+        let html = '';
+        if (title) {
+          html += `<div class="custom-tooltip-title"><span class="custom-tooltip-dot"></span><span>${escapeHtml(title)}</span></div>`;
+        }
+        if (body) {
+          html += `<div class="custom-tooltip-body">${escapeHtml(body)}</div>`;
+        }
+        if (mono) {
+          html += `<div class="custom-tooltip-mono">${escapeHtml(mono)}</div>`;
+        }
+        html += `<div class="custom-tooltip-arrow"></div>`;
+
+        customTooltip.innerHTML = html;
+        return true;
+      }
+
+      function showCustomTooltip(targetEl) {
+        if (!renderTooltipContent(targetEl)) {
+          hideCustomTooltip();
+          return;
+        }
+        activeTooltipTarget = targetEl;
+        customTooltip.classList.add('visible');
+        customTooltip.setAttribute('aria-hidden', 'false');
+        positionCustomTooltip(targetEl);
+      }
+
+      function hideCustomTooltip() {
+        activeTooltipTarget = null;
+        if (!customTooltip) return;
+        customTooltip.classList.remove('visible');
+        customTooltip.setAttribute('aria-hidden', 'true');
+      }
+
+      function refreshActiveTooltip() {
+        if (activeTooltipTarget && document.body.contains(activeTooltipTarget)) {
+          showCustomTooltip(activeTooltipTarget);
+        } else if (activeTooltipTarget) {
+          hideCustomTooltip();
+        }
+      }
+
+      document.addEventListener('mouseover', e => {
+        const el = e.target.closest('[data-tooltip], [data-tooltip-title], [title]');
+        if (el) {
+          showCustomTooltip(el);
+        } else if (activeTooltipTarget) {
+          hideCustomTooltip();
+        }
+      });
+
+      document.addEventListener('mouseout', e => {
+        if (!activeTooltipTarget) return;
+        const related = e.relatedTarget;
+        if (!related || !activeTooltipTarget.contains(related)) {
+          hideCustomTooltip();
+        }
+      });
+
+      document.addEventListener('focusin', e => {
+        const el = e.target.closest('[data-tooltip], [data-tooltip-title], [title]');
+        if (el) showCustomTooltip(el);
+      });
+
+      document.addEventListener('focusout', () => hideCustomTooltip());
+      window.addEventListener('scroll', () => hideCustomTooltip(), true);
+      window.addEventListener('resize', () => {
+        if (activeTooltipTarget) positionCustomTooltip(activeTooltipTarget);
+      });
+
       function updateE2EEControlsUI() {
         if (!myAddress) {
           e2eeBtn.classList.remove('visible', 'unlocked');
           e2eeBtn.classList.add('locked');
           publishKeyBtn.classList.remove('visible');
+          hideCustomTooltip();
           return;
         }
         e2eeBtn.classList.add('visible');
@@ -1537,7 +1826,10 @@
           e2eeBtn.classList.add('unlocked');
           const shortKey = `${myKeyPair.publicKeyHex.slice(0, 4)}…${myKeyPair.publicKeyHex.slice(-4)}`;
           e2eeBtn.textContent = `🔐 E2EE (${shortKey})`;
-          e2eeBtn.title = `End-to-End Encryption active (X25519 pubkey: ${myKeyPair.publicKeyHex}). Click to lock.`;
+          e2eeBtn.setAttribute('data-tooltip-title', 'End-to-End Encryption Active');
+          e2eeBtn.setAttribute('data-tooltip', 'Your X25519 keypair is unlocked in memory. Click to lock E2EE for this session.');
+          e2eeBtn.setAttribute('data-tooltip-mono', `X25519: ${myKeyPair.publicKeyHex}`);
+          e2eeBtn.setAttribute('data-tooltip-variant', 'emerald');
           if (!myKeyPublishedOnChain) {
             publishKeyBtn.classList.add('visible');
           } else {
@@ -1547,10 +1839,14 @@
           e2eeBtn.classList.remove('unlocked');
           e2eeBtn.classList.add('locked');
           e2eeBtn.textContent = '🔓 Unlock E2EE';
-          e2eeBtn.title = 'Sign a free off-chain message with your wallet to unlock End-to-End Encryption';
+          e2eeBtn.setAttribute('data-tooltip-title', 'End-to-End Encryption Locked');
+          e2eeBtn.setAttribute('data-tooltip', 'Sign a free off-chain message with your wallet to unlock your X25519 encryption keypair.');
+          e2eeBtn.removeAttribute('data-tooltip-mono');
+          e2eeBtn.setAttribute('data-tooltip-variant', 'amber');
           publishKeyBtn.classList.remove('visible');
         }
         updateComposerState();
+        refreshActiveTooltip();
       }
 
       e2eeBtn.addEventListener('click', async () => {
@@ -1659,6 +1955,9 @@
         if (encryptMode) {
           encryptToggleBtn.classList.add('active');
           encryptToggleBtn.textContent = '🔒 Encrypted';
+          encryptToggleBtn.setAttribute('data-tooltip-title', 'End-to-End Encrypted Mode');
+          encryptToggleBtn.setAttribute('data-tooltip', 'Encrypted client-side with X25519 ECDH + AES-256-GCM. Only you and the recipient can decrypt it.');
+          encryptToggleBtn.setAttribute('data-tooltip-variant', 'emerald');
           dmInput.classList.add('encrypted-mode');
           dmSendBtn.classList.add('encrypted-mode');
           dmSendBtn.textContent = '🔒 Encrypt & Mint';
@@ -1668,6 +1967,9 @@
         } else {
           encryptToggleBtn.classList.remove('active');
           encryptToggleBtn.textContent = '🌐 Public';
+          encryptToggleBtn.setAttribute('data-tooltip-title', 'Public On-Chain Mode');
+          encryptToggleBtn.setAttribute('data-tooltip', 'Message is publicly readable on-chain. Click to switch to End-to-End Encrypted mode.');
+          encryptToggleBtn.setAttribute('data-tooltip-variant', 'purple');
           dmInput.classList.remove('encrypted-mode');
           dmSendBtn.classList.remove('encrypted-mode');
           dmSendBtn.textContent = 'Mint & Send';
@@ -1675,6 +1977,7 @@
             ? `Message ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)}…`
             : 'Connect wallet & select a recipient to send a message…';
         }
+        refreshActiveTooltip();
       }
 
       async function fetchAllMessages() {
@@ -1825,13 +2128,13 @@
             ? (last.isEncrypted && last.decrypted ? `🔒 ${last.text}` : last.text)
             : 'Start chatting on-chain…';
           const displayName = aliasCache.get(peer) || shortAddr(peer);
-          const hasPeerKey = peerPublicKeys.has(peer);
+          const peerPk = peerPublicKeys.get(peer);
 
           item.innerHTML = `
             <img class="dialog-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(peer)}" alt="" />
             <div class="dialog-meta">
               <div class="dialog-top">
-                <span class="dialog-name">${escapeHtml(displayName)}${hasPeerKey ? ' <span title="E2EE Ready" style="font-size:11px;">🔐</span>' : ''}</span>
+                <span class="dialog-name">${escapeHtml(displayName)}${peerPk ? ` <span data-tooltip-title="E2EE Ready" data-tooltip="This contact has published an X25519 encryption key on-chain" data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald" style="font-size:11px;">🔐</span>` : ''}</span>
                 <span class="dialog-time">${escapeHtml(timeStr)}</span>
               </div>
               <div class="dialog-preview">${escapeHtml(preview)}</div>
@@ -1862,8 +2165,8 @@
         const displayName = aliasCache.get(currentRecipient) || shortAddr(currentRecipient);
         const peerPk = peerPublicKeys.get(currentRecipient);
         const badgeHtml = peerPk
-          ? `<span class="peer-e2ee-badge ready" title="Recipient X25519 Public Key: ${escapeHtml(peerPk)}">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
-          : `<span class="peer-e2ee-badge unavailable" title="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically includes your public key.">🔓 Peer Key Not Published</span>`;
+          ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. You can send end-to-end encrypted messages to this wallet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
+          : `<span class="peer-e2ee-badge unavailable" data-tooltip-title="Peer E2EE Key Not Published" data-tooltip="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically attaches your public key so they can reply encrypted." data-tooltip-variant="amber">🔓 Peer Key Not Published</span>`;
 
         chatHeader.innerHTML = `
           <div class="peer-info">
@@ -1875,7 +2178,7 @@
           </div>
           <div class="peer-actions">
             ${badgeHtml}
-            <a class="contract-tag" href="https://tzkt.io/${escapeHtml(currentRecipient)}" target="_blank" rel="noopener noreferrer">
+            <a class="contract-tag" href="https://tzkt.io/${escapeHtml(currentRecipient)}" target="_blank" rel="noopener noreferrer" data-tooltip-title="View Account on TzKT" data-tooltip="Open recipient profile and transaction history on TzKT Explorer" data-tooltip-mono="${escapeHtml(currentRecipient)}" data-tooltip-variant="cyan">
               View on TzKT ↗
             </a>
           </div>
@@ -1919,7 +2222,7 @@
             box.innerHTML = `
               <div class="bubble-locked-card">
                 <span>🔒 <strong>End-to-End Encrypted Message</strong></span>
-                <button type="button" class="btn-unlock-inline">🔑 Sign with Wallet to Decrypt</button>
+                <button type="button" class="btn-unlock-inline" data-tooltip-title="Decrypt Message" data-tooltip="Sign a free off-chain message with your wallet to unlock your X25519 key and read this message" data-tooltip-variant="cyan">🔑 Sign with Wallet to Decrypt</button>
               </div>
             `;
             const btn = box.querySelector('.btn-unlock-inline');
@@ -1936,6 +2239,14 @@
             const tag = document.createElement('span');
             tag.className = 'bubble-e2ee-tag';
             tag.textContent = m.decrypted ? '🔒 E2EE Decrypted' : '🔒 E2EE Locked';
+            tag.setAttribute('data-tooltip-title', m.decrypted ? 'Verified End-to-End Encrypted' : 'Encrypted Ciphertext');
+            tag.setAttribute(
+              'data-tooltip',
+              m.decrypted
+                ? 'Decrypted locally in your browser using X25519 ECDH + AES-256-GCM'
+                : 'Unlock E2EE with your wallet signature to decrypt this message'
+            );
+            tag.setAttribute('data-tooltip-variant', m.decrypted ? 'emerald' : 'amber');
             meta.appendChild(tag);
           }
           const timeSpan = document.createElement('span');
@@ -2069,6 +2380,7 @@
       function updateAuthUI() {
         if (myAddress) {
           walletPill.classList.add('visible');
+          walletPill.setAttribute('data-tooltip-mono', myAddress);
           myAvatar.src = `https://services.tzkt.io/v1/avatars/${myAddress}`;
           myAddressLabel.textContent = shortAddr(myAddress);
           connectBtn.textContent = 'Disconnect';
@@ -2086,6 +2398,7 @@
           if (!pollTimer) pollTimer = setInterval(fetchAllMessages, 8000);
         } else {
           walletPill.classList.remove('visible');
+          walletPill.removeAttribute('data-tooltip-mono');
           connectBtn.textContent = 'Connect Wallet';
           connectBtn.classList.remove('disconnect');
           if (pollTimer) {

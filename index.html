@@ -845,6 +845,42 @@
       color: var(--text-primary);
     }
 
+    .bubble-text {
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .bubble-gif {
+      max-width: min(320px, 100%);
+      max-height: 220px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      display: block;
+      object-fit: contain;
+      background: rgba(0, 0, 0, 0.22);
+    }
+
+    .bubble-text + .bubble-gif,
+    .bubble-gif + .bubble-gif,
+    .bubble-gif + .bubble-text,
+    .bubble-text + .bubble-gif-fallback,
+    .bubble-gif + .bubble-gif-fallback,
+    .bubble-gif-fallback + .bubble-gif {
+      margin-top: 6px;
+    }
+
+    .bubble-gif-fallback {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent-cyan);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
     .bubble-time {
       margin-top: 4px;
       font-family: var(--font-mono);
@@ -898,14 +934,15 @@
       background: rgba(9, 11, 22, 0.72);
     }
 
-    .dm-emoji-btn {
+    .dm-emoji-btn,
+    .dm-gif-btn {
       width: 40px;
       height: 40px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
       background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
       cursor: pointer;
-      font-size: 17px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -913,9 +950,24 @@
       transition: all 0.15s ease;
     }
 
-    .dm-emoji-btn:hover {
+    .dm-emoji-btn {
+      font-size: 17px;
+    }
+
+    .dm-gif-btn {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .dm-emoji-btn:hover,
+    .dm-emoji-btn.active,
+    .dm-gif-btn:hover,
+    .dm-gif-btn.active {
       border-color: var(--border-cyan);
       background: rgba(0, 242, 242, 0.1);
+      color: var(--accent-cyan);
     }
 
     .dm-input {
@@ -978,7 +1030,7 @@
       cursor: not-allowed;
     }
 
-    /* Emoji Popover */
+    /* Emoji & GIF Popovers */
     .emoji-popover {
       position: absolute;
       bottom: calc(100% + 10px);
@@ -987,6 +1039,7 @@
       max-height: 260px;
       background: var(--bg-glass-elevated);
       backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
       border: 1px solid var(--border-bright);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-glass);
@@ -1013,6 +1066,97 @@
     }
     .emoji-cell:hover {
       background: rgba(255, 255, 255, 0.12);
+    }
+
+    .gif-popover {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 16px;
+      width: min(360px, calc(100vw - 32px));
+      height: 340px;
+      background: var(--bg-glass-elevated);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glass);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 50;
+    }
+
+    .gif-popover.open {
+      display: flex;
+    }
+
+    .gif-popover-header {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .gif-search-input {
+      width: 100%;
+      padding: 7px 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.18s ease;
+    }
+
+    .gif-search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .gif-search-input:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .gif-grid {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-content: start;
+    }
+
+    .gif-item {
+      width: 100%;
+      height: 100px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.03);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .gif-item:hover {
+      transform: scale(1.03);
+      border-color: var(--accent-cyan);
+    }
+
+    .gif-state-box {
+      grid-column: 1 / -1;
+      padding: 36px 16px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 12.5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
     }
 
     .toast-stack {
@@ -1649,6 +1793,11 @@
         font-size: 13.5px;
       }
 
+      .bubble-gif {
+        max-width: 100%;
+        max-height: 180px;
+      }
+
       .empty-pane-state {
         padding: 20px 16px;
         gap: 10px;
@@ -1683,6 +1832,7 @@
       }
 
       .dm-emoji-btn,
+      .dm-gif-btn,
       .dm-encrypt-toggle,
       .dm-pq-toggle {
         order: 1;
@@ -1692,6 +1842,11 @@
       .dm-emoji-btn {
         width: 34px;
         font-size: 15px;
+      }
+
+      .dm-gif-btn {
+        width: 38px;
+        font-size: 10.5px;
       }
 
       .dm-encrypt-toggle,
@@ -1722,12 +1877,24 @@
         font-size: 12px;
       }
 
-      .emoji-popover {
+      .emoji-popover,
+      .gif-popover {
         left: 10px;
         right: 10px;
         width: auto;
         max-width: 340px;
+      }
+
+      .emoji-popover {
         max-height: 220px;
+      }
+
+      .gif-popover {
+        height: min(280px, 50dvh);
+      }
+
+      .gif-search-input {
+        font-size: 16px;
       }
 
       .toast-stack {
@@ -1839,7 +2006,14 @@
 
           <div class="dm-composer">
             <div class="emoji-popover" id="emojiPopover"></div>
+            <div class="gif-popover" id="gifPopover">
+              <div class="gif-popover-header">
+                <input type="text" class="gif-search-input" id="gifSearchInput" maxlength="80" placeholder="Search GIFs…" autocomplete="off" spellcheck="false" />
+              </div>
+              <div class="gif-grid" id="gifGrid"></div>
+            </div>
             <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" data-tooltip="Insert Emoji">😊</button>
+            <button type="button" class="dm-gif-btn" id="gifToggleBtn" data-tooltip="Insert GIF">GIF</button>
             <button type="button" class="dm-encrypt-toggle" id="encryptToggleBtn" data-tooltip-title="Public On-Chain Mode" data-tooltip="Message is readable on-chain. Click to enable End-to-End Encryption." disabled>🌐 Public</button>
             <button type="button" class="dm-pq-toggle" id="pqToggleBtn" data-tooltip-title="Post-Quantum Shield (Optional)" data-tooltip="Toggle NIST ML-KEM-512 Post-Quantum Hybrid encryption (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor's algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts." disabled>⚛️ PQ: Off</button>
             <textarea id="dmInput" class="dm-input" rows="1" maxlength="4000" placeholder="Connect wallet & select a recipient to send a message…" disabled></textarea>
@@ -1863,6 +2037,20 @@
       const HEX_EVEN_REGEX = /^(?:[0-9a-fA-F]{2})+$/;
       const MAX_ENC_HEX_LEN = 32768;
       const MAX_DM_BYTES = 4000;
+      const GIF_API_ENDPOINT = 'https://trollbox.tez.cool/fetchgif';
+      const ALLOWED_GIF_HOSTS = new Set([
+        'media.giphy.com',
+        'media0.giphy.com',
+        'media1.giphy.com',
+        'media2.giphy.com',
+        'media3.giphy.com',
+        'media4.giphy.com',
+        'i.giphy.com',
+        'media.tenor.com',
+        'c.tenor.com'
+      ]);
+      const GIF_URL_CANDIDATE_REGEX = /https:\/\/(?:media\d?\.giphy\.com|i\.giphy\.com|media\.tenor\.com|c\.tenor\.com)\/[^\s"'<>]+/gi;
+      const MAX_GIFS_PER_MESSAGE = 3;
 
       const EMOJIS = [
         '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘',
@@ -1900,6 +2088,8 @@
       let isPublishingKey = false;
       let isSendingDm = false;
       let hasAutoSwitchedInitialMobileView = false;
+      let gifReqId = 0;
+      let gifSearchTimeout = null;
 
       const connectBtn = document.getElementById('connectBtn');
       const e2eeBtn = document.getElementById('e2eeBtn');
@@ -1921,6 +2111,10 @@
       const pqToggleBtn = document.getElementById('pqToggleBtn');
       const emojiToggleBtn = document.getElementById('emojiToggleBtn');
       const emojiPopover = document.getElementById('emojiPopover');
+      const gifToggleBtn = document.getElementById('gifToggleBtn');
+      const gifPopover = document.getElementById('gifPopover');
+      const gifSearchInput = document.getElementById('gifSearchInput');
+      const gifGrid = document.getElementById('gifGrid');
       const toastStack = document.getElementById('toastStack');
 
       function setMobileView(view) {
@@ -4303,14 +4497,247 @@
         emojiPopover.appendChild(b);
       });
 
+      function sanitizeGifUrl(rawUrl) {
+        if (typeof rawUrl !== 'string' || rawUrl.length < 18 || rawUrl.length > 512) return null;
+        try {
+          const cleanedRaw = rawUrl.replace(/[),.;!?]+$/, '');
+          const parsed = new URL(cleanedRaw);
+          if (parsed.protocol !== 'https:') return null;
+          if (parsed.username || parsed.password || parsed.port) return null;
+          const host = parsed.hostname.toLowerCase();
+          if (!ALLOWED_GIF_HOSTS.has(host)) return null;
+          let pathname = parsed.pathname || '';
+          if (!pathname || pathname === '/' || pathname.includes('..') || pathname.includes('\\')) return null;
+          if (!/^\/[A-Za-z0-9/_.-]+\.(?:gif|webp)$/i.test(pathname)) return null;
+          if (host.endsWith('.giphy.com')) {
+            pathname = pathname.replace(
+              /^\/media\/v1\.Y2lk[A-Za-z0-9_-]+\/([A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+\.(?:gif|webp))$/i,
+              '/media/$1'
+            );
+          }
+          return `https://${host}${pathname}`;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function formatDialogPreviewText(rawText) {
+        if (!rawText) return '';
+        let hadGif = false;
+        const withoutGifs = String(rawText)
+          .replace(GIF_URL_CANDIDATE_REGEX, match => {
+            if (sanitizeGifUrl(match)) {
+              hadGif = true;
+              return '';
+            }
+            return match;
+          })
+          .replace(/\s+/g, ' ')
+          .trim();
+        if (hadGif && withoutGifs) return `🖼️ ${withoutGifs}`;
+        if (hadGif) return '🖼️ GIF';
+        return withoutGifs;
+      }
+
+      function renderMessageBubbleContent(box, rawText) {
+        const text = String(rawText ?? '');
+        const gifUrls = [];
+        const seenGifs = new Set();
+        const strippedText = text
+          .replace(GIF_URL_CANDIDATE_REGEX, match => {
+            if (gifUrls.length >= MAX_GIFS_PER_MESSAGE) return match;
+            const safeUrl = sanitizeGifUrl(match);
+            if (!safeUrl) return match;
+            if (!seenGifs.has(safeUrl)) {
+              seenGifs.add(safeUrl);
+              gifUrls.push(safeUrl);
+            }
+            return '';
+          })
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+
+        if (gifUrls.length === 0) {
+          box.textContent = text;
+          return;
+        }
+
+        box.textContent = '';
+        if (strippedText) {
+          const textDiv = document.createElement('div');
+          textDiv.className = 'bubble-text';
+          textDiv.textContent = strippedText;
+          box.appendChild(textDiv);
+        }
+
+        gifUrls.forEach(safeUrl => {
+          const img = document.createElement('img');
+          img.className = 'bubble-gif';
+          img.src = safeUrl;
+          img.alt = 'GIF';
+          img.loading = 'lazy';
+          img.decoding = 'async';
+          img.referrerPolicy = 'no-referrer';
+          img.addEventListener(
+            'error',
+            () => {
+              const fallback = document.createElement('a');
+              fallback.className = 'bubble-gif-fallback';
+              fallback.href = safeUrl;
+              fallback.target = '_blank';
+              fallback.rel = 'noopener noreferrer';
+              fallback.referrerPolicy = 'no-referrer';
+              fallback.textContent = '🖼️ View GIF ↗';
+              img.replaceWith(fallback);
+            },
+            { once: true }
+          );
+          box.appendChild(img);
+        });
+      }
+
+      async function loadGifs(query = '') {
+        if (!gifGrid) return;
+        const reqId = ++gifReqId;
+        gifGrid.innerHTML = '<div class="gif-state-box"><span class="suggest-spinner"></span><span>Loading GIFs…</span></div>';
+        try {
+          const q = String(query || '').trim().slice(0, 80);
+          const url = q
+            ? `${GIF_API_ENDPOINT}?type=search&q=${encodeURIComponent(q)}&limit=50`
+            : `${GIF_API_ENDPOINT}?type=trending&limit=50`;
+
+          const res = await fetch(url, {
+            method: 'GET',
+            credentials: 'omit',
+            referrerPolicy: 'no-referrer'
+          });
+          if (!res.ok) throw new Error('GIF fetch failed');
+          const data = await res.json();
+          if (reqId !== gifReqId) return;
+
+          const list =
+            Array.isArray(data?.results) && data.results.length > 0
+              ? data.results
+              : Array.isArray(data?.data)
+                ? data.data
+                : [];
+
+          gifGrid.innerHTML = '';
+          let renderedCount = 0;
+
+          list.forEach(item => {
+            if (!item || typeof item !== 'object') return;
+            const rawPreviewUrl =
+              item.media_formats?.tinygif?.url ||
+              item.media?.[0]?.tinygif?.url ||
+              item.images?.fixed_height_small?.url ||
+              item.images?.fixed_height?.url ||
+              item.images?.original?.url;
+            const rawSendUrl =
+              item.media_formats?.gif?.url ||
+              item.media?.[0]?.gif?.url ||
+              item.images?.fixed_height?.url ||
+              item.images?.original?.url ||
+              rawPreviewUrl;
+
+            const previewUrl = sanitizeGifUrl(rawPreviewUrl);
+            const sendUrl = sanitizeGifUrl(rawSendUrl);
+            if (!previewUrl || !sendUrl) return;
+
+            const img = document.createElement('img');
+            img.src = previewUrl;
+            img.className = 'gif-item';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            img.referrerPolicy = 'no-referrer';
+            img.alt =
+              typeof item.title === 'string' && item.title
+                ? item.title.slice(0, 80)
+                : typeof item.content_description === 'string' && item.content_description
+                  ? item.content_description.slice(0, 80)
+                  : 'GIF';
+            img.addEventListener('click', () => {
+              if (dmInput.disabled) {
+                toast('Connect your Tezos wallet & select a conversation first to send a GIF.');
+                return;
+              }
+              gifPopover.classList.remove('open');
+              gifToggleBtn.classList.remove('active');
+              const currentVal = dmInput.value;
+              const needsSeparator = currentVal.length > 0 && !/\s$/.test(currentVal);
+              const nextVal = `${currentVal}${needsSeparator ? ' ' : ''}${sendUrl}`;
+              if (new TextEncoder().encode(nextVal).length > MAX_DM_BYTES) {
+                toast(`Message is too long (maximum ${MAX_DM_BYTES} UTF-8 bytes).`);
+                return;
+              }
+              dmInput.value = nextVal;
+              autoResizeDmInput();
+              dmInput.focus();
+            });
+            gifGrid.appendChild(img);
+            renderedCount++;
+          });
+
+          if (renderedCount === 0) {
+            gifGrid.innerHTML = '<div class="gif-state-box">No GIFs found</div>';
+          }
+        } catch (e) {
+          if (reqId !== gifReqId) return;
+          gifGrid.innerHTML = '<div class="gif-state-box">Error loading GIFs. Please try again.</div>';
+        }
+      }
+
       emojiToggleBtn.addEventListener('click', e => {
         e.stopPropagation();
-        emojiPopover.classList.toggle('open');
+        const open = emojiPopover.classList.toggle('open');
+        emojiToggleBtn.classList.toggle('active', open);
+        if (gifPopover) gifPopover.classList.remove('open');
+        if (gifToggleBtn) gifToggleBtn.classList.remove('active');
       });
+
+      if (gifToggleBtn && gifPopover) {
+        gifToggleBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          const open = gifPopover.classList.toggle('open');
+          gifToggleBtn.classList.toggle('active', open);
+          emojiPopover.classList.remove('open');
+          emojiToggleBtn.classList.remove('active');
+          if (open && gifGrid && gifGrid.children.length === 0) {
+            loadGifs(gifSearchInput ? gifSearchInput.value : '');
+          }
+          if (open && gifSearchInput) {
+            gifSearchInput.focus();
+          }
+        });
+      }
+
+      if (gifSearchInput) {
+        gifSearchInput.addEventListener('input', () => {
+          if (gifSearchTimeout) clearTimeout(gifSearchTimeout);
+          gifSearchTimeout = setTimeout(() => {
+            loadGifs(gifSearchInput.value);
+          }, 350);
+        });
+        gifSearchInput.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            if (gifSearchTimeout) clearTimeout(gifSearchTimeout);
+            loadGifs(gifSearchInput.value);
+          } else if (e.key === 'Escape') {
+            gifPopover.classList.remove('open');
+            gifToggleBtn.classList.remove('active');
+          }
+        });
+      }
 
       document.addEventListener('click', e => {
         if (!emojiPopover.contains(e.target) && e.target !== emojiToggleBtn) {
           emojiPopover.classList.remove('open');
+          emojiToggleBtn.classList.remove('active');
+        }
+        if (gifPopover && !gifPopover.contains(e.target) && e.target !== gifToggleBtn) {
+          gifPopover.classList.remove('open');
+          gifToggleBtn.classList.remove('active');
         }
       });
 
@@ -4818,7 +5245,7 @@
           item.className = `dialog-item${peer === currentRecipient ? ' active' : ''}`;
           const last = msgs[msgs.length - 1];
           const timeStr = last ? new Date(last.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'New';
-          const singleLineText = last ? String(last.text || '').replace(/\s+/g, ' ').trim() : '';
+          const singleLineText = last ? formatDialogPreviewText(last.text) : '';
           const preview = last
             ? (last.isStealth && last.decrypted
               ? `${last.isPq ? '🕵️🛡️' : '🕵️'} ${singleLineText}`
@@ -4966,7 +5393,7 @@
               box.innerHTML = `<div class="bubble-locked-card"><span>⚠️ <strong>Unable to decrypt with current E2EE key</strong></span></div>`;
             }
           } else {
-            box.textContent = m.text;
+            renderMessageBubbleContent(box, m.text);
           }
 
           const meta = document.createElement('div');
@@ -5026,6 +5453,17 @@
           messagesScroll.appendChild(row);
         });
         messagesScroll.scrollTop = messagesScroll.scrollHeight;
+        messagesScroll.querySelectorAll('.bubble-gif').forEach(img => {
+          if (!img.complete) {
+            img.addEventListener(
+              'load',
+              () => {
+                messagesScroll.scrollTop = messagesScroll.scrollHeight;
+              },
+              { once: true }
+            );
+          }
+        });
       }
 
       const TZKT_SUGGEST_API_BASE = 'https://api.tzkt.io/v1';
@@ -5486,6 +5924,9 @@
           newAddressInput.value = '';
           hideAddressDropdown();
           emojiPopover.classList.remove('open');
+          emojiToggleBtn.classList.remove('active');
+          if (gifPopover) gifPopover.classList.remove('open');
+          if (gifToggleBtn) gifToggleBtn.classList.remove('active');
           hideCustomTooltip();
           setMobileView('chat');
           updateE2EEControlsUI();

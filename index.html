@@ -891,6 +891,13 @@
       box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
     }
 
+    .dm-encrypt-toggle.active.stealth {
+      background: rgba(0, 242, 242, 0.14);
+      border: 1px solid rgba(0, 242, 242, 0.52);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 242, 242, 0.18);
+    }
+
     .dm-encrypt-toggle:disabled {
       opacity: 0.45;
       cursor: not-allowed;
@@ -905,9 +912,23 @@
       border-color: var(--accent-emerald);
     }
 
+    .dm-input.stealth-mode {
+      border-color: rgba(0, 242, 242, 0.45);
+      background: rgba(0, 242, 242, 0.05);
+    }
+
+    .dm-input.stealth-mode:focus {
+      border-color: var(--accent-cyan);
+    }
+
     .dm-send-btn.encrypted-mode {
       border-color: rgba(16, 185, 129, 0.55);
       background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(0, 242, 242, 0.24));
+    }
+
+    .dm-send-btn.stealth-mode {
+      border-color: rgba(0, 242, 242, 0.58);
+      background: linear-gradient(135deg, rgba(0, 242, 242, 0.28), rgba(162, 124, 238, 0.34));
     }
 
     .bubble-row.sent .bubble-box.encrypted-bubble {
@@ -1254,6 +1275,7 @@
       let peerPublicKeys = new Map(); // address -> 64-char hex X25519 public key
       let peerKeyFetchPending = new Set();
       let encryptMode = false;
+      let stealthMode = false;
 
       const connectBtn = document.getElementById('connectBtn');
       const e2eeBtn = document.getElementById('e2eeBtn');
@@ -1495,6 +1517,88 @@
         return new TextDecoder('utf-8').decode(plainBuf);
       }
 
+      async function deriveStealthMask(secretKeyBytes, ivBytes) {
+        const maskInput = concatBytes(
+          new TextEncoder().encode('chat.tez.cool:stealth-mask:v1:'),
+          secretKeyBytes,
+          ivBytes
+        );
+        const hashBuf = await crypto.subtle.digest('SHA-256', maskInput);
+        return new Uint8Array(hashBuf);
+      }
+
+      async function encryptStealthMessage(plaintext, recipientAddress, keyPair, recipientPkHex) {
+        const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const senderPkBytes = keyPair.publicKey;
+        const recipientPkBytes = hexToBytes(recipientPkHex);
+        const mask = await deriveStealthMask(keyPair.secretKey, iv);
+        const maskedRecipientPk = new Uint8Array(32);
+        for (let i = 0; i < 32; i++) {
+          maskedRecipientPk[i] = recipientPkBytes[i] ^ mask[i];
+        }
+
+        const additionalData = concatBytes(new Uint8Array([0x02]), senderPkBytes, recipientPkBytes);
+        const innerPayload = JSON.stringify({ to: recipientAddress, text: plaintext });
+        const plainBytes = new TextEncoder().encode(innerPayload);
+
+        const cipherBuf = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          plainBytes
+        );
+        const cipherBytes = new Uint8Array(cipherBuf);
+        // Stealth binary envelope: [version=0x02 (1B) || maskedRecipientPk (32B) || iv (12B) || ciphertext+tag]
+        const packet = concatBytes(new Uint8Array([0x02]), maskedRecipientPk, iv, cipherBytes);
+        return bytesToHex(packet);
+      }
+
+      async function decryptStealthMessage(encHex, senderPkHex, keyPair, isSentByMe, myAddr) {
+        if (!keyPair || !encHex || !HEX32_REGEX.test(senderPkHex || '')) return null;
+        const packet = hexToBytes(encHex);
+        if (packet.length < 1 + 32 + 12 + 16 || packet[0] !== 0x02) return null;
+
+        const maskedRecipientPk = packet.slice(1, 33);
+        const iv = packet.slice(33, 45);
+        const cipherBytes = packet.slice(45);
+
+        let recipientPkBytes;
+        let peerPkHex;
+        if (isSentByMe) {
+          const mask = await deriveStealthMask(keyPair.secretKey, iv);
+          recipientPkBytes = new Uint8Array(32);
+          for (let i = 0; i < 32; i++) {
+            recipientPkBytes[i] = maskedRecipientPk[i] ^ mask[i];
+          }
+          peerPkHex = bytesToHex(recipientPkBytes);
+        } else {
+          recipientPkBytes = keyPair.publicKey;
+          peerPkHex = senderPkHex.toLowerCase();
+        }
+
+        const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex);
+        const additionalData = concatBytes(new Uint8Array([0x02]), hexToBytes(senderPkHex), recipientPkBytes);
+
+        const plainBuf = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          cipherBytes
+        );
+        const decoded = new TextDecoder('utf-8').decode(plainBuf);
+        const parsed = JSON.parse(decoded);
+        if (!parsed || typeof parsed.text !== 'string' || !ADDR_REGEX.test(parsed.to || '')) {
+          return null;
+        }
+        if (!isSentByMe && myAddr && parsed.to !== myAddr) {
+          return null;
+        }
+        return {
+          recipientAddress: parsed.to,
+          recipientPkHex: bytesToHex(recipientPkBytes),
+          text: parsed.text
+        };
+      }
+
       function saveSessionKeyPair(address, kp) {
         try {
           sessionStorage.setItem(`nftchat_e2ee_${address}`, JSON.stringify({
@@ -1551,6 +1655,7 @@
           saveSessionKeyPair(myAddress, myKeyPair);
 
           await decryptAllLoadedMessages();
+          await fetchAllMessages();
           updateE2EEControlsUI();
           renderDialogs();
           renderActiveConversation();
@@ -1850,14 +1955,17 @@
         if (myKeyPair) {
           myKeyPair = null;
           encryptMode = false;
+          stealthMode = false;
           clearSessionKeyPair(myAddress);
-          conversations.forEach(msgs => {
-            msgs.forEach(m => {
+          conversations.forEach((msgs, peer) => {
+            const remaining = msgs.filter(m => !m.isStealth);
+            remaining.forEach(m => {
               if (m.isEncrypted) {
                 m.decrypted = false;
                 m.text = '🔒 End-to-End Encrypted Message';
               }
             });
+            conversations.set(peer, remaining);
           });
           updateE2EEControlsUI();
           renderDialogs();
@@ -1931,8 +2039,12 @@
             return;
           }
           encryptMode = true;
+          stealthMode = false;
+        } else if (!stealthMode) {
+          stealthMode = true;
         } else {
           encryptMode = false;
+          stealthMode = false;
         }
         updateComposerState();
       });
@@ -1946,28 +2058,46 @@
         const peerHasKey = Boolean(currentRecipient && peerPublicKeys.has(currentRecipient));
         if (encryptMode && (!myKeyPair || !peerHasKey)) {
           encryptMode = false;
+          stealthMode = false;
         }
 
-        if (encryptMode) {
+        if (encryptMode && stealthMode) {
+          encryptToggleBtn.classList.add('active', 'stealth');
+          encryptToggleBtn.textContent = '🕵️ Stealth';
+          encryptToggleBtn.setAttribute('data-tooltip-title', 'Stealth E2EE Mode (Hidden Recipient)');
+          encryptToggleBtn.setAttribute('data-tooltip', 'Content + recipient address are encrypted (0x02 envelope) and minted to your own wallet so outsiders on-chain cannot see whom you are messaging. Click to switch to Public mode.');
+          encryptToggleBtn.setAttribute('data-tooltip-variant', 'cyan');
+          dmInput.classList.remove('encrypted-mode');
+          dmInput.classList.add('stealth-mode');
+          dmSendBtn.classList.remove('encrypted-mode');
+          dmSendBtn.classList.add('stealth-mode');
+          dmSendBtn.textContent = '🕵️ Stealth Mint';
+          dmInput.placeholder = canChat
+            ? `Stealth E2EE message to ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} (recipient hidden on-chain)…`
+            : 'Connect wallet & select a recipient…';
+        } else if (encryptMode) {
           encryptToggleBtn.classList.add('active');
+          encryptToggleBtn.classList.remove('stealth');
           encryptToggleBtn.textContent = '🔒 Encrypted';
           encryptToggleBtn.setAttribute('data-tooltip-title', 'End-to-End Encrypted Mode');
-          encryptToggleBtn.setAttribute('data-tooltip', 'Encrypted client-side with X25519 ECDH + AES-256-GCM. Only you and the recipient can decrypt it.');
+          encryptToggleBtn.setAttribute('data-tooltip', 'Encrypted client-side with X25519 ECDH + AES-256-GCM. Only you and the recipient can decrypt the content. Click again for Stealth Mode (hides recipient address on-chain).');
           encryptToggleBtn.setAttribute('data-tooltip-variant', 'emerald');
+          dmInput.classList.remove('stealth-mode');
           dmInput.classList.add('encrypted-mode');
+          dmSendBtn.classList.remove('stealth-mode');
           dmSendBtn.classList.add('encrypted-mode');
           dmSendBtn.textContent = '🔒 Encrypt & Mint';
           dmInput.placeholder = canChat
             ? `Encrypted message to ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} (only recipient can decrypt)…`
             : 'Connect wallet & select a recipient…';
         } else {
-          encryptToggleBtn.classList.remove('active');
+          encryptToggleBtn.classList.remove('active', 'stealth');
           encryptToggleBtn.textContent = '🌐 Public';
           encryptToggleBtn.setAttribute('data-tooltip-title', 'Public On-Chain Mode');
-          encryptToggleBtn.setAttribute('data-tooltip', 'Message is publicly readable on-chain. Click to switch to End-to-End Encrypted mode.');
+          encryptToggleBtn.setAttribute('data-tooltip', 'Message is publicly readable on-chain. Click to switch to End-to-End Encrypted or Stealth mode.');
           encryptToggleBtn.setAttribute('data-tooltip-variant', 'purple');
-          dmInput.classList.remove('encrypted-mode');
-          dmSendBtn.classList.remove('encrypted-mode');
+          dmInput.classList.remove('encrypted-mode', 'stealth-mode');
+          dmSendBtn.classList.remove('encrypted-mode', 'stealth-mode');
           dmSendBtn.textContent = 'Mint & Send';
           dmInput.placeholder = canChat
             ? `Message ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)}…`
@@ -1977,16 +2107,21 @@
       }
 
       async function fetchAllMessages() {
-        if (!myAddress) return;
+        const activeAddress = myAddress;
+        if (!activeAddress) return;
         try {
-          const [sentRes, recRes] = await Promise.all([
-            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${encodeURIComponent(myAddress)}&target=${CONTRACT}&status=applied&limit=1000&sort.desc=id`),
-            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.to_=${encodeURIComponent(myAddress)}&status=applied&limit=1000&sort.desc=id`)
+          const [sentRes, recRes, encRes] = await Promise.all([
+            fetch(`https://api.tzkt.io/v1/operations/transactions?sender=${encodeURIComponent(activeAddress)}&target=${CONTRACT}&status=applied&limit=1000&sort.desc=id`),
+            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.to_=${encodeURIComponent(activeAddress)}&status=applied&limit=1000&sort.desc=id`),
+            fetch(`https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&parameter.metadata.enc.null=false&status=applied&limit=500&sort.desc=id`)
           ]);
+          if (!myAddress || myAddress !== activeAddress) return;
           const sentOps = sentRes.ok ? await sentRes.json() : [];
           const recOps = recRes.ok ? await recRes.json() : [];
+          const encOps = encRes.ok ? await encRes.json() : [];
+          if (!myAddress || myAddress !== activeAddress) return;
 
-          const allOps = [...sentOps, ...recOps];
+          const allOps = [...sentOps, ...recOps, ...encOps];
           // Sort ascending by id so newer public keys overwrite older ones
           allOps.sort((a, b) => a.id - b.id);
 
@@ -2002,7 +2137,7 @@
             if (!op || seenIds.has(op.id)) continue;
             seenIds.add(op.id);
             const sender = op.sender?.address;
-            const recipient = op.parameter?.value?.to_;
+            let recipient = op.parameter?.value?.to_;
             const metadata = op.parameter?.value?.metadata || {};
             const hexName = metadata.name;
             const senderPk = metadata.pk;
@@ -2014,12 +2149,12 @@
 
             if (senderPk && HEX32_REGEX.test(senderPk)) {
               peerPublicKeys.set(sender, senderPk.toLowerCase());
-              if (sender === myAddress) {
+              if (sender === activeAddress) {
                 myKeyPublishedOnChain = true;
               }
             }
 
-            // Also extract recipient public key embedded in encrypted packet header (bytes 1..33)
+            // Also extract recipient public key embedded in 0x01 encrypted packet header (bytes 1..33)
             if (encHex && encHex.length >= 90 && encHex.slice(0, 2) === '01') {
               const embeddedRecipientPk = encHex.slice(2, 66);
               if (HEX32_REGEX.test(embeddedRecipientPk) && !peerPublicKeys.has(recipient)) {
@@ -2028,38 +2163,70 @@
             }
 
             // Skip self key-registration transactions from appearing as chat bubbles
-            if (isKeyReg && sender === myAddress && recipient === myAddress) {
+            if (isKeyReg && sender === activeAddress && recipient === activeAddress) {
               continue;
             }
 
-            const peer = sender === myAddress ? recipient : sender;
+            const isStealthPacket = Boolean(encHex && encHex.length >= 90 && encHex.slice(0, 2) === '02' && senderPk && HEX32_REGEX.test(senderPk));
+            const isEncrypted = Boolean(encHex && senderPk && HEX32_REGEX.test(senderPk));
+            let text = hexToString(hexName);
+            let decrypted = false;
+            let isStealth = false;
+
+            if (isStealthPacket) {
+              if (!myKeyPair) {
+                continue;
+              }
+              try {
+                const stealthRes = await decryptStealthMessage(
+                  encHex,
+                  senderPk.toLowerCase(),
+                  myKeyPair,
+                  sender === activeAddress,
+                  activeAddress
+                );
+                if (!stealthRes) {
+                  continue;
+                }
+                recipient = stealthRes.recipientAddress;
+                if (stealthRes.recipientPkHex && !peerPublicKeys.has(recipient)) {
+                  peerPublicKeys.set(recipient, stealthRes.recipientPkHex.toLowerCase());
+                }
+                text = stealthRes.text;
+                decrypted = true;
+                isStealth = true;
+              } catch (e) {
+                continue;
+              }
+            } else {
+              if (sender !== activeAddress && recipient !== activeAddress) {
+                continue;
+              }
+              if (isEncrypted) {
+                if (myKeyPair) {
+                  try {
+                    const plain = await decryptChatMessage(encHex, senderPk.toLowerCase(), myKeyPair, sender === activeAddress);
+                    if (plain !== null) {
+                      text = plain;
+                      decrypted = true;
+                    } else {
+                      text = '🔒 End-to-End Encrypted Message';
+                    }
+                  } catch (e) {
+                    text = '🔒 End-to-End Encrypted Message';
+                  }
+                } else {
+                  text = '🔒 End-to-End Encrypted Message';
+                }
+              }
+            }
+
+            const peer = sender === activeAddress ? recipient : sender;
             if (!nextMap.has(peer)) {
               nextMap.set(peer, []);
               resolveAlias(peer);
               if (!peerPublicKeys.has(peer)) {
                 resolvePeerPublicKey(peer);
-              }
-            }
-
-            const isEncrypted = Boolean(encHex && senderPk && HEX32_REGEX.test(senderPk));
-            let text = hexToString(hexName);
-            let decrypted = false;
-
-            if (isEncrypted) {
-              if (myKeyPair) {
-                try {
-                  const plain = await decryptChatMessage(encHex, senderPk.toLowerCase(), myKeyPair, sender === myAddress);
-                  if (plain !== null) {
-                    text = plain;
-                    decrypted = true;
-                  } else {
-                    text = '🔒 End-to-End Encrypted Message';
-                  }
-                } catch (e) {
-                  text = '🔒 End-to-End Encrypted Message';
-                }
-              } else {
-                text = '🔒 End-to-End Encrypted Message';
               }
             }
 
@@ -2069,6 +2236,7 @@
               recipient,
               text,
               isEncrypted,
+              isStealth,
               decrypted,
               encHex: encHex || null,
               senderPkHex: senderPk ? senderPk.toLowerCase() : null,
@@ -2121,7 +2289,7 @@
           const last = msgs[msgs.length - 1];
           const timeStr = last ? new Date(last.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'New';
           const preview = last
-            ? (last.isEncrypted && last.decrypted ? `🔒 ${last.text}` : last.text)
+            ? (last.isStealth && last.decrypted ? `🕵️ ${last.text}` : last.isEncrypted && last.decrypted ? `🔒 ${last.text}` : last.text)
             : 'Start chatting on-chain…';
           const displayName = aliasCache.get(peer) || shortAddr(peer);
           const peerPk = peerPublicKeys.get(peer);
@@ -2169,7 +2337,7 @@
         lastChatHeaderState = nextState;
 
         const badgeHtml = peerPk
-          ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. You can send end-to-end encrypted messages to this wallet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
+          ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. You can send Encrypted or Stealth E2EE messages to this wallet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
           : `<span class="peer-e2ee-badge unavailable" data-tooltip-title="Peer E2EE Key Not Published" data-tooltip="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically attaches your public key so they can reply encrypted." data-tooltip-variant="amber">🔓 Peer Key Not Published</span>`;
 
         chatHeader.innerHTML = `
@@ -2193,7 +2361,16 @@
         renderChatHeader();
         updateComposerState();
 
-        if (!currentRecipient) return;
+        if (!currentRecipient) {
+          messagesScroll.innerHTML = `
+            <div class="empty-pane-state">
+              <div class="empty-icon-circle">💬</div>
+              <h3>Direct Wallet-to-Wallet Messaging</h3>
+              <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet. Enable optional End-to-End Encryption (X25519 + AES-256-GCM) or Stealth Mode so only your recipient can decrypt it.</p>
+            </div>
+          `;
+          return;
+        }
 
         const msgs = conversations.get(currentRecipient) || [];
         if (msgs.length === 0) {
@@ -2242,15 +2419,22 @@
           if (m.isEncrypted) {
             const tag = document.createElement('span');
             tag.className = 'bubble-e2ee-tag';
-            tag.textContent = m.decrypted ? '🔒 E2EE Decrypted' : '🔒 E2EE Locked';
-            tag.setAttribute('data-tooltip-title', m.decrypted ? 'Verified End-to-End Encrypted' : 'Encrypted Ciphertext');
-            tag.setAttribute(
-              'data-tooltip',
-              m.decrypted
-                ? 'Decrypted locally in your browser using X25519 ECDH + AES-256-GCM'
-                : 'Unlock E2EE with your wallet signature to decrypt this message'
-            );
-            tag.setAttribute('data-tooltip-variant', m.decrypted ? 'emerald' : 'amber');
+            if (m.isStealth) {
+              tag.textContent = '🕵️ Stealth E2EE';
+              tag.setAttribute('data-tooltip-title', 'Stealth End-to-End Encrypted');
+              tag.setAttribute('data-tooltip', 'Both the message content and recipient wallet address are hidden from outsiders on-chain (0x02 Stealth envelope).');
+              tag.setAttribute('data-tooltip-variant', 'cyan');
+            } else {
+              tag.textContent = m.decrypted ? '🔒 E2EE Decrypted' : '🔒 E2EE Locked';
+              tag.setAttribute('data-tooltip-title', m.decrypted ? 'Verified End-to-End Encrypted' : 'Encrypted Ciphertext');
+              tag.setAttribute(
+                'data-tooltip',
+                m.decrypted
+                  ? 'Decrypted locally in your browser using X25519 ECDH + AES-256-GCM'
+                  : 'Unlock E2EE with your wallet signature to decrypt this message'
+              );
+              tag.setAttribute('data-tooltip-variant', m.decrypted ? 'emerald' : 'amber');
+            }
             meta.appendChild(tag);
           }
           const timeSpan = document.createElement('span');
@@ -2288,10 +2472,15 @@
 
         try {
           dmSendBtn.disabled = true;
-          dmSendBtn.textContent = encryptMode ? 'Encrypting & Minting…' : 'Minting…';
+          dmSendBtn.textContent = stealthMode
+            ? 'Stealth Minting…'
+            : encryptMode
+              ? 'Encrypting & Minting…'
+              : 'Minting…';
 
           let nameHex = stringToHex(text);
           let encHex = null;
+          let mintDestinationAddress = currentRecipient;
 
           if (encryptMode) {
             if (!myKeyPair) {
@@ -2303,7 +2492,13 @@
               toast('Cannot encrypt: recipient has not published an E2EE public key on-chain yet.');
               return;
             }
-            encHex = await encryptChatMessage(text, myKeyPair, peerPk);
+            if (stealthMode) {
+              encHex = await encryptStealthMessage(text, currentRecipient, myKeyPair, peerPk);
+              mintDestinationAddress = myAddress;
+            } else {
+              encHex = await encryptChatMessage(text, myKeyPair, peerPk);
+              mintDestinationAddress = currentRecipient;
+            }
             nameHex = stringToHex('🔒 Encrypted Message (chat.tez.cool)');
           }
 
@@ -2341,7 +2536,7 @@
                           { bytes: e.hex }
                         ]
                       })),
-                      { string: currentRecipient }
+                      { string: mintDestinationAddress }
                     ]
                   }
                 }
@@ -2354,9 +2549,11 @@
           }
           dmInput.value = '';
           toast(
-            encHex
-              ? '🔒 Encrypted message minted! Only you and the recipient can decrypt it.'
-              : 'Message minted! It will appear once confirmed on-chain.'
+            stealthMode
+              ? '🕵️ Stealth E2EE message minted! Both content and recipient address are hidden on-chain.'
+              : encHex
+                ? '🔒 Encrypted message minted! Only you and the recipient can decrypt it.'
+                : 'Message minted! It will appear once confirmed on-chain.'
           );
           setTimeout(fetchAllMessages, 4000);
         } catch (err) {
@@ -2406,8 +2603,13 @@
           myKeyPair = null;
           myKeyPublishedOnChain = false;
           encryptMode = false;
+          stealthMode = false;
           conversations.clear();
           currentRecipient = null;
+          dmInput.value = '';
+          newAddressInput.value = '';
+          emojiPopover.classList.remove('open');
+          hideCustomTooltip();
           updateE2EEControlsUI();
           renderDialogs();
           renderActiveConversation();

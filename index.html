@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NFTChat — On-Chain Tezos Direct Messenger</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Monda:wght@400;600;700&display=swap" rel="stylesheet">
@@ -2907,9 +2906,8 @@
 
         const { cipherText: pqCt, sharedSecret: pqShared } = mlKem512Encaps(recipientPqPkBytes, mSeed);
         mSeed.fill(0);
-        const fastTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, iv.subarray(0, 10));
         const pqViewTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, pqShared, iv.subarray(0, 10));
-        iv[10] = fastTag[0];
+        iv[10] = pqViewTag[0];
         iv[11] = pqViewTag[1];
 
         const mask = await derivePqStealthMask(keyPair.selfSeed, iv);
@@ -2990,14 +2988,12 @@
           }
           selfWrapMask.fill(0);
         } else {
-          const expectedFastTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, iv.subarray(0, 10));
-          if (iv[10] !== expectedFastTag[0]) return null;
           recipientPkBytes = keyPair.publicKey;
           peerPkHex = senderPkLower;
           pqShared = mlKem512Decaps(keyPair.pqSecretKey, pqCt);
           if (!pqShared) return null;
           const expectedPqTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, pqShared, iv.subarray(0, 10));
-          if (iv[11] !== expectedPqTag[1]) {
+          if (iv[10] !== expectedPqTag[0] || iv[11] !== expectedPqTag[1]) {
             pqShared.fill(0);
             return null;
           }

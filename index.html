@@ -4201,6 +4201,7 @@
               conversations.set(peer, remaining);
             }
           });
+          conversations = sortConversationsMap(conversations);
           if (!currentRecipient && conversations.size > 0) {
             currentRecipient = conversations.keys().next().value;
           }
@@ -4449,6 +4450,28 @@
             : 'Connect wallet & select a recipient to send a message…';
         }
         refreshActiveTooltip();
+      }
+
+      function sortConversationsMap(map) {
+        const entries = Array.from(map.entries());
+        entries.sort((a, b) => {
+          const msgsA = a[1];
+          const msgsB = b[1];
+          const lastA = msgsA && msgsA.length > 0 ? msgsA[msgsA.length - 1] : null;
+          const lastB = msgsB && msgsB.length > 0 ? msgsB[msgsB.length - 1] : null;
+          if (!lastA && !lastB) return 0;
+          if (!lastA) return 1;
+          if (!lastB) return -1;
+          const timeA = Date.parse(lastA.timestamp);
+          const timeB = Date.parse(lastB.timestamp);
+          const validTimeA = Number.isFinite(timeA) ? timeA : 0;
+          const validTimeB = Number.isFinite(timeB) ? timeB : 0;
+          if (validTimeB !== validTimeA) {
+            return validTimeB - validTimeA;
+          }
+          return (lastB.id || 0) - (lastA.id || 0);
+        });
+        return new Map(entries);
       }
 
       async function fetchAllMessages() {
@@ -4700,7 +4723,7 @@
               nextMap.set(peer, []);
             }
           });
-          conversations = nextMap;
+          conversations = sortConversationsMap(nextMap);
 
           if (currentRecipient && !conversations.has(currentRecipient)) {
             currentRecipient = null;

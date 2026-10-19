@@ -781,6 +781,199 @@
       box-shadow: var(--shadow-glass);
     }
 
+    /* End-to-End Encryption Controls & Badges */
+    .btn-e2ee, .btn-publish-key {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      font-family: var(--font-display);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-e2ee.visible, .btn-publish-key.visible {
+      display: inline-flex;
+    }
+
+    .btn-e2ee.locked {
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+    }
+
+    .btn-e2ee.locked:hover {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: var(--accent-amber);
+    }
+
+    .btn-e2ee.unlocked {
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.42);
+      color: #6ee7b7;
+    }
+
+    .btn-e2ee.unlocked:hover {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: var(--accent-emerald);
+    }
+
+    .btn-publish-key {
+      background: rgba(0, 242, 242, 0.12);
+      border: 1px solid rgba(0, 242, 242, 0.4);
+      color: var(--accent-cyan);
+    }
+
+    .btn-publish-key:hover:not(:disabled) {
+      background: rgba(0, 242, 242, 0.22);
+      transform: translateY(-1px);
+    }
+
+    .btn-publish-key:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .peer-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .peer-e2ee-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .peer-e2ee-badge.ready {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.38);
+      color: #6ee7b7;
+    }
+
+    .peer-e2ee-badge.unavailable {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fcd34d;
+    }
+
+    .dm-encrypt-toggle {
+      height: 38px;
+      padding: 0 11px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-secondary);
+      font-family: var(--font-display);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+      transition: all 0.18s ease;
+    }
+
+    .dm-encrypt-toggle:hover:not(:disabled) {
+      border-color: var(--border-cyan);
+      color: var(--text-primary);
+    }
+
+    .dm-encrypt-toggle.active {
+      background: rgba(16, 185, 129, 0.16);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #6ee7b7;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
+    }
+
+    .dm-encrypt-toggle:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .dm-input.encrypted-mode {
+      border-color: rgba(16, 185, 129, 0.45);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .dm-input.encrypted-mode:focus {
+      border-color: var(--accent-emerald);
+    }
+
+    .dm-send-btn.encrypted-mode {
+      border-color: rgba(16, 185, 129, 0.55);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(0, 242, 242, 0.24));
+    }
+
+    .bubble-row.sent .bubble-box.encrypted-bubble {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(162, 124, 238, 0.24));
+      border-color: rgba(16, 185, 129, 0.42);
+    }
+
+    .bubble-row.received .bubble-box.encrypted-bubble {
+      background: rgba(16, 185, 129, 0.07);
+      border-color: rgba(16, 185, 129, 0.28);
+    }
+
+    .bubble-locked-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .btn-unlock-inline {
+      align-self: flex-start;
+      padding: 5px 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(0, 242, 242, 0.4);
+      background: rgba(0, 242, 242, 0.12);
+      color: var(--accent-cyan);
+      font-family: var(--font-display);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-unlock-inline:hover {
+      background: rgba(0, 242, 242, 0.22);
+    }
+
+    .bubble-meta {
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .bubble-e2ee-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.32);
+      color: #6ee7b7;
+      font-size: 9.5px;
+    }
+
     @media (max-width: 820px) {
       .messenger-grid {
         grid-template-columns: 1fr;
@@ -823,6 +1016,8 @@
         </div>
 
         <div class="topbar-right">
+          <button type="button" class="btn-publish-key" id="publishKeyBtn" title="Publish your E2EE public key on-chain so anyone can send you encrypted messages immediately">📡 Publish Key</button>
+          <button type="button" class="btn-e2ee locked" id="e2eeBtn" title="Unlock End-to-End Encryption with a deterministic wallet signature">🔓 Unlock E2EE</button>
           <div class="wallet-pill" id="walletPill">
             <img id="myAvatar" src="" alt="" />
             <span id="myAddressLabel"></span>
@@ -863,13 +1058,14 @@
             <div class="empty-pane-state">
               <div class="empty-icon-circle">💬</div>
               <h3>Direct Wallet-to-Wallet Messaging</h3>
-              <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet.</p>
+              <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet. Enable optional End-to-End Encryption (X25519 + AES-256-GCM) so only your recipient can decrypt it.</p>
             </div>
           </div>
 
           <div class="dm-composer">
             <div class="emoji-popover" id="emojiPopover"></div>
             <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" title="Insert Emoji">😊</button>
+            <button type="button" class="dm-encrypt-toggle" id="encryptToggleBtn" title="Toggle End-to-End Encryption for this message" disabled>🌐 Public</button>
             <input type="text" id="dmInput" class="dm-input" placeholder="Connect wallet & select a recipient to send a message…" disabled />
             <button type="button" class="dm-send-btn" id="dmSendBtn" disabled>Mint & Send</button>
           </div>
@@ -885,6 +1081,7 @@
       const CONTRACT = 'KT1NuwjJ2wwaRGCL2yR3WeUzdELNzejVBJz7';
       const RPC_URL = 'https://rpc.tzbeta.net';
       const ADDR_REGEX = /^(tz1|tz2|tz3|tz4|KT1)[1-9A-HJ-NP-Za-km-z]{33}$/;
+      const HEX32_REGEX = /^[0-9a-fA-F]{64}$/;
 
       const EMOJIS = [
         '😀','😃','😄','😁','😆','😅','🤣','😂','🙂','😉','😊','😇','🥰','😍','🤩','😘',
@@ -895,11 +1092,20 @@
       let client = null;
       let myAddress = null;
       let currentRecipient = null;
-      let conversations = new Map(); // peerAddress -> Array<{id, sender, recipient, text, timestamp}>
+      let conversations = new Map(); // peerAddress -> Array<Msg>
       let aliasCache = new Map();
       let pollTimer = null;
 
+      // End-to-End Encryption state
+      let myKeyPair = null; // { secretKey: Uint8Array(32), publicKey: Uint8Array(32), publicKeyHex: string }
+      let myKeyPublishedOnChain = false;
+      let peerPublicKeys = new Map(); // address -> 64-char hex X25519 public key
+      let peerKeyFetchPending = new Set();
+      let encryptMode = false;
+
       const connectBtn = document.getElementById('connectBtn');
+      const e2eeBtn = document.getElementById('e2eeBtn');
+      const publishKeyBtn = document.getElementById('publishKeyBtn');
       const walletPill = document.getElementById('walletPill');
       const myAvatar = document.getElementById('myAvatar');
       const myAddressLabel = document.getElementById('myAddressLabel');
@@ -911,6 +1117,7 @@
       const messagesScroll = document.getElementById('messagesScroll');
       const dmInput = document.getElementById('dmInput');
       const dmSendBtn = document.getElementById('dmSendBtn');
+      const encryptToggleBtn = document.getElementById('encryptToggleBtn');
       const emojiToggleBtn = document.getElementById('emojiToggleBtn');
       const emojiPopover = document.getElementById('emojiPopover');
       const toastStack = document.getElementById('toastStack');
@@ -929,22 +1136,41 @@
           .replace(/'/g, '&#39;');
       }
 
-      function stringToHex(str) {
-        const bytes = new TextEncoder().encode(str);
+      function bytesToHex(bytes) {
         return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      function hexToBytes(hex) {
+        if (!hex || hex.length % 2 !== 0) return new Uint8Array(0);
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+        }
+        return bytes;
+      }
+
+      function stringToHex(str) {
+        return bytesToHex(new TextEncoder().encode(str));
       }
 
       function hexToString(hex) {
         if (!hex) return '';
         try {
-          const bytes = new Uint8Array(hex.length / 2);
-          for (let i = 0; i < hex.length; i += 2) {
-            bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-          }
-          return new TextDecoder('utf-8').decode(bytes);
+          return new TextDecoder('utf-8').decode(hexToBytes(hex));
         } catch (e) {
           return '';
         }
+      }
+
+      function concatBytes(...arrays) {
+        const total = arrays.reduce((acc, a) => acc + a.length, 0);
+        const out = new Uint8Array(total);
+        let offset = 0;
+        for (const a of arrays) {
+          out.set(a, offset);
+          offset += a.length;
+        }
+        return out;
       }
 
       function toast(text) {
@@ -952,8 +1178,405 @@
         div.className = 'toast-msg';
         div.textContent = text;
         toastStack.appendChild(div);
-        setTimeout(() => div.remove(), 3500);
+        setTimeout(() => div.remove(), 4000);
       }
+
+      /* =========================================================================
+       * RFC 7748 X25519 ECDH + WebCrypto AES-256-GCM End-to-End Encryption Engine
+       * ========================================================================= */
+      const P_25519 = (1n << 255n) - 19n;
+      const A24_25519 = 121665n;
+
+      function modP(x) {
+        const r = x % P_25519;
+        return r < 0n ? r + P_25519 : r;
+      }
+
+      function modPowP(base, exp) {
+        let result = 1n;
+        let b = modP(base);
+        let e = exp;
+        while (e > 0n) {
+          if (e & 1n) result = modP(result * b);
+          b = modP(b * b);
+          e >>= 1n;
+        }
+        return result;
+      }
+
+      function x25519(kBytes, uBytes) {
+        const k = new Uint8Array(kBytes);
+        k[0] &= 248;
+        k[31] = (k[31] & 127) | 64;
+
+        const u = new Uint8Array(uBytes);
+        u[31] &= 127;
+
+        let kBig = 0n;
+        let uBig = 0n;
+        for (let i = 31; i >= 0; i--) {
+          kBig = (kBig << 8n) | BigInt(k[i]);
+          uBig = (uBig << 8n) | BigInt(u[i]);
+        }
+
+        const x1 = uBig;
+        let x2 = 1n, z2 = 0n;
+        let x3 = uBig, z3 = 1n;
+        let swap = 0n;
+
+        for (let t = 254n; t >= 0n; t--) {
+          const kt = (kBig >> t) & 1n;
+          if ((swap ^ kt) === 1n) {
+            let tmp = x2; x2 = x3; x3 = tmp;
+            tmp = z2; z2 = z3; z3 = tmp;
+          }
+          swap = kt;
+
+          const A = modP(x2 + z2);
+          const AA = modP(A * A);
+          const B = modP(x2 - z2);
+          const BB = modP(B * B);
+          const E = modP(AA - BB);
+          const C = modP(x3 + z3);
+          const D = modP(x3 - z3);
+          const DA = modP(D * A);
+          const CB = modP(C * B);
+
+          x3 = modP((DA + CB) * (DA + CB));
+          z3 = modP(x1 * modP((DA - CB) * (DA - CB)));
+          x2 = modP(AA * BB);
+          z2 = modP(E * (AA + modP(A24_25519 * E)));
+        }
+
+        if (swap === 1n) {
+          let tmp = x2; x2 = x3; x3 = tmp;
+          tmp = z2; z2 = z3; z3 = tmp;
+        }
+
+        let res = modP(x2 * modPowP(z2, P_25519 - 2n));
+        const out = new Uint8Array(32);
+        for (let i = 0; i < 32; i++) {
+          out[i] = Number(res & 0xffn);
+          res >>= 8n;
+        }
+        return out;
+      }
+
+      function x25519PublicKeyFromPrivate(secretKeyBytes) {
+        const basePoint = new Uint8Array(32);
+        basePoint[0] = 9;
+        return x25519(secretKeyBytes, basePoint);
+      }
+
+      function buildMichelineSignPayload(messageText) {
+        const msgHex = stringToHex(messageText);
+        const byteLenHex = (msgHex.length / 2).toString(16).padStart(8, '0');
+        return '0501' + byteLenHex + msgHex;
+      }
+
+      async function deriveKeyPairFromSignature(address, signature) {
+        const domainInput = new TextEncoder().encode(`chat.tez.cool:e2ee:x25519:v1:${address}:${signature}`);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', domainInput);
+        const secretKey = new Uint8Array(hashBuffer);
+        secretKey[0] &= 248;
+        secretKey[31] = (secretKey[31] & 127) | 64;
+        const publicKey = x25519PublicKeyFromPrivate(secretKey);
+        const publicKeyHex = bytesToHex(publicKey);
+        return { secretKey, publicKey, publicKeyHex };
+      }
+
+      async function deriveSharedAesKey(mySecretKey, myPkHex, peerPkHex) {
+        const peerPkBytes = hexToBytes(peerPkHex);
+        const sharedSecret = x25519(mySecretKey, peerPkBytes);
+        let nonZero = 0;
+        for (let i = 0; i < sharedSecret.length; i++) nonZero |= sharedSecret[i];
+        if (nonZero === 0) throw new Error('Invalid peer X25519 public key');
+
+        const firstPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? myPkHex.toLowerCase() : peerPkHex.toLowerCase();
+        const secondPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? peerPkHex.toLowerCase() : myPkHex.toLowerCase();
+        const kdfInput = concatBytes(
+          new TextEncoder().encode(`chat.tez.cool:aes-gcm:v1:${firstPk}:${secondPk}:`),
+          sharedSecret
+        );
+        const keyHash = await crypto.subtle.digest('SHA-256', kdfInput);
+        return crypto.subtle.importKey('raw', keyHash, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
+      }
+
+      async function encryptChatMessage(plaintext, keyPair, recipientPkHex) {
+        const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex);
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const senderPkBytes = keyPair.publicKey;
+        const recipientPkBytes = hexToBytes(recipientPkHex);
+        const additionalData = concatBytes(senderPkBytes, recipientPkBytes);
+        const plainBytes = new TextEncoder().encode(plaintext);
+
+        const cipherBuf = await crypto.subtle.encrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          plainBytes
+        );
+        const cipherBytes = new Uint8Array(cipherBuf);
+        // Binary envelope: [version=0x01 (1B) || recipientPk (32B) || iv (12B) || ciphertext+tag]
+        const packet = concatBytes(new Uint8Array([0x01]), recipientPkBytes, iv, cipherBytes);
+        return bytesToHex(packet);
+      }
+
+      async function decryptChatMessage(encHex, senderPkHex, keyPair, isSentByMe) {
+        if (!keyPair || !encHex || !HEX32_REGEX.test(senderPkHex || '')) return null;
+        const packet = hexToBytes(encHex);
+        if (packet.length < 1 + 32 + 12 + 16 || packet[0] !== 0x01) return null;
+
+        const recipientPkBytes = packet.slice(1, 33);
+        const recipientPkHex = bytesToHex(recipientPkBytes);
+        const iv = packet.slice(33, 45);
+        const cipherBytes = packet.slice(45);
+
+        const peerPkHex = isSentByMe ? recipientPkHex : senderPkHex;
+        const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex);
+        const additionalData = concatBytes(hexToBytes(senderPkHex), recipientPkBytes);
+
+        const plainBuf = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+          aesKey,
+          cipherBytes
+        );
+        return new TextDecoder('utf-8').decode(plainBuf);
+      }
+
+      function saveSessionKeyPair(address, kp) {
+        try {
+          sessionStorage.setItem(`nftchat_e2ee_${address}`, JSON.stringify({
+            secretKeyHex: bytesToHex(kp.secretKey),
+            publicKeyHex: kp.publicKeyHex
+          }));
+        } catch (e) {}
+      }
+
+      function loadSessionKeyPair(address) {
+        try {
+          const raw = sessionStorage.getItem(`nftchat_e2ee_${address}`);
+          if (!raw) return null;
+          const parsed = JSON.parse(raw);
+          if (!HEX32_REGEX.test(parsed.secretKeyHex) || !HEX32_REGEX.test(parsed.publicKeyHex)) return null;
+          return {
+            secretKey: hexToBytes(parsed.secretKeyHex),
+            publicKey: hexToBytes(parsed.publicKeyHex),
+            publicKeyHex: parsed.publicKeyHex
+          };
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function clearSessionKeyPair(address) {
+        try {
+          if (address) sessionStorage.removeItem(`nftchat_e2ee_${address}`);
+        } catch (e) {}
+      }
+
+      async function unlockEncryption() {
+        if (!client || !myAddress) return false;
+        try {
+          const signMessage = [
+            'Tezos Signed Message: chat.tez.cool',
+            'Action: Derive End-to-End Encryption Key (v1)',
+            `Account: ${myAddress}`,
+            'Security Warning: ONLY sign this message on https://chat.tez.cool'
+          ].join('\n');
+
+          const payload = buildMichelineSignPayload(signMessage);
+          const response = await client.requestSignPayload({
+            signingType: beacon.SigningType ? beacon.SigningType.MICHELINE : 'micheline',
+            payload
+          });
+
+          if (!response || !response.signature) {
+            throw new Error('No signature returned');
+          }
+
+          myKeyPair = await deriveKeyPairFromSignature(myAddress, response.signature);
+          peerPublicKeys.set(myAddress, myKeyPair.publicKeyHex);
+          saveSessionKeyPair(myAddress, myKeyPair);
+
+          await decryptAllLoadedMessages();
+          updateE2EEControlsUI();
+          renderDialogs();
+          renderActiveConversation();
+          toast(`🔐 E2EE unlocked! Key: ${myKeyPair.publicKeyHex.slice(0, 6)}…${myKeyPair.publicKeyHex.slice(-4)}`);
+          return true;
+        } catch (err) {
+          toast('E2EE signature request cancelled.');
+          return false;
+        }
+      }
+
+      async function publishKeyOnChain() {
+        if (!client || !myAddress) return;
+        if (!myKeyPair) {
+          const ok = await unlockEncryption();
+          if (!ok) return;
+        }
+        try {
+          publishKeyBtn.disabled = true;
+          publishKeyBtn.textContent = 'Publishing…';
+
+          const metadataEntries = [
+            { key: 'artifactUri', hex: stringToHex(`https://services.tzkt.io/v1/avatars/${myAddress}`) },
+            { key: 'decimals', hex: '30' },
+            { key: 'key_reg', hex: '31' },
+            { key: 'name', hex: stringToHex('🔐 NFTChat E2EE Public Key Registration') },
+            { key: 'pk', hex: myKeyPair.publicKeyHex }
+          ].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+
+          await client.requestOperation({
+            operationDetails: [
+              {
+                kind: beacon.TezosOperationType.TRANSACTION,
+                amount: '0',
+                destination: CONTRACT,
+                parameters: {
+                  entrypoint: 'mint',
+                  value: {
+                    prim: 'Pair',
+                    args: [
+                      {
+                        prim: 'Pair',
+                        args: [
+                          { int: '1' },
+                          metadataEntries.map(e => ({
+                            prim: 'Elt',
+                            args: [{ string: e.key }, { bytes: e.hex }]
+                          }))
+                        ]
+                      },
+                      { string: myAddress }
+                    ]
+                  }
+                }
+              }
+            ]
+          });
+
+          myKeyPublishedOnChain = true;
+          updateE2EEControlsUI();
+          toast('📡 E2EE public key published on-chain! Anyone can now message you encrypted.');
+          setTimeout(fetchAllMessages, 4000);
+        } catch (err) {
+          toast('Key publication cancelled or failed.');
+        } finally {
+          publishKeyBtn.disabled = false;
+          publishKeyBtn.textContent = '📡 Publish Key';
+          updateE2EEControlsUI();
+        }
+      }
+
+      async function resolvePeerPublicKey(peer) {
+        if (!peer || !ADDR_REGEX.test(peer)) return null;
+        if (peerPublicKeys.has(peer)) return peerPublicKeys.get(peer);
+        if (peerKeyFetchPending.has(peer)) return null;
+
+        peerKeyFetchPending.add(peer);
+        try {
+          const res = await fetch(
+            `https://api.tzkt.io/v1/operations/transactions?sender=${encodeURIComponent(peer)}&target=${CONTRACT}&status=applied&limit=100&sort.desc=id`
+          );
+          if (res.ok) {
+            const ops = await res.json();
+            for (const op of ops) {
+              const pk = op?.parameter?.value?.metadata?.pk;
+              if (pk && HEX32_REGEX.test(pk)) {
+                peerPublicKeys.set(peer, pk.toLowerCase());
+                if (currentRecipient === peer) {
+                  renderChatHeader();
+                  updateComposerState();
+                }
+                break;
+              }
+            }
+          }
+        } catch (e) {
+        } finally {
+          peerKeyFetchPending.delete(peer);
+        }
+        return peerPublicKeys.get(peer) || null;
+      }
+
+      async function decryptAllLoadedMessages() {
+        if (!myKeyPair) return;
+        const tasks = [];
+        conversations.forEach(msgs => {
+          msgs.forEach(m => {
+            if (m.isEncrypted && !m.decrypted && m.encHex && m.senderPkHex) {
+              const isSent = m.sender === myAddress;
+              tasks.push(
+                decryptChatMessage(m.encHex, m.senderPkHex, myKeyPair, isSent)
+                  .then(plain => {
+                    if (plain !== null) {
+                      m.text = plain;
+                      m.decrypted = true;
+                    }
+                  })
+                  .catch(() => {})
+              );
+            }
+          });
+        });
+        await Promise.all(tasks);
+      }
+
+      function updateE2EEControlsUI() {
+        if (!myAddress) {
+          e2eeBtn.classList.remove('visible', 'unlocked');
+          e2eeBtn.classList.add('locked');
+          publishKeyBtn.classList.remove('visible');
+          return;
+        }
+        e2eeBtn.classList.add('visible');
+        if (myKeyPair) {
+          e2eeBtn.classList.remove('locked');
+          e2eeBtn.classList.add('unlocked');
+          const shortKey = `${myKeyPair.publicKeyHex.slice(0, 4)}…${myKeyPair.publicKeyHex.slice(-4)}`;
+          e2eeBtn.textContent = `🔐 E2EE (${shortKey})`;
+          e2eeBtn.title = `End-to-End Encryption active (X25519 pubkey: ${myKeyPair.publicKeyHex}). Click to lock.`;
+          if (!myKeyPublishedOnChain) {
+            publishKeyBtn.classList.add('visible');
+          } else {
+            publishKeyBtn.classList.remove('visible');
+          }
+        } else {
+          e2eeBtn.classList.remove('unlocked');
+          e2eeBtn.classList.add('locked');
+          e2eeBtn.textContent = '🔓 Unlock E2EE';
+          e2eeBtn.title = 'Sign a free off-chain message with your wallet to unlock End-to-End Encryption';
+          publishKeyBtn.classList.remove('visible');
+        }
+        updateComposerState();
+      }
+
+      e2eeBtn.addEventListener('click', async () => {
+        if (!myAddress) return;
+        if (myKeyPair) {
+          myKeyPair = null;
+          encryptMode = false;
+          clearSessionKeyPair(myAddress);
+          conversations.forEach(msgs => {
+            msgs.forEach(m => {
+              if (m.isEncrypted) {
+                m.decrypted = false;
+                m.text = '🔒 End-to-End Encrypted Message';
+              }
+            });
+          });
+          updateE2EEControlsUI();
+          renderDialogs();
+          renderActiveConversation();
+          toast('🔓 E2EE locked for this session.');
+        } else {
+          await unlockEncryption();
+        }
+      });
+
+      publishKeyBtn.addEventListener('click', publishKeyOnChain);
 
       async function resolveAlias(addr) {
         if (!addr || !ADDR_REGEX.test(addr)) return '';
@@ -999,6 +1622,61 @@
         }
       });
 
+      encryptToggleBtn.addEventListener('click', async () => {
+        if (!myAddress || !currentRecipient) return;
+        if (!encryptMode) {
+          if (!myKeyPair) {
+            const unlocked = await unlockEncryption();
+            if (!unlocked) return;
+          }
+          let peerPk = peerPublicKeys.get(currentRecipient);
+          if (!peerPk) {
+            toast('Checking on-chain E2EE public key for recipient…');
+            peerPk = await resolvePeerPublicKey(currentRecipient);
+          }
+          if (!peerPk) {
+            toast('Recipient has not published an E2EE key on-chain yet. Send a public message first (your key will be attached automatically) or ask them to click Publish Key.');
+            return;
+          }
+          encryptMode = true;
+        } else {
+          encryptMode = false;
+        }
+        updateComposerState();
+      });
+
+      function updateComposerState() {
+        const canChat = Boolean(myAddress && currentRecipient);
+        dmInput.disabled = !canChat;
+        dmSendBtn.disabled = !canChat;
+        encryptToggleBtn.disabled = !canChat;
+
+        const peerHasKey = Boolean(currentRecipient && peerPublicKeys.has(currentRecipient));
+        if (encryptMode && (!myKeyPair || !peerHasKey)) {
+          encryptMode = false;
+        }
+
+        if (encryptMode) {
+          encryptToggleBtn.classList.add('active');
+          encryptToggleBtn.textContent = '🔒 Encrypted';
+          dmInput.classList.add('encrypted-mode');
+          dmSendBtn.classList.add('encrypted-mode');
+          dmSendBtn.textContent = '🔒 Encrypt & Mint';
+          dmInput.placeholder = canChat
+            ? `Encrypted message to ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} (only recipient can decrypt)…`
+            : 'Connect wallet & select a recipient…';
+        } else {
+          encryptToggleBtn.classList.remove('active');
+          encryptToggleBtn.textContent = '🌐 Public';
+          dmInput.classList.remove('encrypted-mode');
+          dmSendBtn.classList.remove('encrypted-mode');
+          dmSendBtn.textContent = 'Mint & Send';
+          dmInput.placeholder = canChat
+            ? `Message ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)}…`
+            : 'Connect wallet & select a recipient to send a message…';
+        }
+      }
+
       async function fetchAllMessages() {
         if (!myAddress) return;
         try {
@@ -1010,6 +1688,9 @@
           const recOps = recRes.ok ? await recRes.json() : [];
 
           const allOps = [...sentOps, ...recOps];
+          // Sort ascending by id so newer public keys overwrite older ones
+          allOps.sort((a, b) => a.id - b.id);
+
           const seenIds = new Set();
           const nextMap = new Map();
 
@@ -1018,29 +1699,83 @@
             if (msgs.length === 0) nextMap.set(peer, []);
           });
 
-          allOps.forEach(op => {
-            if (!op || seenIds.has(op.id)) return;
+          for (const op of allOps) {
+            if (!op || seenIds.has(op.id)) continue;
             seenIds.add(op.id);
             const sender = op.sender?.address;
             const recipient = op.parameter?.value?.to_;
-            const hexName = op.parameter?.value?.metadata?.name;
-            if (!sender || !recipient || !hexName) return;
-            if (!ADDR_REGEX.test(sender) || !ADDR_REGEX.test(recipient)) return;
+            const metadata = op.parameter?.value?.metadata || {};
+            const hexName = metadata.name;
+            const senderPk = metadata.pk;
+            const encHex = metadata.enc;
+            const isKeyReg = metadata.key_reg === '31';
+
+            if (!sender || !recipient || !hexName) continue;
+            if (!ADDR_REGEX.test(sender) || !ADDR_REGEX.test(recipient)) continue;
+
+            if (senderPk && HEX32_REGEX.test(senderPk)) {
+              peerPublicKeys.set(sender, senderPk.toLowerCase());
+              if (sender === myAddress) {
+                myKeyPublishedOnChain = true;
+              }
+            }
+
+            // Also extract recipient public key embedded in encrypted packet header (bytes 1..33)
+            if (encHex && encHex.length >= 90 && encHex.slice(0, 2) === '01') {
+              const embeddedRecipientPk = encHex.slice(2, 66);
+              if (HEX32_REGEX.test(embeddedRecipientPk) && !peerPublicKeys.has(recipient)) {
+                peerPublicKeys.set(recipient, embeddedRecipientPk.toLowerCase());
+              }
+            }
+
+            // Skip self key-registration transactions from appearing as chat bubbles
+            if (isKeyReg && sender === myAddress && recipient === myAddress) {
+              continue;
+            }
 
             const peer = sender === myAddress ? recipient : sender;
-            const text = hexToString(hexName);
             if (!nextMap.has(peer)) {
               nextMap.set(peer, []);
               resolveAlias(peer);
+              if (!peerPublicKeys.has(peer)) {
+                resolvePeerPublicKey(peer);
+              }
             }
+
+            const isEncrypted = Boolean(encHex && senderPk && HEX32_REGEX.test(senderPk));
+            let text = hexToString(hexName);
+            let decrypted = false;
+
+            if (isEncrypted) {
+              if (myKeyPair) {
+                try {
+                  const plain = await decryptChatMessage(encHex, senderPk.toLowerCase(), myKeyPair, sender === myAddress);
+                  if (plain !== null) {
+                    text = plain;
+                    decrypted = true;
+                  } else {
+                    text = '🔒 End-to-End Encrypted Message';
+                  }
+                } catch (e) {
+                  text = '🔒 End-to-End Encrypted Message';
+                }
+              } else {
+                text = '🔒 End-to-End Encrypted Message';
+              }
+            }
+
             nextMap.get(peer).push({
               id: op.id,
               sender,
               recipient,
               text,
+              isEncrypted,
+              decrypted,
+              encHex: encHex || null,
+              senderPkHex: senderPk ? senderPk.toLowerCase() : null,
               timestamp: op.timestamp
             });
-          });
+          }
 
           nextMap.forEach(list => list.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)));
           conversations = nextMap;
@@ -1048,7 +1783,11 @@
           if (!currentRecipient && conversations.size > 0) {
             currentRecipient = conversations.keys().next().value;
           }
+          if (currentRecipient && !peerPublicKeys.has(currentRecipient)) {
+            resolvePeerPublicKey(currentRecipient);
+          }
 
+          updateE2EEControlsUI();
           renderDialogs();
           renderActiveConversation();
         } catch (err) {
@@ -1082,14 +1821,17 @@
           item.className = `dialog-item${peer === currentRecipient ? ' active' : ''}`;
           const last = msgs[msgs.length - 1];
           const timeStr = last ? new Date(last.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'New';
-          const preview = last ? last.text : 'Start chatting on-chain…';
+          const preview = last
+            ? (last.isEncrypted && last.decrypted ? `🔒 ${last.text}` : last.text)
+            : 'Start chatting on-chain…';
           const displayName = aliasCache.get(peer) || shortAddr(peer);
+          const hasPeerKey = peerPublicKeys.has(peer);
 
           item.innerHTML = `
             <img class="dialog-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(peer)}" alt="" />
             <div class="dialog-meta">
               <div class="dialog-top">
-                <span class="dialog-name">${escapeHtml(displayName)}</span>
+                <span class="dialog-name">${escapeHtml(displayName)}${hasPeerKey ? ' <span title="E2EE Ready" style="font-size:11px;">🔐</span>' : ''}</span>
                 <span class="dialog-time">${escapeHtml(timeStr)}</span>
               </div>
               <div class="dialog-preview">${escapeHtml(preview)}</div>
@@ -1097,6 +1839,10 @@
           `;
           item.addEventListener('click', () => {
             currentRecipient = peer;
+            if (!peerPublicKeys.has(peer)) {
+              resolvePeerPublicKey(peer);
+            }
+            updateComposerState();
             renderDialogs();
             renderActiveConversation();
           });
@@ -1114,6 +1860,11 @@
           return;
         }
         const displayName = aliasCache.get(currentRecipient) || shortAddr(currentRecipient);
+        const peerPk = peerPublicKeys.get(currentRecipient);
+        const badgeHtml = peerPk
+          ? `<span class="peer-e2ee-badge ready" title="Recipient X25519 Public Key: ${escapeHtml(peerPk)}">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
+          : `<span class="peer-e2ee-badge unavailable" title="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically includes your public key.">🔓 Peer Key Not Published</span>`;
+
         chatHeader.innerHTML = `
           <div class="peer-info">
             <img class="peer-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(currentRecipient)}" alt="" />
@@ -1122,20 +1873,18 @@
               <div class="peer-sub">${escapeHtml(currentRecipient)}</div>
             </div>
           </div>
-          <a class="contract-tag" href="https://tzkt.io/${escapeHtml(currentRecipient)}" target="_blank" rel="noopener noreferrer">
-            View on TzKT ↗
-          </a>
+          <div class="peer-actions">
+            ${badgeHtml}
+            <a class="contract-tag" href="https://tzkt.io/${escapeHtml(currentRecipient)}" target="_blank" rel="noopener noreferrer">
+              View on TzKT ↗
+            </a>
+          </div>
         `;
       }
 
       function renderActiveConversation() {
         renderChatHeader();
-        const canChat = Boolean(myAddress && currentRecipient);
-        dmInput.disabled = !canChat;
-        dmSendBtn.disabled = !canChat;
-        dmInput.placeholder = canChat
-          ? `Message ${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)}…`
-          : 'Connect wallet & select a recipient to send a message…';
+        updateComposerState();
 
         if (!currentRecipient) return;
 
@@ -1162,10 +1911,39 @@
             hour: '2-digit',
             minute: '2-digit'
           });
-          row.innerHTML = `
-            <div class="bubble-box">${escapeHtml(m.text)}</div>
-            <span class="bubble-time">${escapeHtml(timeLabel)}</span>
-          `;
+
+          const box = document.createElement('div');
+          box.className = `bubble-box${m.isEncrypted ? ' encrypted-bubble' : ''}`;
+
+          if (m.isEncrypted && !m.decrypted) {
+            box.innerHTML = `
+              <div class="bubble-locked-card">
+                <span>🔒 <strong>End-to-End Encrypted Message</strong></span>
+                <button type="button" class="btn-unlock-inline">🔑 Sign with Wallet to Decrypt</button>
+              </div>
+            `;
+            const btn = box.querySelector('.btn-unlock-inline');
+            if (btn) {
+              btn.addEventListener('click', () => unlockEncryption());
+            }
+          } else {
+            box.textContent = m.text;
+          }
+
+          const meta = document.createElement('div');
+          meta.className = 'bubble-meta';
+          if (m.isEncrypted) {
+            const tag = document.createElement('span');
+            tag.className = 'bubble-e2ee-tag';
+            tag.textContent = m.decrypted ? '🔒 E2EE Decrypted' : '🔒 E2EE Locked';
+            meta.appendChild(tag);
+          }
+          const timeSpan = document.createElement('span');
+          timeSpan.textContent = timeLabel;
+          meta.appendChild(timeSpan);
+
+          row.appendChild(box);
+          row.appendChild(meta);
           messagesScroll.appendChild(row);
         });
         messagesScroll.scrollTop = messagesScroll.scrollHeight;
@@ -1183,6 +1961,7 @@
         }
         currentRecipient = addr;
         newAddressInput.value = '';
+        resolvePeerPublicKey(addr);
         renderDialogs();
         renderActiveConversation();
       });
@@ -1194,7 +1973,40 @@
 
         try {
           dmSendBtn.disabled = true;
-          dmSendBtn.textContent = 'Minting…';
+          dmSendBtn.textContent = encryptMode ? 'Encrypting & Minting…' : 'Minting…';
+
+          let nameHex = stringToHex(text);
+          let encHex = null;
+
+          if (encryptMode) {
+            if (!myKeyPair) {
+              const ok = await unlockEncryption();
+              if (!ok) return;
+            }
+            const peerPk = peerPublicKeys.get(currentRecipient) || (await resolvePeerPublicKey(currentRecipient));
+            if (!peerPk) {
+              toast('Cannot encrypt: recipient has not published an E2EE public key on-chain yet.');
+              return;
+            }
+            encHex = await encryptChatMessage(text, myKeyPair, peerPk);
+            nameHex = stringToHex('🔒 Encrypted Message (chat.tez.cool)');
+          }
+
+          // Build Michelson metadata map sorted strictly in ASCII key order
+          const metadataEntries = [
+            { key: 'artifactUri', hex: stringToHex(`https://services.tzkt.io/v1/avatars/${myAddress}`) },
+            { key: 'decimals', hex: '30' },
+            { key: 'name', hex: nameHex }
+          ];
+
+          if (encHex) {
+            metadataEntries.push({ key: 'enc', hex: encHex });
+          }
+          if (myKeyPair && myKeyPair.publicKeyHex) {
+            metadataEntries.push({ key: 'pk', hex: myKeyPair.publicKeyHex });
+          }
+
+          metadataEntries.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 
           await client.requestOperation({
             operationDetails: [
@@ -1211,29 +2023,13 @@
                         prim: 'Pair',
                         args: [
                           { int: '1' },
-                          [
-                            {
-                              prim: 'Elt',
-                              args: [
-                                { string: 'artifactUri' },
-                                { bytes: stringToHex(`https://services.tzkt.io/v1/avatars/${myAddress}`) }
-                              ]
-                            },
-                            {
-                              prim: 'Elt',
-                              args: [
-                                { string: 'decimals' },
-                                { bytes: '30' }
-                              ]
-                            },
-                            {
-                              prim: 'Elt',
-                              args: [
-                                { string: 'name' },
-                                { bytes: stringToHex(text) }
-                              ]
-                            }
-                          ]
+                          metadataEntries.map(e => ({
+                            prim: 'Elt',
+                            args: [
+                              { string: e.key },
+                              { bytes: e.hex }
+                            ]
+                          }))
                         ]
                       },
                       { string: currentRecipient }
@@ -1244,14 +2040,21 @@
             ]
           });
 
+          if (myKeyPair) {
+            myKeyPublishedOnChain = true;
+          }
           dmInput.value = '';
-          toast('Message minted! It will appear once confirmed on-chain.');
+          toast(
+            encHex
+              ? '🔒 Encrypted message minted! Only you and the recipient can decrypt it.'
+              : 'Message minted! It will appear once confirmed on-chain.'
+          );
           setTimeout(fetchAllMessages, 4000);
         } catch (err) {
           toast('Transaction cancelled or failed.');
         } finally {
           dmSendBtn.disabled = false;
-          dmSendBtn.textContent = 'Mint & Send';
+          updateComposerState();
         }
       }
 
@@ -1270,6 +2073,15 @@
           myAddressLabel.textContent = shortAddr(myAddress);
           connectBtn.textContent = 'Disconnect';
           connectBtn.classList.add('disconnect');
+
+          // Restore session E2EE key if unlocked in this tab
+          myKeyPair = loadSessionKeyPair(myAddress);
+          if (myKeyPair) {
+            peerPublicKeys.set(myAddress, myKeyPair.publicKeyHex);
+          }
+          myKeyPublishedOnChain = false;
+          updateE2EEControlsUI();
+
           fetchAllMessages();
           if (!pollTimer) pollTimer = setInterval(fetchAllMessages, 8000);
         } else {
@@ -1280,8 +2092,12 @@
             clearInterval(pollTimer);
             pollTimer = null;
           }
+          myKeyPair = null;
+          myKeyPublishedOnChain = false;
+          encryptMode = false;
           conversations.clear();
           currentRecipient = null;
+          updateE2EEControlsUI();
           renderDialogs();
           renderActiveConversation();
         }
@@ -1304,6 +2120,7 @@
         if (!client) return;
         try {
           if (myAddress) {
+            clearSessionKeyPair(myAddress);
             if (typeof client.disconnect === 'function') {
               await client.disconnect();
             } else {

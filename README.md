@@ -11,4 +11,5 @@
      - `📡 Publish Key` / `🛡️ Publish PQ Key` (~0.001 XTZ, 0 storage burn): Broadcasts your `X25519` (32B) and optional `ML-KEM-512` (800B) public keys on-chain
      - `🔒 Encrypted` (`0x01` classical / `0x03` PQ-Hybrid, ~0.084 XTZ): Encrypts message content while minting the NFT directly to the recipient's wallet (`enc` and `pk` are stripped from `big_map` storage so ciphertexts cost 0 storage burn)
      - `🕵️ Stealth` (`0x02` classical / `0x04` PQ-Hybrid, ~0.001 XTZ, 0 storage burn): Encrypts both `{ to, text }`, masks the recipient's `X25519` public key with a one-time `SHA-256` pad, and self-mints to the sender (`to_ = sender`) so outsiders on-chain cannot see whom the message is directed to
+   - **Trust Model & Key Resolution**: To keep key registrations and encrypted payloads at 0 storage burn, `pk`, `pq_pk`, and `enc` are read from applied contract call history via the TzKT API (`api.tzkt.io`) rather than persistent contract storage, and peer keys automatically resolve to the latest valid key published by each address without manual key pinning.
 

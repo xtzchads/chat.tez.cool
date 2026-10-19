@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://services.tzkt.io https:; frame-src 'self' https:; connect-src 'self' https://api.tzkt.io https://services.tzkt.io https://tcinfra.net https: wss:; object-src 'none'; base-uri 'self';">
   <title>NFTChat — On-Chain Tezos Direct Messenger</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1337,6 +1336,7 @@
       let optimisticallyPublishedPqPk = null;
       let peerPublicKeys = new Map(); // address -> 64-char hex X25519 public key
       let peerPqPublicKeys = new Map(); // address -> 1600-char hex ML-KEM-512 public key
+      let validatedX25519PkCache = new Map(); // lowerPkHex -> boolean (memoizes RFC 7748 low-order check)
       let validatedPqPkCache = new Map(); // lowerPqPkHex -> boolean (memoizes FIPS 203 modulus validation)
       let processedOpsCache = new Map(); // cacheKey -> { skip: boolean, entry?: object }
       let sharedSecretCache = new Map(); // "myPkHex:peerPkHex" -> Uint8Array(32) X25519 shared secret
@@ -1885,7 +1885,9 @@
 
       function isValidX25519PublicKeyHex(pkHex) {
         if (!pkHex || !HEX32_REGEX.test(pkHex)) return false;
-        const uBytes = hexToBytes(pkHex);
+        const lower = pkHex.toLowerCase();
+        if (validatedX25519PkCache.has(lower)) return validatedX25519PkCache.get(lower);
+        const uBytes = hexToBytes(lower);
         if (uBytes.length !== 32) return false;
         uBytes[31] &= 127;
         let uBig = 0n;
@@ -1893,7 +1895,13 @@
           uBig = (uBig << 8n) | BigInt(uBytes[i]);
         }
         uBig = modP(uBig);
-        return !X25519_LOW_ORDER_U.has(uBig);
+        const ok = !X25519_LOW_ORDER_U.has(uBig);
+        if (validatedX25519PkCache.size >= 4096) {
+          const oldestKey = validatedX25519PkCache.keys().next().value;
+          if (oldestKey !== undefined) validatedX25519PkCache.delete(oldestKey);
+        }
+        validatedX25519PkCache.set(lower, ok);
+        return ok;
       }
 
       function isValidMlKem512PublicKey(ek) {
@@ -1911,6 +1919,10 @@
         const lower = pqPkHex.toLowerCase();
         if (validatedPqPkCache.has(lower)) return validatedPqPkCache.get(lower);
         const ok = isValidMlKem512PublicKey(hexToBytes(lower));
+        if (validatedPqPkCache.size >= 4096) {
+          const oldestKey = validatedPqPkCache.keys().next().value;
+          if (oldestKey !== undefined) validatedPqPkCache.delete(oldestKey);
+        }
         validatedPqPkCache.set(lower, ok);
         return ok;
       }
@@ -1982,6 +1994,8 @@
 
       const B58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
       const ED25519_L = (1n << 252n) + 27742317777372353535851937790883648493n;
+      const SECP256K1_N = 0xfffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141n;
+      const SECP256K1_HALF_N = SECP256K1_N >> 1n;
       const TEZOS_SIG_PREFIXES = {
         edsig: { prefix: new Uint8Array([9, 245, 205, 134, 18]), sigLen: 64 },
         spsig1: { prefix: new Uint8Array([13, 115, 101, 19, 63]), sigLen: 64 },
@@ -2111,6 +2125,24 @@
           if (sBig <= 0n || sBig >= ED25519_L) {
             rawSig.fill(0);
             return null;
+          }
+        } else if (addrPrefix === 'tz2') {
+          let rBig = 0n;
+          let sBig = 0n;
+          for (let i = 0; i < 32; i++) {
+            rBig = (rBig << 8n) | BigInt(rawSig[i]);
+            sBig = (sBig << 8n) | BigInt(rawSig[i + 32]);
+          }
+          if (rBig <= 0n || rBig >= SECP256K1_N || sBig <= 0n || sBig >= SECP256K1_N) {
+            rawSig.fill(0);
+            return null;
+          }
+          if (sBig > SECP256K1_HALF_N) {
+            sBig = SECP256K1_N - sBig;
+            for (let i = 63; i >= 32; i--) {
+              rawSig[i] = Number(sBig & 0xffn);
+              sBig >>= 8n;
+            }
           }
         }
 
@@ -2383,37 +2415,47 @@
       }
 
       function getX25519SharedSecret(mySecretKey, myPkHex, peerPkHex) {
-        if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '')) {
+        if (!isValidX25519PublicKeyHex(myPkHex) || !isValidX25519PublicKeyHex(peerPkHex)) {
           throw new Error('Invalid X25519 public key format');
         }
         const myLower = myPkHex.toLowerCase();
         const peerLower = peerPkHex.toLowerCase();
         const cacheKey = `${myLower}:${peerLower}`;
         let cached = sharedSecretCache.get(cacheKey);
-        if (!cached) {
-          const peerPkBytes = hexToBytes(peerLower);
-          const shared = x25519(mySecretKey, peerPkBytes);
-          let nonZero = 0;
-          for (let i = 0; i < shared.length; i++) nonZero |= shared[i];
-          if (nonZero === 0) throw new Error('Invalid peer X25519 public key');
-          if (sharedSecretCache.size >= 2048) {
-            clearCryptoCaches();
-          }
-          sharedSecretCache.set(cacheKey, shared);
-          cached = shared;
+        if (cached) {
+          sharedSecretCache.delete(cacheKey);
+          sharedSecretCache.set(cacheKey, cached);
+          return cached.slice();
         }
-        return cached.slice();
+        const peerPkBytes = hexToBytes(peerLower);
+        const shared = x25519(mySecretKey, peerPkBytes);
+        let nonZero = 0;
+        for (let i = 0; i < shared.length; i++) nonZero |= shared[i];
+        if (nonZero === 0) throw new Error('Invalid peer X25519 public key');
+        if (sharedSecretCache.size >= 2048) {
+          const oldestKey = sharedSecretCache.keys().next().value;
+          if (oldestKey !== undefined) {
+            const oldSec = sharedSecretCache.get(oldestKey);
+            if (oldSec instanceof Uint8Array) oldSec.fill(0);
+            sharedSecretCache.delete(oldestKey);
+          }
+        }
+        sharedSecretCache.set(cacheKey, shared);
+        return shared.slice();
       }
 
       async function deriveSharedAesKey(mySecretKey, myPkHex, peerPkHex) {
-        if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '')) {
+        if (!isValidX25519PublicKeyHex(myPkHex) || !isValidX25519PublicKeyHex(peerPkHex)) {
           throw new Error('Invalid X25519 public key format');
         }
         const myLower = myPkHex.toLowerCase();
         const peerLower = peerPkHex.toLowerCase();
         const cacheKey = `${myLower}:${peerLower}`;
         if (classicalAesKeyCache.has(cacheKey)) {
-          return classicalAesKeyCache.get(cacheKey);
+          const cachedKey = classicalAesKeyCache.get(cacheKey);
+          classicalAesKeyCache.delete(cacheKey);
+          classicalAesKeyCache.set(cacheKey, cachedKey);
+          return cachedKey;
         }
         const sharedSecret = getX25519SharedSecret(mySecretKey, myLower, peerLower);
 
@@ -2429,12 +2471,16 @@
         const keyBytes = new Uint8Array(keyHash);
         const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
         keyBytes.fill(0);
+        if (classicalAesKeyCache.size >= 2048) {
+          const oldestKey = classicalAesKeyCache.keys().next().value;
+          if (oldestKey !== undefined) classicalAesKeyCache.delete(oldestKey);
+        }
         classicalAesKeyCache.set(cacheKey, cryptoKey);
         return cryptoKey;
       }
 
       async function deriveHybridPqAesKey(mySecretKey, myPkHex, peerPkHex, pqSharedBytes) {
-        if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '') || !pqSharedBytes || pqSharedBytes.length !== 32) {
+        if (!isValidX25519PublicKeyHex(myPkHex) || !isValidX25519PublicKeyHex(peerPkHex) || !pqSharedBytes || pqSharedBytes.length !== 32) {
           throw new Error('Invalid hybrid key parameters');
         }
         const myLower = myPkHex.toLowerCase();
@@ -2573,7 +2619,7 @@
           !encHex ||
           encHex.length > MAX_ENC_HEX_LEN ||
           !HEX_EVEN_REGEX.test(encHex) ||
-          !HEX32_REGEX.test(senderPkHex || '') ||
+          !isValidX25519PublicKeyHex(senderPkHex) ||
           !ADDR_REGEX.test(senderAddr || '') ||
           !ADDR_REGEX.test(recipientAddr || '')
         ) {
@@ -2661,7 +2707,7 @@
           !encHex ||
           encHex.length > MAX_ENC_HEX_LEN ||
           !HEX_EVEN_REGEX.test(encHex) ||
-          !HEX32_REGEX.test(senderPkHex || '') ||
+          !isValidX25519PublicKeyHex(senderPkHex) ||
           !ADDR_REGEX.test(myAddr || '') ||
           !ADDR_REGEX.test(senderAddr || '')
         ) {
@@ -2793,7 +2839,7 @@
           !encHex ||
           encHex.length > MAX_ENC_HEX_LEN ||
           !HEX_EVEN_REGEX.test(encHex) ||
-          !HEX32_REGEX.test(senderPkHex || '') ||
+          !isValidX25519PublicKeyHex(senderPkHex) ||
           !ADDR_REGEX.test(senderAddr || '') ||
           !ADDR_REGEX.test(recipientAddr || '')
         ) {
@@ -2860,9 +2906,10 @@
 
         const { cipherText: pqCt, sharedSecret: pqShared } = mlKem512Encaps(recipientPqPkBytes, mSeed);
         mSeed.fill(0);
-        const viewTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, pqShared, iv.subarray(0, 10));
-        iv[10] = viewTag[0];
-        iv[11] = viewTag[1];
+        const fastTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, iv.subarray(0, 10));
+        const pqViewTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, pqShared, iv.subarray(0, 10));
+        iv[10] = fastTag[0];
+        iv[11] = pqViewTag[1];
 
         const mask = await derivePqStealthMask(keyPair.selfSeed, iv);
         const maskedRecipientPk = new Uint8Array(32);
@@ -2904,7 +2951,7 @@
           !encHex ||
           encHex.length > MAX_ENC_HEX_LEN ||
           !HEX_EVEN_REGEX.test(encHex) ||
-          !HEX32_REGEX.test(senderPkHex || '') ||
+          !isValidX25519PublicKeyHex(senderPkHex) ||
           !ADDR_REGEX.test(myAddr || '') ||
           !ADDR_REGEX.test(senderAddr || '')
         ) {
@@ -2942,12 +2989,14 @@
           }
           selfWrapMask.fill(0);
         } else {
+          const expectedFastTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, iv.subarray(0, 10));
+          if (iv[10] !== expectedFastTag[0]) return null;
           recipientPkBytes = keyPair.publicKey;
           peerPkHex = senderPkLower;
           pqShared = mlKem512Decaps(keyPair.pqSecretKey, pqCt);
           if (!pqShared) return null;
-          const expectedTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, pqShared, iv.subarray(0, 10));
-          if (iv[10] !== expectedTag[0] || iv[11] !== expectedTag[1]) {
+          const expectedPqTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, pqShared, iv.subarray(0, 10));
+          if (iv[11] !== expectedPqTag[1]) {
             pqShared.fill(0);
             return null;
           }
@@ -3928,7 +3977,7 @@
             }
 
             const envVer = encHex && encHex.length >= 90 ? encHex.slice(0, 2) : '';
-            const hasValidSenderPk = Boolean(senderPk && HEX32_REGEX.test(senderPk));
+            const hasValidSenderPk = Boolean(senderPk && isValidX25519PublicKeyHex(senderPk));
             const isStealth02 = Boolean(envVer === '02' && hasValidSenderPk);
             const isStealth04 = Boolean(envVer === '04' && encHex.length >= 1722 && hasValidSenderPk);
             const isStealthPacket = isStealth02 || isStealth04;
@@ -3941,6 +3990,19 @@
             if (isStealthPacket) {
               if (!activeKeyPair) {
                 continue;
+              }
+              if (sender !== activeAddress) {
+                const myPkLower = activeKeyPair.publicKeyHex.toLowerCase();
+                const myPqPkLower = activeKeyPair.pqPublicKeyHex.toLowerCase();
+                const hasPublishedPk =
+                  latestMyOnChainPk === myPkLower || optimisticallyPublishedPk === myPkLower;
+                const hasPublishedPqPk =
+                  (latestMyOnChainPqPk === myPqPkLower && latestMyOnChainPk === myPkLower) ||
+                  optimisticallyPublishedPqPk === myPqPkLower;
+                if ((isStealth04 && !hasPublishedPqPk) || (isStealth02 && !hasPublishedPk)) {
+                  processedOpsCache.set(cacheKey, { skip: true });
+                  continue;
+                }
               }
               uncachedStealthTrials++;
               if (uncachedStealthTrials % 20 === 0) {

@@ -1293,7 +1293,7 @@
             <div class="emoji-popover" id="emojiPopover"></div>
             <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" data-tooltip="Insert Emoji">😊</button>
             <button type="button" class="dm-encrypt-toggle" id="encryptToggleBtn" data-tooltip-title="Public On-Chain Mode" data-tooltip="Message is readable on-chain. Click to enable End-to-End Encryption." disabled>🌐 Public</button>
-            <button type="button" class="dm-pq-toggle" id="pqToggleBtn" data-tooltip-title="Post-Quantum Shield (Optional)" data-tooltip="Toggle NIST ML-KEM-512 Post-Quantum Hybrid encryption (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth)" disabled>⚛️ PQ: Off</button>
+            <button type="button" class="dm-pq-toggle" id="pqToggleBtn" data-tooltip-title="Post-Quantum Shield (Optional)" data-tooltip="Toggle NIST ML-KEM-512 Post-Quantum Hybrid encryption (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor's algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts." disabled>⚛️ PQ: Off</button>
             <input type="text" id="dmInput" class="dm-input" maxlength="4000" placeholder="Connect wallet & select a recipient to send a message…" disabled />
             <button type="button" class="dm-send-btn" id="dmSendBtn" disabled>Mint & Send</button>
           </div>
@@ -1333,6 +1333,8 @@
       let myKeyPair = null; // { secretKey, publicKey, publicKeyHex, pqSeedD, pqSeedZ, selfSeed, pqPublicKey, pqSecretKey, pqPublicKeyHex }
       let myKeyPublishedOnChain = false;
       let myPqKeyPublishedOnChain = false;
+      let optimisticallyPublishedPk = null;
+      let optimisticallyPublishedPqPk = null;
       let peerPublicKeys = new Map(); // address -> 64-char hex X25519 public key
       let peerPqPublicKeys = new Map(); // address -> 1600-char hex ML-KEM-512 public key
       let validatedPqPkCache = new Map(); // lowerPqPkHex -> boolean (memoizes FIPS 203 modulus validation)
@@ -1958,6 +1960,10 @@
           if (address !== myAddress && lowerPk === myPk) return false;
           if (address === myAddress && lowerPk !== myPk) return false;
         }
+        const prevPk = peerPublicKeys.get(address);
+        if (prevPk && prevPk !== lowerPk) {
+          peerPqPublicKeys.delete(address);
+        }
         peerPublicKeys.set(address, lowerPk);
         return true;
       }
@@ -2465,6 +2471,21 @@
         return [bytes[0], bytes[1]];
       }
 
+      async function derivePqStealthViewTag(mySecretKey, myPkHex, peerPkHex, pqSharedBytes, ivPrefix10) {
+        const x25519Shared = getX25519SharedSecret(mySecretKey, myPkHex, peerPkHex);
+        const input = concatBytes(
+          new TextEncoder().encode('chat.tez.cool:pq-stealth-tag:v1:'),
+          x25519Shared,
+          pqSharedBytes,
+          ivPrefix10
+        );
+        x25519Shared.fill(0);
+        const hashBuf = await crypto.subtle.digest('SHA-256', input);
+        input.fill(0);
+        const bytes = new Uint8Array(hashBuf);
+        return [bytes[0], bytes[1]];
+      }
+
       const E2EE_PAD_BLOCK = 64;
 
       function padPlaintextBytes(plainBytes) {
@@ -2832,14 +2853,16 @@
           throw new Error('Refusing to encrypt to a peer advertising your own public key');
         }
         const iv = crypto.getRandomValues(new Uint8Array(12));
-        const viewTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, iv.subarray(0, 10));
-        iv[10] = viewTag[0];
-        iv[11] = viewTag[1];
-
         const mSeed = crypto.getRandomValues(new Uint8Array(32));
         const senderPkBytes = keyPair.publicKey;
         const recipientPkBytes = hexToBytes(recipientPkHex);
         const recipientPqPkBytes = hexToBytes(recipientPqPkHex);
+
+        const { cipherText: pqCt, sharedSecret: pqShared } = mlKem512Encaps(recipientPqPkBytes, mSeed);
+        mSeed.fill(0);
+        const viewTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, pqShared, iv.subarray(0, 10));
+        iv[10] = viewTag[0];
+        iv[11] = viewTag[1];
 
         const mask = await derivePqStealthMask(keyPair.selfSeed, iv);
         const maskedRecipientPk = new Uint8Array(32);
@@ -2848,8 +2871,6 @@
         }
         mask.fill(0);
 
-        const { cipherText: pqCt, sharedSecret: pqShared } = mlKem512Encaps(recipientPqPkBytes, mSeed);
-        mSeed.fill(0);
         const selfWrapMask = await derivePqSelfWrapMask(keyPair.selfSeed, iv, recipientPkBytes);
         const wrappedPqShared = new Uint8Array(32);
         for (let i = 0; i < 32; i++) {
@@ -2921,12 +2942,15 @@
           }
           selfWrapMask.fill(0);
         } else {
-          const expectedTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, iv.subarray(0, 10));
-          if (iv[10] !== expectedTag[0] || iv[11] !== expectedTag[1]) return null;
           recipientPkBytes = keyPair.publicKey;
           peerPkHex = senderPkLower;
           pqShared = mlKem512Decaps(keyPair.pqSecretKey, pqCt);
           if (!pqShared) return null;
+          const expectedTag = await derivePqStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, pqShared, iv.subarray(0, 10));
+          if (iv[10] !== expectedTag[0] || iv[11] !== expectedTag[1]) {
+            pqShared.fill(0);
+            return null;
+          }
         }
 
         const aesKey = await deriveHybridPqAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex, pqShared);
@@ -3164,6 +3188,12 @@
             peerPqPublicKeys.set(activeAddr, myKeyPair.pqPublicKeyHex);
             await saveSessionKeyPair(activeAddr, myKeyPair);
             processedOpsCache.clear();
+            if (optimisticallyPublishedPk !== myKeyPair.publicKeyHex.toLowerCase()) {
+              optimisticallyPublishedPk = null;
+            }
+            if (optimisticallyPublishedPqPk !== myKeyPair.pqPublicKeyHex.toLowerCase()) {
+              optimisticallyPublishedPqPk = null;
+            }
             myKeyPublishedOnChain = Boolean(myKeyPublishedOnChain && priorOnChainPk === myKeyPair.publicKeyHex);
             myPqKeyPublishedOnChain = Boolean(myPqKeyPublishedOnChain && priorOnChainPqPk === myKeyPair.pqPublicKeyHex);
 
@@ -3253,9 +3283,11 @@
 
           if (myAddress === activeAddr && myKeyPair === activeKeyPair) {
             myKeyPublishedOnChain = true;
+            optimisticallyPublishedPk = activeKeyPair.publicKeyHex.toLowerCase();
             peerPublicKeys.set(activeAddr, activeKeyPair.publicKeyHex);
             if (includePqKey && activeKeyPair.pqPublicKeyHex) {
               myPqKeyPublishedOnChain = true;
+              optimisticallyPublishedPqPk = activeKeyPair.pqPublicKeyHex.toLowerCase();
               peerPqPublicKeys.set(activeAddr, activeKeyPair.pqPublicKeyHex);
             }
           }
@@ -3485,7 +3517,7 @@
             publishKeyBtn.setAttribute('data-tooltip-title', 'Publish Post-Quantum Hybrid Key (~0.001 XTZ once)');
             publishKeyBtn.setAttribute(
               'data-tooltip',
-              'Registers both your 32-byte X25519 key and 800-byte NIST ML-KEM-512 Post-Quantum key on-chain with zero storage burn (~0.001 XTZ once) so anyone can send you quantum-resistant messages.'
+              'Registers both your 32-byte X25519 key and 800-byte NIST ML-KEM-512 Post-Quantum key on-chain with zero storage burn (~0.001 XTZ once) so anyone can send you quantum-resistant messages. Note: Full PQ key-derivation resistance against Shor\'s algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts.'
             );
             publishKeyBtn.setAttribute('data-tooltip-variant', 'purple');
           } else {
@@ -3673,6 +3705,9 @@
             encryptMode = true;
           }
           updateE2EEControlsUI();
+          if (!activeAddr.startsWith('tz1') && !activeAddr.startsWith('tz5')) {
+            toast('⚠️ Note: Full Post-Quantum key-derivation resistance against Shor\'s algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts.');
+          }
           if (!myPqKeyPublishedOnChain) {
             toast('🛡️ Post-Quantum (ML-KEM-512) mode enabled! Click "🛡️ Publish PQ Key" in the top bar (~0.001 XTZ once) so others can send you PQ messages too.');
           } else if (peerPk && !peerPqPk) {
@@ -3715,7 +3750,7 @@
           pqToggleBtn.setAttribute(
             'data-tooltip',
             peerHasPqKey
-              ? 'Uses X25519 + NIST ML-KEM-512 + AES-256-GCM (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Click to switch back to standard X25519.'
+              ? 'Uses X25519 + NIST ML-KEM-512 + AES-256-GCM (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor\'s algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts. Click to switch back to standard X25519.'
               : 'PQ Shield is enabled, but this recipient has not published an ML-KEM-512 key (pq_pk) yet. Click to toggle off or ask them to click "🛡️ Publish PQ Key" (~0.001 XTZ).'
           );
           pqToggleBtn.setAttribute('data-tooltip-variant', peerHasPqKey ? 'purple' : 'amber');
@@ -3725,7 +3760,7 @@
           pqToggleBtn.setAttribute('data-tooltip-title', 'Post-Quantum Hybrid Shield: OFF');
           pqToggleBtn.setAttribute(
             'data-tooltip',
-            'Click to enable optional NIST ML-KEM-512 Post-Quantum Hybrid protection (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth).'
+            'Click to enable optional NIST ML-KEM-512 Post-Quantum Hybrid protection (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor\'s algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts.'
           );
           pqToggleBtn.setAttribute('data-tooltip-variant', 'purple');
         }
@@ -3832,6 +3867,8 @@
 
           const sessionKeyTag = activeKeyPair ? activeKeyPair.publicKeyHex : 'locked';
           let uncachedStealthTrials = 0;
+          let latestMyOnChainPk = null;
+          let latestMyOnChainPqPk = null;
 
           for (const op of allOps) {
             if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
@@ -3849,16 +3886,25 @@
             if (!ADDR_REGEX.test(sender) || !ADDR_REGEX.test(recipient)) continue;
 
             // Register authentic public keys published directly by op.sender.address in chronological order
-            if (senderPk && tryRegisterPeerPk(sender, senderPk)) {
-              const lowerPk = senderPk.toLowerCase();
-              if (sender === activeAddress && (!activeKeyPair || lowerPk === activeKeyPair.publicKeyHex.toLowerCase())) {
-                myKeyPublishedOnChain = true;
+            if (sender === activeAddress) {
+              if (senderPk && isValidX25519PublicKeyHex(senderPk)) {
+                const lowerPk = senderPk.toLowerCase();
+                if (latestMyOnChainPk && latestMyOnChainPk !== lowerPk) {
+                  latestMyOnChainPqPk = null;
+                }
+                latestMyOnChainPk = lowerPk;
               }
-            }
-            if (senderPqPk && tryRegisterPeerPqPk(sender, senderPqPk)) {
-              const lowerPqPk = senderPqPk.toLowerCase();
-              if (sender === activeAddress && (!activeKeyPair || lowerPqPk === activeKeyPair.pqPublicKeyHex.toLowerCase())) {
-                myPqKeyPublishedOnChain = true;
+              if (senderPqPk && isValidMlKem512PublicKeyHex(senderPqPk)) {
+                if (!senderPk || (latestMyOnChainPk && latestMyOnChainPk === senderPk.toLowerCase())) {
+                  latestMyOnChainPqPk = senderPqPk.toLowerCase();
+                }
+              }
+            } else {
+              if (senderPk) {
+                tryRegisterPeerPk(sender, senderPk);
+              }
+              if (senderPqPk && (!senderPk || peerPublicKeys.get(sender) === senderPk.toLowerCase())) {
+                tryRegisterPeerPqPk(sender, senderPqPk);
               }
             }
 
@@ -3987,6 +4033,32 @@
           }
 
           if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+          if (activeKeyPair) {
+            const myPkLower = activeKeyPair.publicKeyHex.toLowerCase();
+            const myPqPkLower = activeKeyPair.pqPublicKeyHex.toLowerCase();
+            peerPublicKeys.set(activeAddress, myPkLower);
+            peerPqPublicKeys.set(activeAddress, myPqPkLower);
+            myKeyPublishedOnChain = Boolean(
+              latestMyOnChainPk === myPkLower || optimisticallyPublishedPk === myPkLower
+            );
+            myPqKeyPublishedOnChain = Boolean(
+              (latestMyOnChainPqPk === myPqPkLower && latestMyOnChainPk === myPkLower) ||
+                optimisticallyPublishedPqPk === myPqPkLower
+            );
+          } else {
+            if (latestMyOnChainPk) {
+              peerPublicKeys.set(activeAddress, latestMyOnChainPk);
+            } else {
+              peerPublicKeys.delete(activeAddress);
+            }
+            if (latestMyOnChainPqPk) {
+              peerPqPublicKeys.set(activeAddress, latestMyOnChainPqPk);
+            } else {
+              peerPqPublicKeys.delete(activeAddress);
+            }
+            myKeyPublishedOnChain = Boolean(latestMyOnChainPk);
+            myPqKeyPublishedOnChain = Boolean(latestMyOnChainPqPk);
+          }
           conversations.forEach((msgs, peer) => {
             if (msgs.length === 0 && !nextMap.has(peer)) {
               nextMap.set(peer, []);
@@ -4379,6 +4451,7 @@
 
           if (myAddress === activeAddr && activeKeyPair && myKeyPair === activeKeyPair) {
             myKeyPublishedOnChain = true;
+            optimisticallyPublishedPk = activeKeyPair.publicKeyHex.toLowerCase();
             peerPublicKeys.set(activeAddr, activeKeyPair.publicKeyHex);
           }
           if (currentRecipient === targetRecipient) {
@@ -4419,6 +4492,8 @@
         processedOpsCache.clear();
         peerPublicKeys.clear();
         peerPqPublicKeys.clear();
+        optimisticallyPublishedPk = null;
+        optimisticallyPublishedPqPk = null;
         zeroizeKeyPair(myKeyPair);
         clearCryptoCaches();
         myKeyPair = null;

@@ -2726,8 +2726,8 @@
             peerPqPublicKeys.set(activeAddr, myKeyPair.pqPublicKeyHex);
             saveSessionKeyPair(activeAddr, myKeyPair);
             processedOpsCache.clear();
-            myKeyPublishedOnChain = false;
-            myPqKeyPublishedOnChain = false;
+            myKeyPublishedOnChain = Boolean(myKeyPublishedOnChain && priorOnChainPk === myKeyPair.publicKeyHex);
+            myPqKeyPublishedOnChain = Boolean(myPqKeyPublishedOnChain && priorOnChainPqPk === myKeyPair.pqPublicKeyHex);
 
             await decryptAllLoadedMessages();
             updateE2EEControlsUI();
@@ -3528,6 +3528,11 @@
           }
 
           if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+          conversations.forEach((msgs, peer) => {
+            if (msgs.length === 0 && !nextMap.has(peer)) {
+              nextMap.set(peer, []);
+            }
+          });
           conversations = nextMap;
 
           if (currentRecipient && !conversations.has(currentRecipient)) {

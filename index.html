@@ -385,6 +385,8 @@
 
     /* Left Sidebar: Contacts / Dialogs */
     .sidebar-header {
+      position: relative;
+      z-index: 30;
       padding: 14px;
       border-bottom: 1px solid var(--border-subtle);
       display: flex;
@@ -450,6 +452,7 @@
     }
 
     .new-chat-row {
+      position: relative;
       display: flex;
       gap: 6px;
     }
@@ -466,10 +469,17 @@
       font-family: var(--font-mono);
       font-size: 12px;
       outline: none;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .new-chat-input::placeholder {
+      color: var(--text-muted);
+      font-family: var(--font-sans);
     }
 
     .new-chat-input:focus {
       border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 2px rgba(0, 242, 242, 0.14);
     }
 
     .btn-add-chat {
@@ -490,6 +500,106 @@
 
     .btn-add-chat:hover {
       background: rgba(0, 242, 242, 0.22);
+    }
+
+    /* Address Autocomplete Dropdown */
+    .address-dropdown {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      width: 100%;
+      max-height: min(320px, calc(100dvh - 230px));
+      overflow-y: auto;
+      background: linear-gradient(180deg, rgba(19, 24, 44, 0.98) 0%, rgba(11, 14, 27, 0.98) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-glass), 0 0 20px rgba(162, 124, 238, 0.16);
+      z-index: 60;
+      display: none;
+      padding: 6px;
+    }
+
+    .address-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      gap: 10px;
+    }
+
+    .address-item:hover,
+    .address-item.focused {
+      background: linear-gradient(135deg, rgba(162, 124, 238, 0.2), rgba(0, 242, 242, 0.1));
+      border-color: rgba(162, 124, 238, 0.38);
+    }
+
+    .address-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #fff;
+      object-fit: cover;
+      border: 1.5px solid rgba(162, 124, 238, 0.35);
+      flex-shrink: 0;
+    }
+
+    .address-info {
+      flex: 1;
+      min-width: 0;
+      text-align: left;
+    }
+
+    .address-alias {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 12.5px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 1px;
+    }
+
+    .address-value {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .no-results {
+      padding: 12px 10px;
+      color: var(--text-secondary);
+      text-align: center;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .suggest-spinner {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 2px solid rgba(162, 124, 238, 0.28);
+      border-top-color: var(--accent-cyan);
+      animation: suggestSpin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes suggestSpin {
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .dialogs-list {
@@ -1677,7 +1787,7 @@
               <button type="button" class="mobile-return-chat-btn visible" id="mobileReturnChatBtn">Overview ›</button>
             </div>
             <div class="new-chat-row">
-              <input type="text" id="newAddressInput" class="new-chat-input" maxlength="36" placeholder="tz1-tz5 or KT1 address…" />
+              <input type="text" id="newAddressInput" class="new-chat-input" maxlength="64" placeholder="Search alias or tz1-tz5 / KT1…" autocomplete="off" spellcheck="false" />
               <button type="button" class="btn-add-chat" id="addChatBtn" data-tooltip-title="Start New Chat" data-tooltip="Open a direct conversation with any Tezos address" data-tooltip-variant="cyan">+ New</button>
             </div>
           </div>
@@ -4863,12 +4973,40 @@
         messagesScroll.scrollTop = messagesScroll.scrollHeight;
       }
 
+      const TZKT_SUGGEST_API_BASE = 'https://api.tzkt.io/v1';
+      const TZKT_SUGGEST_FALLBACK_API_BASE = 'https://kukai.api.tzkt.io/v1';
+      const TZKT_AVATARS_BASE = 'https://services.tzkt.io/v1/avatars';
+
+      const addressDropdown = document.createElement('div');
+      addressDropdown.className = 'address-dropdown';
+      if (newAddressInput && newAddressInput.parentElement) {
+        newAddressInput.parentElement.appendChild(addressDropdown);
+      }
+
+      let suggestTimeout = null;
+      let suggestHideTimeout = null;
+      let suggestReqId = 0;
+
+      function hideAddressDropdown() {
+        if (suggestTimeout) {
+          clearTimeout(suggestTimeout);
+          suggestTimeout = null;
+        }
+        if (suggestHideTimeout) {
+          clearTimeout(suggestHideTimeout);
+          suggestHideTimeout = null;
+        }
+        suggestReqId++;
+        addressDropdown.style.display = 'none';
+      }
+
       function handleAddNewChat() {
         const addr = newAddressInput.value.trim();
         if (!ADDR_REGEX.test(addr)) {
           toast('Please enter a valid 36-character Tezos address.');
           return;
         }
+        hideAddressDropdown();
         if (!conversations.has(addr)) {
           conversations.set(addr, []);
           resolveAlias(addr);
@@ -4880,11 +5018,188 @@
         renderActiveConversation();
       }
 
-      addChatBtn.addEventListener('click', handleAddNewChat);
+      function selectSuggestedAddress(address, alias) {
+        hideAddressDropdown();
+        newAddressInput.value = address;
+        const safeAlias = alias ? sanitizeAlias(alias, address) : '';
+        if (safeAlias) {
+          aliasCache.set(address, safeAlias);
+        }
+        toast(`Selected: ${safeAlias || shortAddr(address)}`);
+        handleAddNewChat();
+      }
+
+      function focusNextAddressItem() {
+        const items = addressDropdown.querySelectorAll('.address-item');
+        const focused = addressDropdown.querySelector('.address-item.focused');
+        if (!focused && items.length > 0) {
+          items[0].classList.add('focused');
+        } else if (focused) {
+          const idx = Array.from(items).indexOf(focused);
+          if (idx < items.length - 1) {
+            focused.classList.remove('focused');
+            items[idx + 1].classList.add('focused');
+            items[idx + 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+
+      function focusPreviousAddressItem() {
+        const items = addressDropdown.querySelectorAll('.address-item');
+        const focused = addressDropdown.querySelector('.address-item.focused');
+        if (focused) {
+          const idx = Array.from(items).indexOf(focused);
+          if (idx > 0) {
+            focused.classList.remove('focused');
+            items[idx - 1].classList.add('focused');
+            items[idx - 1].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+      }
+
+      function renderAddressDropdown(suggestions) {
+        addressDropdown.innerHTML = '';
+        const limited = suggestions.slice(0, 10);
+
+        limited.forEach(suggestion => {
+          const item = document.createElement('div');
+          item.className = 'address-item';
+          item.dataset.address = suggestion.address;
+          item.dataset.alias = suggestion.alias || '';
+
+          const avatar = document.createElement('img');
+          avatar.className = 'address-avatar';
+          avatar.src = `${TZKT_AVATARS_BASE}/${encodeURIComponent(suggestion.address)}`;
+          avatar.alt = '';
+          avatar.onerror = function () {
+            const initial = (suggestion.alias || suggestion.address || 'T').charAt(0).toUpperCase();
+            this.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23231942'/%3E%3Ctext x='50%25' y='54%25' font-family='sans-serif' font-size='14' font-weight='bold' text-anchor='middle' dominant-baseline='middle' fill='%23e9d5ff'%3E${encodeURIComponent(initial)}%3C/text%3E%3C/svg%3E`;
+          };
+
+          const info = document.createElement('div');
+          info.className = 'address-info';
+
+          if (suggestion.alias) {
+            const aliasDiv = document.createElement('div');
+            aliasDiv.className = 'address-alias';
+            aliasDiv.textContent = suggestion.alias;
+            info.appendChild(aliasDiv);
+          }
+
+          const addrDiv = document.createElement('div');
+          addrDiv.className = 'address-value';
+          addrDiv.textContent = suggestion.address;
+          info.appendChild(addrDiv);
+
+          item.appendChild(avatar);
+          item.appendChild(info);
+
+          item.addEventListener('click', () => {
+            selectSuggestedAddress(suggestion.address, suggestion.alias);
+          });
+
+          addressDropdown.appendChild(item);
+        });
+
+        addressDropdown.style.display = 'block';
+      }
+
+      async function fetchAddressSuggestions(query) {
+        const reqId = ++suggestReqId;
+        try {
+          addressDropdown.innerHTML = '<div class="no-results"><span class="suggest-spinner"></span><span>Searching TzKT…</span></div>';
+          addressDropdown.style.display = 'block';
+
+          const encoded = encodeURIComponent(query);
+          let response = await fetch(`${TZKT_SUGGEST_API_BASE}/suggest/accounts/${encoded}`);
+          if (!response.ok) {
+            response = await fetch(`${TZKT_SUGGEST_FALLBACK_API_BASE}/suggest/accounts/${encoded}`);
+          }
+          if (!response.ok) throw new Error('Network response was not ok');
+
+          const suggestions = await response.json();
+          if (reqId !== suggestReqId) return;
+
+          const validSuggestions = Array.isArray(suggestions)
+            ? suggestions.filter(s => s && ADDR_REGEX.test(s.address))
+            : [];
+
+          if (validSuggestions.length > 0) {
+            renderAddressDropdown(validSuggestions);
+          } else {
+            addressDropdown.innerHTML = '<div class="no-results">No matching Tezos accounts found</div>';
+            suggestHideTimeout = setTimeout(() => {
+              if (reqId === suggestReqId) {
+                addressDropdown.style.display = 'none';
+              }
+            }, 1800);
+          }
+        } catch (err) {
+          if (reqId !== suggestReqId) return;
+          console.error('Error fetching address suggestions:', err);
+          addressDropdown.style.display = 'none';
+        }
+      }
+
+      newAddressInput.addEventListener('input', function () {
+        const query = this.value.trim();
+
+        if (suggestTimeout) clearTimeout(suggestTimeout);
+        if (suggestHideTimeout) clearTimeout(suggestHideTimeout);
+
+        if (!query || query.length > 30 || query.startsWith('0x')) {
+          suggestReqId++;
+          addressDropdown.style.display = 'none';
+          if (query.length === 36 && ADDR_REGEX.test(query)) {
+            handleAddNewChat();
+          }
+          return;
+        }
+
+        suggestTimeout = setTimeout(() => {
+          fetchAddressSuggestions(query);
+        }, 260);
+      });
+
+      document.addEventListener('click', e => {
+        if (!newAddressInput.contains(e.target) && !addressDropdown.contains(e.target) && e.target !== addChatBtn) {
+          addressDropdown.style.display = 'none';
+        }
+      });
+
+      addChatBtn.addEventListener('click', () => {
+        if (addressDropdown.style.display !== 'none') {
+          const focused = addressDropdown.querySelector('.address-item.focused');
+          if (focused) {
+            selectSuggestedAddress(focused.dataset.address, focused.dataset.alias);
+            return;
+          }
+        }
+        addressDropdown.style.display = 'none';
+        handleAddNewChat();
+      });
+
       newAddressInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') {
+        if (e.key === 'ArrowDown' && addressDropdown.style.display !== 'none') {
           e.preventDefault();
+          focusNextAddressItem();
+        } else if (e.key === 'ArrowUp' && addressDropdown.style.display !== 'none') {
+          e.preventDefault();
+          focusPreviousAddressItem();
+        } else if (e.key === 'Enter') {
+          if (addressDropdown.style.display !== 'none') {
+            const focused = addressDropdown.querySelector('.address-item.focused');
+            if (focused) {
+              e.preventDefault();
+              selectSuggestedAddress(focused.dataset.address, focused.dataset.alias);
+              return;
+            }
+          }
+          e.preventDefault();
+          addressDropdown.style.display = 'none';
           handleAddNewChat();
+        } else if (e.key === 'Escape') {
+          addressDropdown.style.display = 'none';
         }
       });
 
@@ -5111,6 +5426,7 @@
           currentRecipient = null;
           dmInput.value = '';
           newAddressInput.value = '';
+          hideAddressDropdown();
           emojiPopover.classList.remove('open');
           hideCustomTooltip();
           setMobileView('chat');

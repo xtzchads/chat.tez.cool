@@ -1591,16 +1591,10 @@
                   value: {
                     prim: 'Pair',
                     args: [
-                      {
-                        prim: 'Pair',
-                        args: [
-                          { int: '1' },
-                          metadataEntries.map(e => ({
-                            prim: 'Elt',
-                            args: [{ string: e.key }, { bytes: e.hex }]
-                          }))
-                        ]
-                      },
+                      metadataEntries.map(e => ({
+                        prim: 'Elt',
+                        args: [{ string: e.key }, { bytes: e.hex }]
+                      })),
                       { string: myAddress }
                     ]
                   }
@@ -2340,19 +2334,13 @@
                   value: {
                     prim: 'Pair',
                     args: [
-                      {
-                        prim: 'Pair',
+                      metadataEntries.map(e => ({
+                        prim: 'Elt',
                         args: [
-                          { int: '1' },
-                          metadataEntries.map(e => ({
-                            prim: 'Elt',
-                            args: [
-                              { string: e.key },
-                              { bytes: e.hex }
-                            ]
-                          }))
+                          { string: e.key },
+                          { bytes: e.hex }
                         ]
-                      },
+                      })),
                       { string: currentRecipient }
                     ]
                   }

@@ -1262,7 +1262,7 @@
               <span id="dialogCountBadge">0</span>
             </div>
             <div class="new-chat-row">
-              <input type="text" id="newAddressInput" class="new-chat-input" maxlength="36" placeholder="tz1 / tz2 / tz4 / KT1 address…" />
+              <input type="text" id="newAddressInput" class="new-chat-input" maxlength="36" placeholder="tz1-tz5 or KT1 address…" />
               <button type="button" class="btn-add-chat" id="addChatBtn" data-tooltip-title="Start New Chat" data-tooltip="Open a direct conversation with any Tezos address" data-tooltip-variant="cyan">+ New</button>
             </div>
           </div>
@@ -1309,7 +1309,7 @@
     (function () {
       const CONTRACT = 'KT1DenRaZdNgm1WM4vREJ2Zgx5EiH3aogDYZ';
       const RPC_URL = 'https://tcinfra.net/rpc/tezos/mainnet';
-      const ADDR_REGEX = /^(tz1|tz2|tz3|tz4|KT1)[1-9A-HJ-NP-Za-km-z]{33}$/;
+      const ADDR_REGEX = /^(tz1|tz2|tz3|tz4|tz5|KT1)[1-9A-HJ-NP-Za-km-z]{33}$/;
       const HEX32_REGEX = /^[0-9a-fA-F]{64}$/;
       const HEX800_REGEX = /^[0-9a-fA-F]{1600}$/;
       const HEX_EVEN_REGEX = /^(?:[0-9a-fA-F]{2})+$/;
@@ -1335,10 +1335,12 @@
       let myPqKeyPublishedOnChain = false;
       let peerPublicKeys = new Map(); // address -> 64-char hex X25519 public key
       let peerPqPublicKeys = new Map(); // address -> 1600-char hex ML-KEM-512 public key
-      let pkOwnerAddresses = new Map(); // lowerPkHex -> { address, minOpId }
-      let pqPkOwnerAddresses = new Map(); // lowerPqPkHex -> { address, minOpId }
       let validatedPqPkCache = new Map(); // lowerPqPkHex -> boolean (memoizes FIPS 203 modulus validation)
       let processedOpsCache = new Map(); // cacheKey -> { skip: boolean, entry?: object }
+      let sharedSecretCache = new Map(); // "myPkHex:peerPkHex" -> Uint8Array(32) X25519 shared secret
+      let classicalAesKeyCache = new Map(); // "myPkHex:peerPkHex" -> CryptoKey
+      let cachedContractOps = []; // Incremental TzKT operation log (sorted ascending by op.id)
+      let lastFetchedOpId = 0; // Highest op.id fetched in cachedContractOps
       let encryptMode = false;
       let stealthMode = false;
       let pqMode = false;
@@ -1427,90 +1429,166 @@
       }
 
       /* =========================================================================
-       * RFC 7748 X25519 ECDH + NIST FIPS 203 ML-KEM-512 + WebCrypto AES-256-GCM
+       * RFC 7748 X25519 ECDH (Constant-Time 16-Limb GF(2^255-19)) +
+       * NIST FIPS 203 ML-KEM-512 + WebCrypto AES-256-GCM
        * ========================================================================= */
       const P_25519 = (1n << 255n) - 19n;
-      const A24_25519 = 121665n;
 
       function modP(x) {
         const r = x % P_25519;
         return r < 0n ? r + P_25519 : r;
       }
 
-      function modPowP(base, exp) {
-        let result = 1n;
-        let b = modP(base);
-        let e = exp;
-        while (e > 0n) {
-          if (e & 1n) result = modP(result * b);
-          b = modP(b * b);
-          e >>= 1n;
+      function gf25519(init) {
+        const r = new Float64Array(16);
+        if (init) {
+          for (let i = 0; i < init.length; i++) r[i] = init[i];
         }
-        return result;
+        return r;
+      }
+
+      const GF25519_121665 = gf25519([0xdb41, 1]);
+
+      function car25519(o) {
+        for (let i = 0; i < 16; i++) {
+          o[i] += 65536;
+          const c = Math.floor(o[i] * (1 / 65536));
+          o[(i + 1) * (i < 15 ? 1 : 0)] += c - 1 + 37 * (c - 1) * (i === 15 ? 1 : 0);
+          o[i] -= c * 65536;
+        }
+      }
+
+      function sel25519(p, q, b) {
+        const c = ~(b - 1);
+        for (let i = 0; i < 16; i++) {
+          const t = c & (p[i] ^ q[i]);
+          p[i] ^= t;
+          q[i] ^= t;
+        }
+      }
+
+      function pack25519(o, n) {
+        const m = gf25519();
+        const t = gf25519(n);
+        car25519(t);
+        car25519(t);
+        car25519(t);
+        for (let j = 0; j < 2; j++) {
+          m[0] = t[0] - 0xffed;
+          for (let i = 1; i < 15; i++) {
+            m[i] = t[i] - 0xffff - ((m[i - 1] >> 16) & 1);
+            m[i - 1] &= 0xffff;
+          }
+          m[15] = t[15] - 0x7fff - ((m[14] >> 16) & 1);
+          const b = (m[15] >> 16) & 1;
+          m[14] &= 0xffff;
+          sel25519(t, m, 1 - b);
+        }
+        for (let i = 0; i < 16; i++) {
+          o[2 * i] = t[i] & 0xff;
+          o[2 * i + 1] = t[i] >> 8;
+        }
+      }
+
+      function unpack25519(o, n) {
+        for (let i = 0; i < 16; i++) {
+          o[i] = n[2 * i] + (n[2 * i + 1] << 8);
+        }
+        o[15] &= 0x7fff;
+      }
+
+      function add25519(o, a, b) {
+        for (let i = 0; i < 16; i++) o[i] = a[i] + b[i];
+      }
+
+      function sub25519(o, a, b) {
+        for (let i = 0; i < 16; i++) o[i] = a[i] - b[i];
+      }
+
+      function mul25519(o, a, b) {
+        const t = new Float64Array(31);
+        for (let i = 0; i < 16; i++) {
+          for (let j = 0; j < 16; j++) {
+            t[i + j] += a[i] * b[j];
+          }
+        }
+        for (let i = 0; i < 15; i++) {
+          t[i] += 38 * t[i + 16];
+        }
+        for (let i = 0; i < 16; i++) o[i] = t[i];
+        car25519(o);
+        car25519(o);
+      }
+
+      function sqr25519(o, a) {
+        mul25519(o, a, a);
+      }
+
+      function inv25519(o, i) {
+        const c = gf25519(i);
+        for (let a = 253; a >= 0; a--) {
+          sqr25519(c, c);
+          if (a !== 2 && a !== 4) mul25519(c, c, i);
+        }
+        for (let a = 0; a < 16; a++) o[a] = c[a];
       }
 
       function x25519(kBytes, uBytes) {
         if (!kBytes || !uBytes || kBytes.length !== 32 || uBytes.length !== 32) {
           throw new Error('Invalid X25519 key length');
         }
-        const k = new Uint8Array(kBytes);
-        k[0] &= 248;
-        k[31] = (k[31] & 127) | 64;
-
-        const u = new Uint8Array(uBytes);
-        u[31] &= 127;
-
-        let kBig = 0n;
-        let uBig = 0n;
-        for (let i = 31; i >= 0; i--) {
-          kBig = (kBig << 8n) | BigInt(k[i]);
-          uBig = (uBig << 8n) | BigInt(u[i]);
+        const z = new Uint8Array(32);
+        const x = new Float64Array(80);
+        const a = gf25519(), b = gf25519(), c = gf25519(), d = gf25519(), e = gf25519(), f = gf25519();
+        for (let i = 0; i < 31; i++) z[i] = kBytes[i];
+        z[31] = (kBytes[31] & 127) | 64;
+        z[0] &= 248;
+        unpack25519(x, uBytes);
+        for (let i = 0; i < 16; i++) {
+          b[i] = x[i];
+          d[i] = a[i] = c[i] = 0;
         }
-        k.fill(0);
-        uBig = modP(uBig);
-
-        const x1 = uBig;
-        let x2 = 1n, z2 = 0n;
-        let x3 = uBig, z3 = 1n;
-        let swap = 0n;
-
-        for (let t = 254n; t >= 0n; t--) {
-          const kt = (kBig >> t) & 1n;
-          const cswapMask = -(swap ^ kt);
-          const dx = cswapMask & (x2 ^ x3);
-          x2 ^= dx; x3 ^= dx;
-          const dz = cswapMask & (z2 ^ z3);
-          z2 ^= dz; z3 ^= dz;
-          swap = kt;
-
-          const A = modP(x2 + z2);
-          const AA = modP(A * A);
-          const B = modP(x2 - z2);
-          const BB = modP(B * B);
-          const E = modP(AA - BB);
-          const C = modP(x3 + z3);
-          const D = modP(x3 - z3);
-          const DA = modP(D * A);
-          const CB = modP(C * B);
-
-          x3 = modP((DA + CB) * (DA + CB));
-          z3 = modP(x1 * modP((DA - CB) * (DA - CB)));
-          x2 = modP(AA * BB);
-          z2 = modP(E * (AA + modP(A24_25519 * E)));
+        a[0] = d[0] = 1;
+        for (let i = 254; i >= 0; --i) {
+          const r = (z[i >>> 3] >>> (i & 7)) & 1;
+          sel25519(a, b, r);
+          sel25519(c, d, r);
+          add25519(e, a, c);
+          sub25519(a, a, c);
+          add25519(c, b, d);
+          sub25519(b, b, d);
+          sqr25519(d, e);
+          sqr25519(f, a);
+          mul25519(a, c, a);
+          mul25519(c, b, e);
+          add25519(e, a, c);
+          sub25519(a, a, c);
+          sqr25519(b, a);
+          sub25519(c, d, f);
+          mul25519(a, c, GF25519_121665);
+          add25519(a, a, d);
+          mul25519(c, c, a);
+          mul25519(a, d, f);
+          mul25519(d, b, x);
+          sqr25519(b, e);
+          sel25519(a, b, r);
+          sel25519(c, d, r);
         }
-
-        const finalMask = -swap;
-        const dxFinal = finalMask & (x2 ^ x3);
-        x2 ^= dxFinal; x3 ^= dxFinal;
-        const dzFinal = finalMask & (z2 ^ z3);
-        z2 ^= dzFinal; z3 ^= dzFinal;
-
-        let res = modP(x2 * modPowP(z2, P_25519 - 2n));
+        for (let i = 0; i < 16; i++) {
+          x[i + 16] = a[i];
+          x[i + 32] = c[i];
+          x[i + 48] = b[i];
+          x[i + 64] = d[i];
+        }
+        const x32 = x.subarray(32);
+        const x16 = x.subarray(16);
+        inv25519(x32, x32);
+        mul25519(x16, x16, x32);
         const out = new Uint8Array(32);
-        for (let i = 0; i < 32; i++) {
-          out[i] = Number(res & 0xffn);
-          res >>= 8n;
-        }
+        pack25519(out, x16);
+        z.fill(0);
+        x.fill(0);
+        a.fill(0); b.fill(0); c.fill(0); d.fill(0); e.fill(0); f.fill(0);
         return out;
       }
 
@@ -1835,6 +1913,16 @@
         return ok;
       }
 
+      function clearCryptoCaches() {
+        sharedSecretCache.forEach(sec => {
+          try {
+            if (sec instanceof Uint8Array) sec.fill(0);
+          } catch (e) {}
+        });
+        sharedSecretCache.clear();
+        classicalAesKeyCache.clear();
+      }
+
       function zeroizeKeyPair(kp) {
         if (!kp) return;
         try {
@@ -1846,7 +1934,23 @@
         } catch (e) {}
       }
 
-      function tryRegisterPeerPk(address, pkHex, opId = Infinity) {
+      function purgeReflectedPeerKeys(activeAddr, kp) {
+        if (!activeAddr || !kp) return;
+        const myPk = kp.publicKeyHex.toLowerCase();
+        const myPqPk = kp.pqPublicKeyHex.toLowerCase();
+        peerPublicKeys.forEach((pk, addr) => {
+          if (addr !== activeAddr && pk === myPk) {
+            peerPublicKeys.delete(addr);
+          }
+        });
+        peerPqPublicKeys.forEach((pqPk, addr) => {
+          if (addr !== activeAddr && pqPk === myPqPk) {
+            peerPqPublicKeys.delete(addr);
+          }
+        });
+      }
+
+      function tryRegisterPeerPk(address, pkHex) {
         if (!address || !ADDR_REGEX.test(address) || !isValidX25519PublicKeyHex(pkHex)) return false;
         const lowerPk = pkHex.toLowerCase();
         if (myKeyPair) {
@@ -1854,24 +1958,11 @@
           if (address !== myAddress && lowerPk === myPk) return false;
           if (address === myAddress && lowerPk !== myPk) return false;
         }
-        const numericOpId = typeof opId === 'number' && Number.isFinite(opId) ? opId : Infinity;
-        const existing = pkOwnerAddresses.get(lowerPk);
-        if (existing && existing.address !== address) {
-          if (numericOpId >= existing.minOpId) {
-            return false;
-          }
-          if (peerPublicKeys.get(existing.address) === lowerPk) {
-            peerPublicKeys.delete(existing.address);
-          }
-          processedOpsCache.clear();
-        }
-        const prevMin = existing && existing.address === address ? existing.minOpId : Infinity;
-        pkOwnerAddresses.set(lowerPk, { address, minOpId: Math.min(prevMin, numericOpId) });
         peerPublicKeys.set(address, lowerPk);
         return true;
       }
 
-      function tryRegisterPeerPqPk(address, pqPkHex, opId = Infinity) {
+      function tryRegisterPeerPqPk(address, pqPkHex) {
         if (!address || !ADDR_REGEX.test(address) || !isValidMlKem512PublicKeyHex(pqPkHex)) return false;
         const lowerPqPk = pqPkHex.toLowerCase();
         if (myKeyPair) {
@@ -1879,29 +1970,149 @@
           if (address !== myAddress && lowerPqPk === myPqPk) return false;
           if (address === myAddress && lowerPqPk !== myPqPk) return false;
         }
-        const numericOpId = typeof opId === 'number' && Number.isFinite(opId) ? opId : Infinity;
-        const existing = pqPkOwnerAddresses.get(lowerPqPk);
-        if (existing && existing.address !== address) {
-          if (numericOpId >= existing.minOpId) {
-            return false;
-          }
-          if (peerPqPublicKeys.get(existing.address) === lowerPqPk) {
-            peerPqPublicKeys.delete(existing.address);
-          }
-          processedOpsCache.clear();
-        }
-        const prevMin = existing && existing.address === address ? existing.minOpId : Infinity;
-        pqPkOwnerAddresses.set(lowerPqPk, { address, minOpId: Math.min(prevMin, numericOpId) });
         peerPqPublicKeys.set(address, lowerPqPk);
         return true;
       }
 
-      function isValidWalletSignature(sig) {
-        if (typeof sig !== 'string') return false;
+      const B58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+      const ED25519_L = (1n << 252n) + 27742317777372353535851937790883648493n;
+      const TEZOS_SIG_PREFIXES = {
+        edsig: { prefix: new Uint8Array([9, 245, 205, 134, 18]), sigLen: 64 },
+        spsig1: { prefix: new Uint8Array([13, 115, 101, 19, 63]), sigLen: 64 },
+        p2sig: { prefix: new Uint8Array([54, 240, 44, 52]), sigLen: 64 },
+        BLsig: { prefix: new Uint8Array([40, 171, 64, 207]), sigLen: 96 },
+        mdsig: { prefix: new Uint8Array([1, 156, 45, 210, 3]), sigLen: 2420 },
+        sig: { prefix: new Uint8Array([4, 130, 43]), sigLen: 64 }
+      };
+
+      async function base58CheckDecode(str) {
+        if (typeof str !== 'string' || str.length < 10 || str.length > 4096) return null;
+        let zeros = 0;
+        while (zeros < str.length && str[zeros] === '1') zeros++;
+        let num = 0n;
+        for (let i = zeros; i < str.length; i++) {
+          const idx = B58_ALPHABET.indexOf(str[i]);
+          if (idx < 0) return null;
+          num = num * 58n + BigInt(idx);
+        }
+        const revBytes = [];
+        while (num > 0n) {
+          revBytes.push(Number(num & 0xffn));
+          num >>= 8n;
+        }
+        revBytes.reverse();
+        const full = new Uint8Array(zeros + revBytes.length);
+        full.set(revBytes, zeros);
+        if (full.length < 5) return null;
+        const payload = full.slice(0, full.length - 4);
+        const checksum = full.slice(full.length - 4);
+        const h1 = await crypto.subtle.digest('SHA-256', payload);
+        const h2 = new Uint8Array(await crypto.subtle.digest('SHA-256', h1));
+        if (
+          checksum[0] !== h2[0] ||
+          checksum[1] !== h2[1] ||
+          checksum[2] !== h2[2] ||
+          checksum[3] !== h2[3]
+        ) {
+          full.fill(0);
+          payload.fill(0);
+          return null;
+        }
+        full.fill(0);
+        return payload;
+      }
+
+      async function base58CheckEncode(payload) {
+        const h1 = await crypto.subtle.digest('SHA-256', payload);
+        const h2 = new Uint8Array(await crypto.subtle.digest('SHA-256', h1));
+        const full = concatBytes(payload, h2.slice(0, 4));
+        let zeros = 0;
+        while (zeros < full.length && full[zeros] === 0) zeros++;
+        let num = 0n;
+        for (let i = zeros; i < full.length; i++) {
+          num = (num << 8n) | BigInt(full[i]);
+        }
+        full.fill(0);
+        const chars = [];
+        while (num > 0n) {
+          const rem = Number(num % 58n);
+          num = num / 58n;
+          chars.push(B58_ALPHABET[rem]);
+        }
+        chars.reverse();
+        return '1'.repeat(zeros) + chars.join('');
+      }
+
+      function hasPrefixBytes(buf, prefix) {
+        if (!buf || buf.length < prefix.length) return false;
+        for (let i = 0; i < prefix.length; i++) {
+          if (buf[i] !== prefix[i]) return false;
+        }
+        return true;
+      }
+
+      async function canonicalizeWalletSignature(address, sig) {
+        if (typeof sig !== 'string' || !address || !ADDR_REGEX.test(address)) return null;
         const trimmed = sig.trim();
-        if (trimmed.length < 64 || trimmed.length > 512) return false;
-        if (!/^[1-9A-HJ-NP-Za-km-z0-9a-fA-F]+$/.test(trimmed)) return false;
-        return new Set(trimmed).size >= 12;
+        const addrPrefix = address.slice(0, 3);
+        const targetSpec =
+          addrPrefix === 'tz1'
+            ? TEZOS_SIG_PREFIXES.edsig
+            : addrPrefix === 'tz2'
+              ? TEZOS_SIG_PREFIXES.spsig1
+              : addrPrefix === 'tz3'
+                ? TEZOS_SIG_PREFIXES.p2sig
+                : addrPrefix === 'tz4'
+                  ? TEZOS_SIG_PREFIXES.BLsig
+                  : addrPrefix === 'tz5'
+                    ? TEZOS_SIG_PREFIXES.mdsig
+                    : null;
+        if (!targetSpec) return null;
+
+        let rawSig = null;
+        const hexCandidate = trimmed.startsWith('0x') || trimmed.startsWith('0X') ? trimmed.slice(2) : trimmed;
+        if (HEX_EVEN_REGEX.test(hexCandidate) && hexCandidate.length === targetSpec.sigLen * 2) {
+          rawSig = hexToBytes(hexCandidate);
+        } else {
+          const decoded = await base58CheckDecode(trimmed);
+          if (!decoded) return null;
+          if (
+            hasPrefixBytes(decoded, targetSpec.prefix) &&
+            decoded.length === targetSpec.prefix.length + targetSpec.sigLen
+          ) {
+            rawSig = decoded.slice(targetSpec.prefix.length);
+          } else if (
+            addrPrefix !== 'tz4' &&
+            hasPrefixBytes(decoded, TEZOS_SIG_PREFIXES.sig.prefix) &&
+            decoded.length === TEZOS_SIG_PREFIXES.sig.prefix.length + 64
+          ) {
+            rawSig = decoded.slice(TEZOS_SIG_PREFIXES.sig.prefix.length);
+          }
+          decoded.fill(0);
+        }
+
+        if (!rawSig || rawSig.length !== targetSpec.sigLen) return null;
+        if (new Set(rawSig).size < 8) {
+          rawSig.fill(0);
+          return null;
+        }
+
+        if (addrPrefix === 'tz1') {
+          let sBig = 0n;
+          for (let i = 63; i >= 32; i--) {
+            sBig = (sBig << 8n) | BigInt(rawSig[i]);
+          }
+          if (sBig <= 0n || sBig >= ED25519_L) {
+            rawSig.fill(0);
+            return null;
+          }
+        }
+
+        const canonicalPayload = concatBytes(targetSpec.prefix, rawSig);
+        rawSig.fill(0);
+        const canonicalB58 = await base58CheckEncode(canonicalPayload);
+        canonicalPayload.fill(0);
+        return canonicalB58;
       }
 
       function compressPoly(poly, d) {
@@ -1909,7 +2120,10 @@
         const out = new Uint8Array((256 * d) >> 3);
         let bitPos = 0;
         for (let i = 0; i < 256; i++) {
-          const val = Math.floor(((poly[i] << d) + 1664) / MLKEM_Q) & mask;
+          const num = (poly[i] << d) + 1664;
+          const q1 = Math.imul(num, 630) >> 21;
+          const rem = num - Math.imul(q1, MLKEM_Q);
+          const val = (q1 + (rem >> 31)) & mask;
           for (let b = 0; b < d; b++) {
             if ((val >> b) & 1) out[bitPos >> 3] |= 1 << (bitPos & 7);
             bitPos++;
@@ -1927,7 +2141,7 @@
             if ((bytes[bitPos >> 3] >> (bitPos & 7)) & 1) val |= 1 << b;
             bitPos++;
           }
-          poly[i] = Math.floor((val * MLKEM_Q + (1 << (d - 1))) >> d);
+          poly[i] = (Math.imul(val, MLKEM_Q) + (1 << (d - 1))) >> d;
         }
         return poly;
       }
@@ -2117,7 +2331,10 @@
       }
 
       async function deriveKeyPairFromSignature(address, signature) {
-        const cleanSig = String(signature).trim();
+        const cleanSig = await canonicalizeWalletSignature(address, signature);
+        if (!cleanSig) {
+          throw new Error('Invalid or malformed wallet signature');
+        }
         const domainInput = new TextEncoder().encode(`chat.tez.cool:e2ee:x25519:v1:${address}:${cleanSig}`);
         const pqDInput = new TextEncoder().encode(`chat.tez.cool:e2ee:mlkem512:d:v1:${address}:${cleanSig}`);
         const pqZInput = new TextEncoder().encode(`chat.tez.cool:e2ee:mlkem512:z:v1:${address}:${cleanSig}`);
@@ -2159,18 +2376,43 @@
         };
       }
 
+      function getX25519SharedSecret(mySecretKey, myPkHex, peerPkHex) {
+        if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '')) {
+          throw new Error('Invalid X25519 public key format');
+        }
+        const myLower = myPkHex.toLowerCase();
+        const peerLower = peerPkHex.toLowerCase();
+        const cacheKey = `${myLower}:${peerLower}`;
+        let cached = sharedSecretCache.get(cacheKey);
+        if (!cached) {
+          const peerPkBytes = hexToBytes(peerLower);
+          const shared = x25519(mySecretKey, peerPkBytes);
+          let nonZero = 0;
+          for (let i = 0; i < shared.length; i++) nonZero |= shared[i];
+          if (nonZero === 0) throw new Error('Invalid peer X25519 public key');
+          if (sharedSecretCache.size >= 2048) {
+            clearCryptoCaches();
+          }
+          sharedSecretCache.set(cacheKey, shared);
+          cached = shared;
+        }
+        return cached.slice();
+      }
+
       async function deriveSharedAesKey(mySecretKey, myPkHex, peerPkHex) {
         if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '')) {
           throw new Error('Invalid X25519 public key format');
         }
-        const peerPkBytes = hexToBytes(peerPkHex);
-        const sharedSecret = x25519(mySecretKey, peerPkBytes);
-        let nonZero = 0;
-        for (let i = 0; i < sharedSecret.length; i++) nonZero |= sharedSecret[i];
-        if (nonZero === 0) throw new Error('Invalid peer X25519 public key');
+        const myLower = myPkHex.toLowerCase();
+        const peerLower = peerPkHex.toLowerCase();
+        const cacheKey = `${myLower}:${peerLower}`;
+        if (classicalAesKeyCache.has(cacheKey)) {
+          return classicalAesKeyCache.get(cacheKey);
+        }
+        const sharedSecret = getX25519SharedSecret(mySecretKey, myLower, peerLower);
 
-        const firstPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? myPkHex.toLowerCase() : peerPkHex.toLowerCase();
-        const secondPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? peerPkHex.toLowerCase() : myPkHex.toLowerCase();
+        const firstPk = myLower < peerLower ? myLower : peerLower;
+        const secondPk = myLower < peerLower ? peerLower : myLower;
         const kdfInput = concatBytes(
           new TextEncoder().encode(`chat.tez.cool:aes-gcm:v1:${firstPk}:${secondPk}:`),
           sharedSecret
@@ -2181,6 +2423,7 @@
         const keyBytes = new Uint8Array(keyHash);
         const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
         keyBytes.fill(0);
+        classicalAesKeyCache.set(cacheKey, cryptoKey);
         return cryptoKey;
       }
 
@@ -2188,14 +2431,12 @@
         if (!HEX32_REGEX.test(myPkHex || '') || !HEX32_REGEX.test(peerPkHex || '') || !pqSharedBytes || pqSharedBytes.length !== 32) {
           throw new Error('Invalid hybrid key parameters');
         }
-        const peerPkBytes = hexToBytes(peerPkHex);
-        const x25519Shared = x25519(mySecretKey, peerPkBytes);
-        let nonZero = 0;
-        for (let i = 0; i < x25519Shared.length; i++) nonZero |= x25519Shared[i];
-        if (nonZero === 0) throw new Error('Invalid peer X25519 public key');
+        const myLower = myPkHex.toLowerCase();
+        const peerLower = peerPkHex.toLowerCase();
+        const x25519Shared = getX25519SharedSecret(mySecretKey, myLower, peerLower);
 
-        const firstPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? myPkHex.toLowerCase() : peerPkHex.toLowerCase();
-        const secondPk = myPkHex.toLowerCase() < peerPkHex.toLowerCase() ? peerPkHex.toLowerCase() : myPkHex.toLowerCase();
+        const firstPk = myLower < peerLower ? myLower : peerLower;
+        const secondPk = myLower < peerLower ? peerLower : myLower;
         const kdfInput = concatBytes(
           new TextEncoder().encode(`chat.tez.cool:pq-aes-gcm:v1:${firstPk}:${secondPk}:`),
           x25519Shared,
@@ -2208,6 +2449,49 @@
         const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt', 'decrypt']);
         keyBytes.fill(0);
         return cryptoKey;
+      }
+
+      async function deriveStealthViewTag(mySecretKey, myPkHex, peerPkHex, ivPrefix10) {
+        const x25519Shared = getX25519SharedSecret(mySecretKey, myPkHex, peerPkHex);
+        const input = concatBytes(
+          new TextEncoder().encode('chat.tez.cool:stealth-tag:v1:'),
+          x25519Shared,
+          ivPrefix10
+        );
+        x25519Shared.fill(0);
+        const hashBuf = await crypto.subtle.digest('SHA-256', input);
+        input.fill(0);
+        const bytes = new Uint8Array(hashBuf);
+        return [bytes[0], bytes[1]];
+      }
+
+      const E2EE_PAD_BLOCK = 64;
+
+      function padPlaintextBytes(plainBytes) {
+        const rem = plainBytes.length % E2EE_PAD_BLOCK;
+        const padLen = rem === 0 ? 0 : E2EE_PAD_BLOCK - rem;
+        if (padLen === 0) return plainBytes;
+        const out = new Uint8Array(plainBytes.length + padLen);
+        out.set(plainBytes, 0);
+        return out;
+      }
+
+      function unpadPlaintextString(plainBuf) {
+        const bytes = new Uint8Array(plainBuf);
+        let end = bytes.length;
+        while (end > 0 && bytes[end - 1] === 0) {
+          end--;
+        }
+        return new TextDecoder('utf-8').decode(bytes.subarray(0, end));
+      }
+
+      function buildPaddedStealthJsonBytes(recipientAddress, plaintext) {
+        const baseObj = { to: recipientAddress, text: plaintext, pad: '' };
+        const baseBytes = new TextEncoder().encode(JSON.stringify(baseObj));
+        const rem = baseBytes.length % E2EE_PAD_BLOCK;
+        const padLen = rem === 0 ? 0 : E2EE_PAD_BLOCK - rem;
+        baseObj.pad = '0'.repeat(padLen);
+        return new TextEncoder().encode(JSON.stringify(baseObj));
       }
 
       async function derivePqSelfWrapMask(selfSeedBytes, ivBytes, recipientPkBytes) {
@@ -2237,13 +2521,18 @@
         if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddr || '')) {
           throw new Error('Invalid sender or recipient Tezos address for AAD binding');
         }
+        if (senderAddr !== recipientAddr && (recipientPkHex || '').toLowerCase() === keyPair.publicKeyHex.toLowerCase()) {
+          throw new Error('Refusing to encrypt to a peer advertising your own X25519 public key');
+        }
         const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex);
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const senderPkBytes = keyPair.publicKey;
         const recipientPkBytes = hexToBytes(recipientPkHex);
         const addrBindBytes = new TextEncoder().encode(`${senderAddr}:${recipientAddr}:`);
         const additionalData = concatBytes(new Uint8Array([0x01]), addrBindBytes, senderPkBytes, recipientPkBytes);
-        const plainBytes = new TextEncoder().encode(plaintext);
+        const rawBytes = new TextEncoder().encode(plaintext);
+        const plainBytes = padPlaintextBytes(rawBytes);
+        rawBytes.fill(0);
 
         const cipherBuf = await crypto.subtle.encrypt(
           { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
@@ -2293,13 +2582,13 @@
           aesKey,
           cipherBytes
         );
-        return new TextDecoder('utf-8').decode(plainBuf);
+        return unpadPlaintextString(plainBuf);
       }
 
-      async function deriveStealthMask(secretKeyBytes, ivBytes) {
+      async function deriveStealthMask(seedBytes, ivBytes) {
         const maskInput = concatBytes(
           new TextEncoder().encode('chat.tez.cool:stealth-mask:v1:'),
-          secretKeyBytes,
+          seedBytes,
           ivBytes
         );
         const hashBuf = await crypto.subtle.digest('SHA-256', maskInput);
@@ -2311,11 +2600,18 @@
         if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddress || '')) {
           throw new Error('Invalid sender or recipient Tezos address for stealth AAD binding');
         }
+        if (senderAddr !== recipientAddress && (recipientPkHex || '').toLowerCase() === keyPair.publicKeyHex.toLowerCase()) {
+          throw new Error('Refusing to encrypt to a peer advertising your own X25519 public key');
+        }
         const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex);
         const iv = crypto.getRandomValues(new Uint8Array(12));
+        const viewTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, iv.subarray(0, 10));
+        iv[10] = viewTag[0];
+        iv[11] = viewTag[1];
+
         const senderPkBytes = keyPair.publicKey;
         const recipientPkBytes = hexToBytes(recipientPkHex);
-        const mask = await deriveStealthMask(keyPair.secretKey, iv);
+        const mask = await deriveStealthMask(keyPair.selfSeed, iv);
         const maskedRecipientPk = new Uint8Array(32);
         for (let i = 0; i < 32; i++) {
           maskedRecipientPk[i] = recipientPkBytes[i] ^ mask[i];
@@ -2324,8 +2620,7 @@
 
         const addrBindBytes = new TextEncoder().encode(`${senderAddr}:`);
         const additionalData = concatBytes(new Uint8Array([0x02]), addrBindBytes, senderPkBytes, recipientPkBytes, maskedRecipientPk);
-        const innerPayload = JSON.stringify({ to: recipientAddress, text: plaintext });
-        const plainBytes = new TextEncoder().encode(innerPayload);
+        const plainBytes = buildPaddedStealthJsonBytes(recipientAddress, plaintext);
 
         const cipherBuf = await crypto.subtle.encrypt(
           { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
@@ -2339,7 +2634,7 @@
         return bytesToHex(packet);
       }
 
-      async function decryptStealthMessage(encHex, senderPkHex, keyPair, isSentByMe, myAddr, senderAddr) {
+      async function decryptStealthMessage(encHex, senderPkHex, keyPair, isSentByMe, myAddr, senderAddr, opId = 0) {
         if (
           !keyPair ||
           !encHex ||
@@ -2361,32 +2656,53 @@
         const maskedRecipientPk = packet.slice(1, 33);
         const iv = packet.slice(33, 45);
         const cipherBytes = packet.slice(45);
-
-        let recipientPkBytes;
-        let peerPkHex;
-        if (isSentByMe) {
-          const mask = await deriveStealthMask(keyPair.secretKey, iv);
-          recipientPkBytes = new Uint8Array(32);
-          for (let i = 0; i < 32; i++) {
-            recipientPkBytes[i] = maskedRecipientPk[i] ^ mask[i];
-          }
-          mask.fill(0);
-          peerPkHex = bytesToHex(recipientPkBytes);
-        } else {
-          recipientPkBytes = keyPair.publicKey;
-          peerPkHex = senderPkLower;
-        }
-
-        const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex);
         const senderPkBytes = hexToBytes(senderPkLower);
         const addrBindBytes = new TextEncoder().encode(`${senderAddr}:`);
-        const additionalData = concatBytes(new Uint8Array([0x02]), addrBindBytes, senderPkBytes, recipientPkBytes, maskedRecipientPk);
 
-        const plainBuf = await crypto.subtle.decrypt(
-          { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
-          aesKey,
-          cipherBytes
-        );
+        let recipientPkBytes;
+        let plainBuf = null;
+
+        if (isSentByMe) {
+          const candidateSeeds = opId && opId <= 2979006458626048
+            ? [keyPair.selfSeed, keyPair.secretKey]
+            : [keyPair.selfSeed];
+          for (const seed of candidateSeeds) {
+            if (!seed) continue;
+            try {
+              const mask = await deriveStealthMask(seed, iv);
+              const candidatePkBytes = new Uint8Array(32);
+              for (let i = 0; i < 32; i++) {
+                candidatePkBytes[i] = maskedRecipientPk[i] ^ mask[i];
+              }
+              mask.fill(0);
+              const peerPkHex = bytesToHex(candidatePkBytes);
+              const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, peerPkHex);
+              const additionalData = concatBytes(new Uint8Array([0x02]), addrBindBytes, senderPkBytes, candidatePkBytes, maskedRecipientPk);
+              plainBuf = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+                aesKey,
+                cipherBytes
+              );
+              recipientPkBytes = candidatePkBytes;
+              break;
+            } catch (e) {}
+          }
+          if (!plainBuf) return null;
+        } else {
+          if (!opId || opId > 2979006458626048) {
+            const expectedTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, iv.subarray(0, 10));
+            if (iv[10] !== expectedTag[0] || iv[11] !== expectedTag[1]) return null;
+          }
+          recipientPkBytes = keyPair.publicKey;
+          const aesKey = await deriveSharedAesKey(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower);
+          const additionalData = concatBytes(new Uint8Array([0x02]), addrBindBytes, senderPkBytes, recipientPkBytes, maskedRecipientPk);
+          plainBuf = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
+            aesKey,
+            cipherBytes
+          );
+        }
+
         const decoded = new TextDecoder('utf-8').decode(plainBuf);
         const parsed = JSON.parse(decoded);
         if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || typeof parsed.text !== 'string' || !ADDR_REGEX.test(parsed.to || '')) {
@@ -2405,6 +2721,13 @@
       async function encryptPqChatMessage(plaintext, keyPair, recipientPkHex, recipientPqPkHex, senderAddr, recipientAddr) {
         if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddr || '')) {
           throw new Error('Invalid sender or recipient Tezos address for PQ AAD binding');
+        }
+        if (
+          senderAddr !== recipientAddr &&
+          ((recipientPkHex || '').toLowerCase() === keyPair.publicKeyHex.toLowerCase() ||
+            (recipientPqPkHex || '').toLowerCase() === keyPair.pqPublicKeyHex.toLowerCase())
+        ) {
+          throw new Error('Refusing to encrypt to a peer advertising your own public key');
         }
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const mSeed = crypto.getRandomValues(new Uint8Array(32));
@@ -2425,7 +2748,9 @@
         pqShared.fill(0);
         const addrBindBytes = new TextEncoder().encode(`${senderAddr}:${recipientAddr}:`);
         const additionalData = concatBytes(new Uint8Array([0x03]), addrBindBytes, senderPkBytes, recipientPkBytes, wrappedPqShared, pqCt);
-        const plainBytes = new TextEncoder().encode(plaintext);
+        const rawBytes = new TextEncoder().encode(plaintext);
+        const plainBytes = padPlaintextBytes(rawBytes);
+        rawBytes.fill(0);
 
         const cipherBuf = await crypto.subtle.encrypt(
           { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
@@ -2492,14 +2817,25 @@
           aesKey,
           cipherBytes
         );
-        return new TextDecoder('utf-8').decode(plainBuf);
+        return unpadPlaintextString(plainBuf);
       }
 
       async function encryptPqStealthMessage(plaintext, recipientAddress, keyPair, recipientPkHex, recipientPqPkHex, senderAddr) {
         if (!ADDR_REGEX.test(senderAddr || '') || !ADDR_REGEX.test(recipientAddress || '')) {
           throw new Error('Invalid sender or recipient Tezos address for PQ stealth AAD binding');
         }
+        if (
+          senderAddr !== recipientAddress &&
+          ((recipientPkHex || '').toLowerCase() === keyPair.publicKeyHex.toLowerCase() ||
+            (recipientPqPkHex || '').toLowerCase() === keyPair.pqPublicKeyHex.toLowerCase())
+        ) {
+          throw new Error('Refusing to encrypt to a peer advertising your own public key');
+        }
         const iv = crypto.getRandomValues(new Uint8Array(12));
+        const viewTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, recipientPkHex, iv.subarray(0, 10));
+        iv[10] = viewTag[0];
+        iv[11] = viewTag[1];
+
         const mSeed = crypto.getRandomValues(new Uint8Array(32));
         const senderPkBytes = keyPair.publicKey;
         const recipientPkBytes = hexToBytes(recipientPkHex);
@@ -2525,8 +2861,7 @@
         pqShared.fill(0);
         const addrBindBytes = new TextEncoder().encode(`${senderAddr}:`);
         const additionalData = concatBytes(new Uint8Array([0x04]), addrBindBytes, senderPkBytes, recipientPkBytes, maskedRecipientPk, wrappedPqShared, pqCt);
-        const innerPayload = JSON.stringify({ to: recipientAddress, text: plaintext });
-        const plainBytes = new TextEncoder().encode(innerPayload);
+        const plainBytes = buildPaddedStealthJsonBytes(recipientAddress, plaintext);
 
         const cipherBuf = await crypto.subtle.encrypt(
           { name: 'AES-GCM', iv, additionalData, tagLength: 128 },
@@ -2586,6 +2921,8 @@
           }
           selfWrapMask.fill(0);
         } else {
+          const expectedTag = await deriveStealthViewTag(keyPair.secretKey, keyPair.publicKeyHex, senderPkLower, iv.subarray(0, 10));
+          if (iv[10] !== expectedTag[0] || iv[11] !== expectedTag[1]) return null;
           recipientPkBytes = keyPair.publicKey;
           peerPkHex = senderPkLower;
           pqShared = mlKem512Decaps(keyPair.pqSecretKey, pqCt);
@@ -2617,23 +2954,128 @@
         };
       }
 
-      function saveSessionKeyPair(address, kp) {
+      const SESSION_IDB_NAME = 'nftchat_e2ee_keystore';
+      const SESSION_IDB_STORE = 'keys';
+      const SESSION_IDB_KEY_ID = 'session_wrap_v1';
+      let sessionWrapCryptoKey = null;
+
+      function getOrCreateSessionWrapKey() {
+        if (sessionWrapCryptoKey) return Promise.resolve(sessionWrapCryptoKey);
+        if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+        return new Promise(resolve => {
+          try {
+            const req = indexedDB.open(SESSION_IDB_NAME, 1);
+            req.onupgradeneeded = () => {
+              const db = req.result;
+              if (!db.objectStoreNames.contains(SESSION_IDB_STORE)) {
+                db.createObjectStore(SESSION_IDB_STORE);
+              }
+            };
+            req.onerror = () => resolve(null);
+            req.onsuccess = () => {
+              const db = req.result;
+              try {
+                const tx = db.transaction(SESSION_IDB_STORE, 'readonly');
+                const store = tx.objectStore(SESSION_IDB_STORE);
+                const getReq = store.get(SESSION_IDB_KEY_ID);
+                getReq.onerror = () => {
+                  db.close();
+                  resolve(null);
+                };
+                getReq.onsuccess = async () => {
+                  if (getReq.result && getReq.result instanceof CryptoKey) {
+                    sessionWrapCryptoKey = getReq.result;
+                    db.close();
+                    resolve(sessionWrapCryptoKey);
+                    return;
+                  }
+                  try {
+                    const newKey = await crypto.subtle.generateKey(
+                      { name: 'AES-GCM', length: 256 },
+                      false,
+                      ['encrypt', 'decrypt']
+                    );
+                    const wTx = db.transaction(SESSION_IDB_STORE, 'readwrite');
+                    wTx.objectStore(SESSION_IDB_STORE).put(newKey, SESSION_IDB_KEY_ID);
+                    wTx.oncomplete = () => {
+                      sessionWrapCryptoKey = newKey;
+                      db.close();
+                      resolve(newKey);
+                    };
+                    wTx.onerror = () => {
+                      sessionWrapCryptoKey = newKey;
+                      db.close();
+                      resolve(newKey);
+                    };
+                  } catch (e) {
+                    db.close();
+                    resolve(null);
+                  }
+                };
+              } catch (e) {
+                db.close();
+                resolve(null);
+              }
+            };
+          } catch (e) {
+            resolve(null);
+          }
+        });
+      }
+
+      async function saveSessionKeyPair(address, kp) {
+        if (!address || !kp) return;
         try {
-          sessionStorage.setItem(`nftchat_e2ee_${address}`, JSON.stringify({
+          sessionStorage.removeItem(`nftchat_e2ee_${address}`);
+          const wrapKey = await getOrCreateSessionWrapKey();
+          if (!wrapKey) return;
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          const aad = new TextEncoder().encode(`nftchat_e2ee_wrap:v1:${address}`);
+          const plainBytes = new TextEncoder().encode(JSON.stringify({
             secretKeyHex: bytesToHex(kp.secretKey),
             publicKeyHex: kp.publicKeyHex,
             pqSeedDHex: bytesToHex(kp.pqSeedD),
             pqSeedZHex: bytesToHex(kp.pqSeedZ),
             selfSeedHex: bytesToHex(kp.selfSeed)
           }));
+          const cipherBuf = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv, additionalData: aad, tagLength: 128 },
+            wrapKey,
+            plainBytes
+          );
+          plainBytes.fill(0);
+          sessionStorage.setItem(`nftchat_e2ee_enc_${address}`, JSON.stringify({
+            v: 2,
+            iv: bytesToHex(iv),
+            ct: bytesToHex(new Uint8Array(cipherBuf))
+          }));
         } catch (e) {}
       }
 
-      function loadSessionKeyPair(address) {
+      async function loadSessionKeyPair(address) {
+        if (!address) return null;
         try {
-          const raw = sessionStorage.getItem(`nftchat_e2ee_${address}`);
+          sessionStorage.removeItem(`nftchat_e2ee_${address}`);
+          const raw = sessionStorage.getItem(`nftchat_e2ee_enc_${address}`);
           if (!raw) return null;
-          const parsed = JSON.parse(raw);
+          const env = JSON.parse(raw);
+          if (!env || env.v !== 2 || !HEX_EVEN_REGEX.test(env.iv || '') || !HEX_EVEN_REGEX.test(env.ct || '')) {
+            return null;
+          }
+          const wrapKey = await getOrCreateSessionWrapKey();
+          if (!wrapKey) return null;
+          const iv = hexToBytes(env.iv);
+          const ct = hexToBytes(env.ct);
+          if (iv.length !== 12 || ct.length < 32) return null;
+          const aad = new TextEncoder().encode(`nftchat_e2ee_wrap:v1:${address}`);
+          const plainBuf = await crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv, additionalData: aad, tagLength: 128 },
+            wrapKey,
+            ct
+          );
+          const plainBytes = new Uint8Array(plainBuf);
+          const parsed = JSON.parse(new TextDecoder('utf-8').decode(plainBytes));
+          plainBytes.fill(0);
           if (
             !HEX32_REGEX.test(parsed.secretKeyHex) ||
             !HEX32_REGEX.test(parsed.publicKeyHex) ||
@@ -2647,6 +3089,7 @@
           const publicKey = x25519PublicKeyFromPrivate(secretKey);
           const publicKeyHex = bytesToHex(publicKey);
           if (publicKeyHex !== parsed.publicKeyHex.toLowerCase()) {
+            secretKey.fill(0);
             return null;
           }
           const pqSeedD = hexToBytes(parsed.pqSeedDHex);
@@ -2673,7 +3116,10 @@
 
       function clearSessionKeyPair(address) {
         try {
-          if (address) sessionStorage.removeItem(`nftchat_e2ee_${address}`);
+          if (address) {
+            sessionStorage.removeItem(`nftchat_e2ee_${address}`);
+            sessionStorage.removeItem(`nftchat_e2ee_enc_${address}`);
+          }
         } catch (e) {}
       }
 
@@ -2697,34 +3143,26 @@
             });
 
             if (!myAddress || myAddress !== activeAddr) return false;
-            if (!response || !isValidWalletSignature(response.signature)) {
+            if (!response || !response.signature) {
               throw new Error('Invalid or missing wallet signature');
             }
 
             const priorOnChainPk = peerPublicKeys.get(activeAddr);
             const priorOnChainPqPk = peerPqPublicKeys.get(activeAddr);
-            authStateVersion++;
-            zeroizeKeyPair(myKeyPair);
-            myKeyPair = await deriveKeyPairFromSignature(activeAddr, response.signature);
+            const nextKeyPair = await deriveKeyPairFromSignature(activeAddr, response.signature);
             if (!myAddress || myAddress !== activeAddr) {
-              zeroizeKeyPair(myKeyPair);
-              myKeyPair = null;
+              zeroizeKeyPair(nextKeyPair);
               return false;
             }
-            if (priorOnChainPk && priorOnChainPk !== myKeyPair.publicKeyHex) {
-              const owner = pkOwnerAddresses.get(priorOnChainPk);
-              if (owner && owner.address === activeAddr) pkOwnerAddresses.delete(priorOnChainPk);
-            }
-            if (priorOnChainPqPk && priorOnChainPqPk !== myKeyPair.pqPublicKeyHex) {
-              const pqOwner = pqPkOwnerAddresses.get(priorOnChainPqPk);
-              if (pqOwner && pqOwner.address === activeAddr) pqPkOwnerAddresses.delete(priorOnChainPqPk);
-            }
+            authStateVersion++;
+            zeroizeKeyPair(myKeyPair);
+            clearCryptoCaches();
+            myKeyPair = nextKeyPair;
             validatedPqPkCache.set(myKeyPair.pqPublicKeyHex, true);
-            pkOwnerAddresses.set(myKeyPair.publicKeyHex, { address: activeAddr, minOpId: 0 });
-            pqPkOwnerAddresses.set(myKeyPair.pqPublicKeyHex, { address: activeAddr, minOpId: 0 });
+            purgeReflectedPeerKeys(activeAddr, myKeyPair);
             peerPublicKeys.set(activeAddr, myKeyPair.publicKeyHex);
             peerPqPublicKeys.set(activeAddr, myKeyPair.pqPublicKeyHex);
-            saveSessionKeyPair(activeAddr, myKeyPair);
+            await saveSessionKeyPair(activeAddr, myKeyPair);
             processedOpsCache.clear();
             myKeyPublishedOnChain = Boolean(myKeyPublishedOnChain && priorOnChainPk === myKeyPair.publicKeyHex);
             myPqKeyPublishedOnChain = Boolean(myPqKeyPublishedOnChain && priorOnChainPqPk === myKeyPair.pqPublicKeyHex);
@@ -2736,7 +3174,11 @@
             await fetchAllMessages();
 
             if (priorOnChainPk && priorOnChainPk !== myKeyPair.publicKeyHex && !myKeyPublishedOnChain) {
-              toast('⚠️ Note: Your wallet returned a different signature format than your previously published on-chain key.');
+              if (activeAddr.startsWith('tz3')) {
+                toast('⚠️ Note: tz3 (P-256) wallets use randomized ECDSA nonces per signature and cannot deterministically re-derive prior E2EE keys.');
+              } else {
+                toast('⚠️ Note: Your wallet returned a different signature than your previously published on-chain key.');
+              }
             } else if (myKeyPair) {
               toast(`🔐 E2EE + Post-Quantum keys unlocked! X25519: ${myKeyPair.publicKeyHex.slice(0, 6)}…${myKeyPair.publicKeyHex.slice(-4)}`);
             }
@@ -2812,11 +3254,9 @@
           if (myAddress === activeAddr && myKeyPair === activeKeyPair) {
             myKeyPublishedOnChain = true;
             peerPublicKeys.set(activeAddr, activeKeyPair.publicKeyHex);
-            pkOwnerAddresses.set(activeKeyPair.publicKeyHex, { address: activeAddr, minOpId: 0 });
             if (includePqKey && activeKeyPair.pqPublicKeyHex) {
               myPqKeyPublishedOnChain = true;
               peerPqPublicKeys.set(activeAddr, activeKeyPair.pqPublicKeyHex);
-              pqPkOwnerAddresses.set(activeKeyPair.pqPublicKeyHex, { address: activeAddr, minOpId: 0 });
             }
           }
           updateE2EEControlsUI();
@@ -3075,6 +3515,7 @@
           const lockedPqPk = myKeyPair.pqPublicKeyHex;
           authStateVersion++;
           zeroizeKeyPair(myKeyPair);
+          clearCryptoCaches();
           myKeyPair = null;
           encryptMode = false;
           stealthMode = false;
@@ -3083,11 +3524,9 @@
           processedOpsCache.clear();
           if (!myKeyPublishedOnChain && lockedPk) {
             peerPublicKeys.delete(myAddress);
-            pkOwnerAddresses.delete(lockedPk);
           }
           if (!myPqKeyPublishedOnChain && lockedPqPk) {
             peerPqPublicKeys.delete(myAddress);
-            pqPkOwnerAddresses.delete(lockedPqPk);
           }
           conversations.forEach((msgs, peer) => {
             const hadStealth = msgs.some(m => m.isStealth);
@@ -3128,7 +3567,7 @@
           .trim()
           .slice(0, 48);
         if (!cleaned) return '';
-        if (/^(tz1|tz2|tz3|tz4|KT1)/i.test(cleaned) && cleaned !== addr && cleaned !== shortAddr(addr)) {
+        if (/^(tz1|tz2|tz3|tz4|tz5|KT1)/i.test(cleaned) && cleaned !== addr && cleaned !== shortAddr(addr)) {
           return '';
         }
         return cleaned;
@@ -3360,14 +3799,27 @@
         const activeKeyPair = myKeyPair;
         if (!activeAddress) return;
         try {
-          const res = await fetch(
-            `https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&entrypoint=mint&status=applied&limit=10000&sort.asc=id`
-          );
-          if (!res.ok || !myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
-          const allOps = await res.json();
-          if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+          while (true) {
+            const cursorParam = lastFetchedOpId > 0 ? `&id.gt=${lastFetchedOpId}` : '';
+            const res = await fetch(
+              `https://api.tzkt.io/v1/operations/transactions?target=${CONTRACT}&entrypoint=mint&status=applied&limit=10000&sort.asc=id${cursorParam}`
+            );
+            if (!res.ok || !myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+            const batch = await res.json();
+            if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+            if (!Array.isArray(batch) || batch.length === 0) break;
+            for (const op of batch) {
+              if (op && typeof op.id === 'number' && op.id > lastFetchedOpId) {
+                cachedContractOps.push(op);
+                lastFetchedOpId = op.id;
+              }
+            }
+            if (batch.length < 10000) break;
+          }
 
-          if (processedOpsCache.size > 5000) {
+          const allOps = cachedContractOps;
+
+          if (processedOpsCache.size > 50000) {
             processedOpsCache.clear();
           }
 
@@ -3379,6 +3831,7 @@
           });
 
           const sessionKeyTag = activeKeyPair ? activeKeyPair.publicKeyHex : 'locked';
+          let uncachedStealthTrials = 0;
 
           for (const op of allOps) {
             if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
@@ -3390,27 +3843,27 @@
             const senderPk = metadata.pk;
             const senderPqPk = metadata.pq_pk;
             const encHex = metadata.enc;
-            const isKeyReg = metadata.key_reg === '31';
+            const isKeyReg = Object.prototype.hasOwnProperty.call(metadata, 'key_reg');
 
             if (!sender || !recipient || !hexName) continue;
             if (!ADDR_REGEX.test(sender) || !ADDR_REGEX.test(recipient)) continue;
 
             // Register authentic public keys published directly by op.sender.address in chronological order
-            if (senderPk && tryRegisterPeerPk(sender, senderPk, op.id)) {
+            if (senderPk && tryRegisterPeerPk(sender, senderPk)) {
               const lowerPk = senderPk.toLowerCase();
               if (sender === activeAddress && (!activeKeyPair || lowerPk === activeKeyPair.publicKeyHex.toLowerCase())) {
                 myKeyPublishedOnChain = true;
               }
             }
-            if (senderPqPk && tryRegisterPeerPqPk(sender, senderPqPk, op.id)) {
+            if (senderPqPk && tryRegisterPeerPqPk(sender, senderPqPk)) {
               const lowerPqPk = senderPqPk.toLowerCase();
               if (sender === activeAddress && (!activeKeyPair || lowerPqPk === activeKeyPair.pqPublicKeyHex.toLowerCase())) {
                 myPqKeyPublishedOnChain = true;
               }
             }
 
-            // Skip key-registration transactions from appearing as chat bubbles
-            if (isKeyReg && sender === recipient) {
+            // Skip all key-registration transactions (where contract skips FA2 minting via "key_reg" MEM) from appearing as chat bubbles
+            if (isKeyReg) {
               continue;
             }
 
@@ -3443,6 +3896,11 @@
               if (!activeKeyPair) {
                 continue;
               }
+              uncachedStealthTrials++;
+              if (uncachedStealthTrials % 20 === 0) {
+                await new Promise(r => setTimeout(r, 0));
+                if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
+              }
               try {
                 const stealthFn = isStealth04 ? decryptPqStealthMessage : decryptStealthMessage;
                 const stealthRes = await stealthFn(
@@ -3451,7 +3909,8 @@
                   activeKeyPair,
                   sender === activeAddress,
                   activeAddress,
-                  sender
+                  sender,
+                  op.id
                 );
                 if (!myAddress || myAddress !== activeAddress || authStateVersion !== startVersion) return;
                 if (!stealthRes) {
@@ -3921,7 +4380,6 @@
           if (myAddress === activeAddr && activeKeyPair && myKeyPair === activeKeyPair) {
             myKeyPublishedOnChain = true;
             peerPublicKeys.set(activeAddr, activeKeyPair.publicKeyHex);
-            pkOwnerAddresses.set(activeKeyPair.publicKeyHex, { address: activeAddr, minOpId: 0 });
           }
           if (currentRecipient === targetRecipient) {
             dmInput.value = '';
@@ -3957,34 +4415,46 @@
 
       function updateAuthUI() {
         authStateVersion++;
+        const startVersion = authStateVersion;
         processedOpsCache.clear();
         peerPublicKeys.clear();
         peerPqPublicKeys.clear();
-        pkOwnerAddresses.clear();
-        pqPkOwnerAddresses.clear();
         zeroizeKeyPair(myKeyPair);
+        clearCryptoCaches();
         myKeyPair = null;
         if (myAddress) {
+          const activeAddr = myAddress;
           walletPill.classList.add('visible');
-          walletPill.setAttribute('data-tooltip-mono', myAddress);
-          myAvatar.src = `https://services.tzkt.io/v1/avatars/${myAddress}`;
-          myAddressLabel.textContent = shortAddr(myAddress);
+          walletPill.setAttribute('data-tooltip-mono', activeAddr);
+          myAvatar.src = `https://services.tzkt.io/v1/avatars/${activeAddr}`;
+          myAddressLabel.textContent = shortAddr(activeAddr);
           connectBtn.textContent = 'Disconnect';
           connectBtn.classList.add('disconnect');
 
-          // Restore session E2EE key if unlocked in this tab
-          myKeyPair = loadSessionKeyPair(myAddress);
-          if (myKeyPair) {
-            peerPublicKeys.set(myAddress, myKeyPair.publicKeyHex);
-            peerPqPublicKeys.set(myAddress, myKeyPair.pqPublicKeyHex);
-            pkOwnerAddresses.set(myKeyPair.publicKeyHex, { address: myAddress, minOpId: 0 });
-            pqPkOwnerAddresses.set(myKeyPair.pqPublicKeyHex, { address: myAddress, minOpId: 0 });
-          }
           myKeyPublishedOnChain = false;
           myPqKeyPublishedOnChain = false;
           updateE2EEControlsUI();
 
-          fetchAllMessages();
+          // Restore wrapped session E2EE key via non-extractable IndexedDB CryptoKey if unlocked in this tab
+          loadSessionKeyPair(activeAddr).then(async kp => {
+            if (!myAddress || myAddress !== activeAddr || authStateVersion !== startVersion) {
+              zeroizeKeyPair(kp);
+              return;
+            }
+            if (kp) {
+              myKeyPair = kp;
+              purgeReflectedPeerKeys(activeAddr, kp);
+              peerPublicKeys.set(activeAddr, kp.publicKeyHex);
+              peerPqPublicKeys.set(activeAddr, kp.pqPublicKeyHex);
+              processedOpsCache.clear();
+              await decryptAllLoadedMessages();
+              if (!myAddress || myAddress !== activeAddr || authStateVersion !== startVersion) return;
+              updateE2EEControlsUI();
+              renderDialogs();
+              renderActiveConversation();
+            }
+            await fetchAllMessages();
+          });
           if (!pollTimer) pollTimer = setInterval(fetchAllMessages, 8000);
         } else {
           walletPill.classList.remove('visible');

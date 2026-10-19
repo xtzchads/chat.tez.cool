@@ -825,7 +825,9 @@
       border-radius: 16px;
       font-size: 14px;
       line-height: 1.48;
+      white-space: pre-wrap;
       word-break: break-word;
+      overflow-wrap: anywhere;
       border: 1px solid var(--border-subtle);
     }
 
@@ -889,7 +891,7 @@
     .dm-composer {
       position: relative;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 8px;
       padding: 12px 16px;
       border-top: 1px solid var(--border-subtle);
@@ -897,8 +899,8 @@
     }
 
     .dm-emoji-btn {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
       background: rgba(255, 255, 255, 0.04);
@@ -920,14 +922,25 @@
       flex: 1;
       min-width: 0;
       height: 40px;
-      padding: 0 14px;
+      min-height: 40px;
+      max-height: 140px;
+      padding: 9px 14px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
       background: rgba(255, 255, 255, 0.04);
       color: var(--text-primary);
       font-family: var(--font-sans);
       font-size: 14px;
+      line-height: 20px;
       outline: none;
+      resize: none;
+      overflow-y: auto;
+    }
+
+    .dm-input:placeholder-shown {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .dm-input:focus {
@@ -1116,7 +1129,7 @@
     }
 
     .dm-encrypt-toggle {
-      height: 38px;
+      height: 40px;
       padding: 0 11px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
@@ -1159,7 +1172,7 @@
     }
 
     .dm-pq-toggle {
-      height: 38px;
+      height: 40px;
       padding: 0 10px;
       border-radius: var(--radius-md);
       border: 1px solid var(--border-subtle);
@@ -1251,6 +1264,7 @@
       gap: 8px;
       color: var(--text-secondary);
       font-size: 13px;
+      white-space: normal;
     }
 
     .btn-unlock-inline {
@@ -1696,8 +1710,11 @@
       .dm-input {
         flex: 1 1 0%;
         min-width: 0;
+        min-height: 38px;
+        max-height: 120px;
         font-size: 16px;
-        padding: 0 11px;
+        line-height: 22px;
+        padding: 7px 11px;
       }
 
       .dm-send-btn {
@@ -1825,7 +1842,7 @@
             <button type="button" class="dm-emoji-btn" id="emojiToggleBtn" data-tooltip="Insert Emoji">😊</button>
             <button type="button" class="dm-encrypt-toggle" id="encryptToggleBtn" data-tooltip-title="Public On-Chain Mode" data-tooltip="Message is readable on-chain. Click to enable End-to-End Encryption." disabled>🌐 Public</button>
             <button type="button" class="dm-pq-toggle" id="pqToggleBtn" data-tooltip-title="Post-Quantum Shield (Optional)" data-tooltip="Toggle NIST ML-KEM-512 Post-Quantum Hybrid encryption (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor's algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts." disabled>⚛️ PQ: Off</button>
-            <input type="text" id="dmInput" class="dm-input" maxlength="4000" placeholder="Connect wallet & select a recipient to send a message…" disabled />
+            <textarea id="dmInput" class="dm-input" rows="1" maxlength="4000" placeholder="Connect wallet & select a recipient to send a message…" disabled></textarea>
             <button type="button" class="dm-send-btn" id="dmSendBtn" disabled>Mint & Send</button>
           </div>
         </section>
@@ -4051,7 +4068,7 @@
       document.addEventListener('mouseover', e => {
         const el = e.target.closest('[data-tooltip], [data-tooltip-title], [title]');
         if (el) {
-          if (Date.now() - lastTouchTimestamp < 800 && el.matches('button, input, a')) {
+          if (Date.now() - lastTouchTimestamp < 800 && el.matches('button, input, textarea, a')) {
             return;
           }
           if (el === activeTooltipTarget) return;
@@ -4079,6 +4096,7 @@
       window.addEventListener('scroll', () => hideCustomTooltip(), true);
       window.addEventListener('resize', () => {
         if (activeTooltipTarget) positionCustomTooltip(activeTooltipTarget);
+        autoResizeDmInput();
       });
 
       if (mobileReturnChatBtn) {
@@ -4096,6 +4114,21 @@
           }
         }
       });
+
+      function autoResizeDmInput() {
+        if (!dmInput) return;
+        if (!dmInput.value) {
+          dmInput.style.height = '';
+          return;
+        }
+        dmInput.style.height = 'auto';
+        const borderH = dmInput.offsetHeight - dmInput.clientHeight;
+        const cs = window.getComputedStyle(dmInput);
+        const minH = parseFloat(cs.minHeight) || 38;
+        const maxH = parseFloat(cs.maxHeight) || 140;
+        const nextH = Math.min(Math.max(dmInput.scrollHeight + borderH, minH), maxH);
+        dmInput.style.height = `${nextH}px`;
+      }
 
       function updateE2EEControlsUI() {
         if (!myAddress) {
@@ -4256,8 +4289,15 @@
         b.textContent = em;
         b.addEventListener('click', () => {
           if (!dmInput.disabled) {
-            dmInput.value += em;
+            const start = typeof dmInput.selectionStart === 'number' ? dmInput.selectionStart : dmInput.value.length;
+            const end = typeof dmInput.selectionEnd === 'number' ? dmInput.selectionEnd : dmInput.value.length;
+            dmInput.value = dmInput.value.slice(0, start) + em + dmInput.value.slice(end);
+            const nextPos = start + em.length;
+            autoResizeDmInput();
             dmInput.focus();
+            try {
+              dmInput.setSelectionRange(nextPos, nextPos);
+            } catch (e) {}
           }
         });
         emojiPopover.appendChild(b);
@@ -4778,12 +4818,13 @@
           item.className = `dialog-item${peer === currentRecipient ? ' active' : ''}`;
           const last = msgs[msgs.length - 1];
           const timeStr = last ? new Date(last.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'New';
+          const singleLineText = last ? String(last.text || '').replace(/\s+/g, ' ').trim() : '';
           const preview = last
             ? (last.isStealth && last.decrypted
-              ? `${last.isPq ? '🕵️🛡️' : '🕵️'} ${last.text}`
+              ? `${last.isPq ? '🕵️🛡️' : '🕵️'} ${singleLineText}`
               : last.isEncrypted && last.decrypted
-                ? `${last.isPq ? '🛡️' : '🔒'} ${last.text}`
-                : last.text)
+                ? `${last.isPq ? '🛡️' : '🔒'} ${singleLineText}`
+                : singleLineText)
             : 'Start chatting on-chain…';
           const displayName = aliasCache.get(peer) || shortAddr(peer);
           const peerPk = peerPublicKeys.get(peer);
@@ -4916,22 +4957,13 @@
 
           if (m.isEncrypted && !m.decrypted) {
             if (!myKeyPair) {
-              box.innerHTML = `
-                <div class="bubble-locked-card">
-                  <span>${m.isPq ? '🛡️ <strong>Post-Quantum Encrypted Message</strong>' : '🔒 <strong>End-to-End Encrypted Message</strong>'}</span>
-                  <button type="button" class="btn-unlock-inline" data-tooltip-title="Decrypt Message" data-tooltip="Sign a free off-chain message with your wallet to unlock your X25519 + ML-KEM-512 keys and read this message" data-tooltip-variant="cyan">🔑 Sign with Wallet to Decrypt</button>
-                </div>
-              `;
+              box.innerHTML = `<div class="bubble-locked-card"><span>${m.isPq ? '🛡️ <strong>Post-Quantum Encrypted Message</strong>' : '🔒 <strong>End-to-End Encrypted Message</strong>'}</span><button type="button" class="btn-unlock-inline" data-tooltip-title="Decrypt Message" data-tooltip="Sign a free off-chain message with your wallet to unlock your X25519 + ML-KEM-512 keys and read this message" data-tooltip-variant="cyan">🔑 Sign with Wallet to Decrypt</button></div>`;
               const btn = box.querySelector('.btn-unlock-inline');
               if (btn) {
                 btn.addEventListener('click', () => unlockEncryption());
               }
             } else {
-              box.innerHTML = `
-                <div class="bubble-locked-card">
-                  <span>⚠️ <strong>Unable to decrypt with current E2EE key</strong></span>
-                </div>
-              `;
+              box.innerHTML = `<div class="bubble-locked-card"><span>⚠️ <strong>Unable to decrypt with current E2EE key</strong></span></div>`;
             }
           } else {
             box.textContent = m.text;
@@ -5228,7 +5260,7 @@
 
       async function sendDm() {
         if (!client || !myAddress || !currentRecipient || isSendingDm) return;
-        const text = dmInput.value.trim();
+        const text = dmInput.value.replace(/\r\n?/g, '\n').trim();
         if (!text) return;
         if (new TextEncoder().encode(text).length > MAX_DM_BYTES) {
           toast(`Message is too long (maximum ${MAX_DM_BYTES} UTF-8 bytes).`);
@@ -5355,6 +5387,7 @@
           }
           if (currentRecipient === targetRecipient) {
             dmInput.value = '';
+            autoResizeDmInput();
           }
           toast(
             stealthMode
@@ -5378,8 +5411,9 @@
       }
 
       dmSendBtn.addEventListener('click', sendDm);
+      dmInput.addEventListener('input', autoResizeDmInput);
       dmInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
           e.preventDefault();
           sendDm();
         }
@@ -5448,6 +5482,7 @@
           conversations.clear();
           currentRecipient = null;
           dmInput.value = '';
+          autoResizeDmInput();
           newAddressInput.value = '';
           hideAddressDropdown();
           emojiPopover.classList.remove('open');

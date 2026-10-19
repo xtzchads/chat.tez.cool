@@ -4497,6 +4497,8 @@
         emojiPopover.appendChild(b);
       });
 
+      let gifAbortController = null;
+
       function sanitizeGifUrl(rawUrl) {
         if (typeof rawUrl !== 'string' || rawUrl.length < 18 || rawUrl.length > 512) return null;
         try {
@@ -4507,7 +4509,16 @@
           const host = parsed.hostname.toLowerCase();
           if (!ALLOWED_GIF_HOSTS.has(host)) return null;
           let pathname = parsed.pathname || '';
-          if (!pathname || pathname === '/' || pathname.includes('..') || pathname.includes('\\')) return null;
+          if (
+            !pathname ||
+            pathname === '/' ||
+            pathname.includes('..') ||
+            pathname.includes('/.') ||
+            pathname.includes('//') ||
+            pathname.includes('\\')
+          ) {
+            return null;
+          }
           if (!/^\/[A-Za-z0-9/_.-]+\.(?:gif|webp)$/i.test(pathname)) return null;
           if (host.endsWith('.giphy.com')) {
             pathname = pathname.replace(
@@ -4526,9 +4537,11 @@
         let hadGif = false;
         const withoutGifs = String(rawText)
           .replace(GIF_URL_CANDIDATE_REGEX, match => {
-            if (sanitizeGifUrl(match)) {
+            const trailing = (match.match(/[),.;!?]+$/) || [''])[0];
+            const core = trailing ? match.slice(0, -trailing.length) : match;
+            if (sanitizeGifUrl(core)) {
               hadGif = true;
-              return '';
+              return trailing;
             }
             return match;
           })
@@ -4546,13 +4559,15 @@
         const strippedText = text
           .replace(GIF_URL_CANDIDATE_REGEX, match => {
             if (gifUrls.length >= MAX_GIFS_PER_MESSAGE) return match;
-            const safeUrl = sanitizeGifUrl(match);
+            const trailing = (match.match(/[),.;!?]+$/) || [''])[0];
+            const core = trailing ? match.slice(0, -trailing.length) : match;
+            const safeUrl = sanitizeGifUrl(core);
             if (!safeUrl) return match;
             if (!seenGifs.has(safeUrl)) {
               seenGifs.add(safeUrl);
               gifUrls.push(safeUrl);
             }
-            return '';
+            return trailing;
           })
           .replace(/\n{3,}/g, '\n\n')
           .trim();
@@ -4599,6 +4614,15 @@
       async function loadGifs(query = '') {
         if (!gifGrid) return;
         const reqId = ++gifReqId;
+        if (gifAbortController) {
+          try {
+            gifAbortController.abort();
+          } catch (e) {}
+        }
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        gifAbortController = controller;
+        const timeoutId = controller ? setTimeout(() => controller.abort(), 10000) : null;
+
         gifGrid.innerHTML = '<div class="gif-state-box"><span class="suggest-spinner"></span><span>Loading GIFs…</span></div>';
         try {
           const q = String(query || '').trim().slice(0, 80);
@@ -4609,7 +4633,8 @@
           const res = await fetch(url, {
             method: 'GET',
             credentials: 'omit',
-            referrerPolicy: 'no-referrer'
+            referrerPolicy: 'no-referrer',
+            signal: controller ? controller.signal : undefined
           });
           if (!res.ok) throw new Error('GIF fetch failed');
           const data = await res.json();
@@ -4684,6 +4709,8 @@
         } catch (e) {
           if (reqId !== gifReqId) return;
           gifGrid.innerHTML = '<div class="gif-state-box">Error loading GIFs. Please try again.</div>';
+        } finally {
+          if (timeoutId) clearTimeout(timeoutId);
         }
       }
 

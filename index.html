@@ -100,8 +100,6 @@
       left: 0;
       right: 0;
       background: 0 0;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid rgba(255, 255, 255, 0.26);
       padding: 16px 24px;
       z-index: 100;
@@ -251,7 +249,6 @@
       gap: 12px;
       padding: 10px 16px;
       background: var(--bg-glass);
-      backdrop-filter: blur(20px);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-glass);
@@ -293,7 +290,7 @@
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--text-secondary);
-      transition: all 0.2s ease;
+      transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
     }
 
     .contract-tag:hover {
@@ -340,12 +337,11 @@
       font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
     }
 
     .btn-connect:hover {
       border-color: var(--accent-purple);
-      transform: translateY(-1px);
       box-shadow: 0 6px 18px rgba(127, 75, 231, 0.3);
     }
 
@@ -366,8 +362,6 @@
 
     .glass-pane {
       background: var(--bg-glass);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-xl);
       box-shadow: var(--shadow-glass);
@@ -711,12 +705,12 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
     }
 
     .dm-send-btn:hover:not(:disabled) {
       border-color: var(--accent-cyan);
-      transform: translateY(-1px);
+      box-shadow: 0 0 14px rgba(0, 242, 242, 0.22);
     }
 
     .dm-send-btn:disabled {
@@ -792,7 +786,7 @@
       font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
     }
 
     .btn-e2ee.visible, .btn-publish-key.visible {
@@ -829,7 +823,7 @@
 
     .btn-publish-key:hover:not(:disabled) {
       background: rgba(0, 242, 242, 0.22);
-      transform: translateY(-1px);
+      border-color: var(--accent-cyan);
     }
 
     .btn-publish-key:disabled {
@@ -882,7 +876,7 @@
       align-items: center;
       gap: 5px;
       flex-shrink: 0;
-      transition: all 0.18s ease;
+      transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
     }
 
     .dm-encrypt-toggle:hover:not(:disabled) {
@@ -892,7 +886,7 @@
 
     .dm-encrypt-toggle.active {
       background: rgba(16, 185, 129, 0.16);
-      border-color: rgba(16, 185, 129, 0.5);
+      border: 1px solid rgba(16, 185, 129, 0.5);
       color: #6ee7b7;
       box-shadow: 0 0 12px rgba(16, 185, 129, 0.18);
     }
@@ -945,7 +939,7 @@
       font-size: 11.5px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.15s ease;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
     }
 
     .btn-unlock-inline:hover {
@@ -978,15 +972,13 @@
     /* Custom Glassmorphic Tooltip System */
     .custom-tooltip {
       position: fixed;
-      top: 0;
-      left: 0;
+      top: -9999px;
+      left: -9999px;
       z-index: 350;
       max-width: 310px;
       padding: 10px 13px;
       border-radius: var(--radius-md);
-      background: rgba(13, 17, 32, 0.94);
-      backdrop-filter: blur(22px);
-      -webkit-backdrop-filter: blur(22px);
+      background: linear-gradient(180deg, rgba(19, 24, 44, 0.98) 0%, rgba(11, 14, 27, 0.98) 100%);
       border: 1px solid var(--border-bright);
       box-shadow: 0 16px 38px -6px rgba(0, 0, 0, 0.78), 0 0 20px rgba(162, 124, 238, 0.18);
       color: var(--text-primary);
@@ -996,10 +988,7 @@
       pointer-events: none;
       opacity: 0;
       visibility: hidden;
-      transform: translate3d(0, 6px, 0) scale(0.96);
-      transition: opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
-                  transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
-                  visibility 0.16s;
+      transition: opacity 0.14s ease, visibility 0.14s ease;
       overflow: visible;
     }
 
@@ -1015,10 +1004,14 @@
       opacity: 0.85;
     }
 
+    .custom-tooltip[data-placement="bottom"]::before {
+      top: auto;
+      bottom: 0;
+    }
+
     .custom-tooltip.visible {
       opacity: 1;
       visibility: visible;
-      transform: translate3d(0, 0, 0) scale(1);
     }
 
     .custom-tooltip[data-variant="emerald"] {
@@ -1101,12 +1094,13 @@
 
     .custom-tooltip-arrow {
       position: absolute;
-      width: 9px;
-      height: 9px;
-      background: rgba(13, 17, 32, 0.95);
+      width: 10px;
+      height: 10px;
+      background: rgba(11, 14, 27, 0.98);
       border-right: 1px solid var(--border-bright);
       border-bottom: 1px solid var(--border-bright);
-      transform: rotate(45deg);
+      clip-path: polygon(0 100%, 100% 0, 100% 100%);
+      -webkit-clip-path: polygon(0 100%, 100% 0, 100% 100%);
     }
 
     .custom-tooltip[data-variant="emerald"] .custom-tooltip-arrow {
@@ -1121,11 +1115,13 @@
 
     .custom-tooltip[data-placement="top"] .custom-tooltip-arrow {
       bottom: -5.5px;
+      background: rgba(11, 14, 27, 0.98);
       transform: rotate(45deg);
     }
 
     .custom-tooltip[data-placement="bottom"] .custom-tooltip-arrow {
       top: -5.5px;
+      background: rgba(19, 24, 44, 0.98);
       transform: rotate(225deg);
     }
 
@@ -1694,21 +1690,26 @@
           return;
         }
 
-        const tipRect = customTooltip.getBoundingClientRect();
+        const tipW = customTooltip.offsetWidth;
+        const tipH = customTooltip.offsetHeight;
         const gap = 10;
         const pad = 12;
 
         let placement = 'top';
-        let top = rect.top - tipRect.height - gap;
-        if (top < pad) {
+        let top = rect.top - tipH - gap;
+        const preferBottom =
+          targetEl.getAttribute('data-tooltip-placement') === 'bottom' ||
+          Boolean(targetEl.closest('.messenger-topbar, .chat-pane-header, .header'));
+
+        if (preferBottom || top < 88) {
           placement = 'bottom';
           top = rect.bottom + gap;
         }
 
-        let left = rect.left + rect.width / 2 - tipRect.width / 2;
+        let left = rect.left + rect.width / 2 - tipW / 2;
         if (left < pad) left = pad;
-        if (left + tipRect.width > window.innerWidth - pad) {
-          left = window.innerWidth - pad - tipRect.width;
+        if (left + tipW > window.innerWidth - pad) {
+          left = window.innerWidth - pad - tipW;
         }
 
         customTooltip.setAttribute('data-placement', placement);
@@ -1718,7 +1719,7 @@
         const arrow = customTooltip.querySelector('.custom-tooltip-arrow');
         if (arrow) {
           const targetCenter = rect.left + rect.width / 2;
-          const arrowOffset = Math.max(14, Math.min(tipRect.width - 18, targetCenter - left - 4.5));
+          const arrowOffset = Math.max(14, Math.min(tipW - 18, targetCenter - left - 5));
           arrow.style.left = `${Math.round(arrowOffset)}px`;
         }
       }
@@ -1764,9 +1765,9 @@
           return;
         }
         activeTooltipTarget = targetEl;
+        positionCustomTooltip(targetEl);
         customTooltip.classList.add('visible');
         customTooltip.setAttribute('aria-hidden', 'false');
-        positionCustomTooltip(targetEl);
       }
 
       function hideCustomTooltip() {
@@ -1787,6 +1788,7 @@
       document.addEventListener('mouseover', e => {
         const el = e.target.closest('[data-tooltip], [data-tooltip-title], [title]');
         if (el) {
+          if (el === activeTooltipTarget) return;
           showCustomTooltip(el);
         } else if (activeTooltipTarget) {
           hideCustomTooltip();
@@ -1803,7 +1805,7 @@
 
       document.addEventListener('focusin', e => {
         const el = e.target.closest('[data-tooltip], [data-tooltip-title], [title]');
-        if (el) showCustomTooltip(el);
+        if (el && el !== activeTooltipTarget) showCustomTooltip(el);
       });
 
       document.addEventListener('focusout', () => hideCustomTooltip());
@@ -2153,8 +2155,12 @@
         });
       }
 
+      let lastChatHeaderState = '';
+
       function renderChatHeader() {
         if (!currentRecipient) {
+          if (lastChatHeaderState === 'empty') return;
+          lastChatHeaderState = 'empty';
           chatHeader.innerHTML = `
             <div class="peer-info">
               <div class="peer-title">Select or start a conversation</div>
@@ -2163,7 +2169,11 @@
           return;
         }
         const displayName = aliasCache.get(currentRecipient) || shortAddr(currentRecipient);
-        const peerPk = peerPublicKeys.get(currentRecipient);
+        const peerPk = peerPublicKeys.get(currentRecipient) || '';
+        const nextState = `${currentRecipient}|${displayName}|${peerPk}`;
+        if (nextState === lastChatHeaderState) return;
+        lastChatHeaderState = nextState;
+
         const badgeHtml = peerPk
           ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. You can send end-to-end encrypted messages to this wallet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
           : `<span class="peer-e2ee-badge unavailable" data-tooltip-title="Peer E2EE Key Not Published" data-tooltip="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically attaches your public key so they can reply encrypted." data-tooltip-variant="amber">🔓 Peer Key Not Published</span>`;

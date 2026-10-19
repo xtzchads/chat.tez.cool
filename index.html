@@ -4291,7 +4291,7 @@
             peerPk = peerPublicKeys.get(targetRecipient);
           }
           if (!peerPk) {
-            toast('Recipient has not published an E2EE key on-chain yet. Send a public message first (your key will be attached automatically) or ask them to click Publish Key.');
+            toast('Recipient has not published an E2EE key on-chain yet. Send a public message first (your key will be attached automatically) or wait for them to publish their key.');
             return;
           }
           encryptMode = true;

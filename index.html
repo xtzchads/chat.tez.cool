@@ -91,6 +91,8 @@
       flex-direction: column;
       width: 100%;
       height: 100vh;
+      height: 100dvh;
+      min-height: 0;
     }
 
     /* Original TezCool Header */
@@ -237,12 +239,6 @@
       gap: 12px;
     }
 
-    @media (max-width: 640px) {
-      .messenger-workspace {
-        padding-top: 142px;
-      }
-    }
-
     .messenger-topbar {
       display: flex;
       align-items: center;
@@ -261,6 +257,7 @@
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
+      min-width: 0;
     }
 
     .topbar-title {
@@ -270,6 +267,7 @@
       font-family: var(--font-display);
       font-size: 13.5px;
       font-weight: 600;
+      min-width: 0;
     }
 
     .status-dot {
@@ -278,6 +276,7 @@
       border-radius: 50%;
       background: var(--accent-cyan);
       box-shadow: 0 0 10px var(--accent-cyan);
+      flex-shrink: 0;
     }
 
     .contract-tag {
@@ -291,6 +290,8 @@
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--text-secondary);
+      white-space: nowrap;
+      flex-shrink: 0;
       transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
     }
 
@@ -299,10 +300,15 @@
       border-color: var(--border-cyan);
     }
 
+    .tzkt-text-mobile {
+      display: none;
+    }
+
     .topbar-right {
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-shrink: 0;
     }
 
     .wallet-pill {
@@ -316,6 +322,8 @@
       font-family: var(--font-mono);
       font-size: 12px;
       color: #a7f3d0;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .wallet-pill.visible { display: inline-flex; }
     .wallet-pill img {
@@ -323,6 +331,7 @@
       height: 22px;
       border-radius: 50%;
       background: #fff;
+      flex-shrink: 0;
     }
 
     .btn-connect {
@@ -337,6 +346,8 @@
       font-family: var(--font-display);
       font-size: 12.5px;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
       cursor: pointer;
       transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
     }
@@ -348,7 +359,7 @@
 
     .btn-connect.disconnect {
       background: rgba(244, 63, 94, 0.14);
-      border-color: rgba(244, 63, 94, 0.35);
+      border: 1px solid rgba(244, 63, 94, 0.35);
       color: #fda4af;
     }
 
@@ -391,6 +402,51 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 8px;
+    }
+
+    .sidebar-heading-left {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sidebar-count-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 18px;
+      padding: 0 6px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-primary);
+    }
+
+    .mobile-return-chat-btn {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(162, 124, 238, 0.45);
+      background: rgba(162, 124, 238, 0.16);
+      color: #e9d5ff;
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .mobile-return-chat-btn:hover {
+      background: rgba(162, 124, 238, 0.28);
     }
 
     .new-chat-row {
@@ -426,6 +482,8 @@
       font-family: var(--font-display);
       font-size: 12px;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
       cursor: pointer;
       transition: all 0.18s ease;
     }
@@ -529,6 +587,12 @@
       align-items: center;
       gap: 10px;
       min-width: 0;
+      flex: 1;
+    }
+
+    .peer-meta {
+      min-width: 0;
+      flex: 1;
     }
 
     .peer-avatar {
@@ -537,6 +601,7 @@
       border-radius: 50%;
       background: #fff;
       border: 1.5px solid var(--accent-cyan);
+      flex-shrink: 0;
     }
 
     .peer-title {
@@ -544,12 +609,79 @@
       font-size: 14px;
       font-weight: 600;
       color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .peer-sub {
       font-family: var(--font-mono);
       font-size: 11px;
       color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .mobile-back-btn {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      height: 32px;
+      padding: 0 10px 0 7px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(162, 124, 238, 0.38);
+      background: rgba(162, 124, 238, 0.14);
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+      white-space: nowrap;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .mobile-back-btn:hover {
+      background: rgba(162, 124, 238, 0.24);
+      border-color: var(--accent-purple);
+    }
+
+    .mobile-back-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 16px;
+      padding: 0 5px;
+      border-radius: var(--radius-pill);
+      background: rgba(0, 242, 242, 0.16);
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .mobile-empty-chats-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 4px;
+      padding: 8px 16px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(0, 242, 242, 0.4);
+      background: rgba(0, 242, 242, 0.12);
+      color: var(--accent-cyan);
+      font-family: var(--font-display);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.18s ease, border-color 0.18s ease;
+    }
+
+    .mobile-empty-chats-btn:hover {
+      background: rgba(0, 242, 242, 0.22);
     }
 
     .messages-scroll {
@@ -665,6 +797,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
       transition: all 0.15s ease;
     }
 
@@ -675,6 +808,7 @@
 
     .dm-input {
       flex: 1;
+      min-width: 0;
       height: 40px;
       padding: 0 14px;
       border-radius: var(--radius-md);
@@ -705,6 +839,8 @@
       font-family: var(--font-display);
       font-size: 13px;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
       cursor: pointer;
       transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
     }
@@ -764,6 +900,7 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      max-width: calc(100vw - 40px);
     }
 
     .toast-msg {
@@ -773,6 +910,8 @@
       border: 1px solid var(--border-bright);
       color: var(--text-primary);
       font-size: 13px;
+      line-height: 1.4;
+      word-break: break-word;
       box-shadow: var(--shadow-glass);
     }
 
@@ -786,6 +925,8 @@
       font-family: var(--font-display);
       font-size: 11.5px;
       font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
       cursor: pointer;
       transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
     }
@@ -837,6 +978,7 @@
       align-items: center;
       gap: 8px;
       flex-wrap: wrap;
+      flex-shrink: 0;
     }
 
     .peer-e2ee-badge {
@@ -848,6 +990,7 @@
       font-family: var(--font-mono);
       font-size: 11px;
       font-weight: 500;
+      white-space: nowrap;
     }
 
     .peer-e2ee-badge.ready {
@@ -872,6 +1015,7 @@
       font-family: var(--font-display);
       font-size: 11.5px;
       font-weight: 600;
+      white-space: nowrap;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -914,6 +1058,7 @@
       font-family: var(--font-display);
       font-size: 11px;
       font-weight: 600;
+      white-space: nowrap;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -1020,6 +1165,7 @@
       margin-top: 4px;
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 6px;
       font-family: var(--font-mono);
       font-size: 10px;
@@ -1051,7 +1197,7 @@
       top: -9999px;
       left: -9999px;
       z-index: 350;
-      max-width: 310px;
+      max-width: min(310px, calc(100vw - 24px));
       padding: 10px 13px;
       border-radius: var(--radius-md);
       background: linear-gradient(180deg, rgba(19, 24, 44, 0.98) 0%, rgba(11, 14, 27, 0.98) 100%);
@@ -1201,12 +1347,278 @@
       transform: rotate(225deg);
     }
 
+    /* Mobile & Tablet Responsive Layout */
     @media (max-width: 820px) {
+      .header {
+        position: relative;
+        height: auto;
+        min-height: 52px;
+        padding: 10px 12px;
+        flex-shrink: 0;
+      }
+
+      .messenger-workspace {
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+        gap: 8px;
+      }
+
+      .messenger-topbar {
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        gap: 8px;
+      }
+
+      .topbar-right {
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-left: auto;
+      }
+
       .messenger-grid {
         grid-template-columns: 1fr;
-        grid-template-rows: 220px 1fr;
+        grid-template-rows: 1fr;
       }
-      .contract-tag { display: none; }
+
+      .messenger-grid:not(.mobile-show-list) > aside.glass-pane {
+        display: none;
+      }
+
+      .messenger-grid.mobile-show-list > section.glass-pane {
+        display: none;
+      }
+
+      .mobile-back-btn {
+        display: inline-flex;
+      }
+
+      .mobile-return-chat-btn.visible {
+        display: inline-flex;
+      }
+
+      .mobile-empty-chats-btn {
+        display: inline-flex;
+      }
+
+      .messenger-topbar .contract-tag {
+        display: none;
+      }
+
+      .tzkt-text-desktop {
+        display: none;
+      }
+
+      .tzkt-text-mobile {
+        display: inline;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .messenger-workspace {
+        padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px));
+        gap: 6px;
+      }
+
+      .messenger-topbar {
+        padding: 8px 10px;
+        gap: 6px;
+        border-radius: var(--radius-md);
+      }
+
+      .topbar-title {
+        font-size: 12px;
+        gap: 6px;
+      }
+
+      .btn-connect {
+        padding: 6px 12px;
+        font-size: 11.5px;
+      }
+
+      .btn-e2ee, .btn-publish-key {
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+
+      .wallet-pill {
+        padding: 3px 9px 3px 5px;
+        font-size: 11px;
+        gap: 6px;
+      }
+
+      .wallet-pill img {
+        width: 18px;
+        height: 18px;
+      }
+
+      .glass-pane {
+        border-radius: var(--radius-lg);
+      }
+
+      .sidebar-header {
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .new-chat-input {
+        height: 38px;
+        font-size: 16px;
+      }
+
+      .btn-add-chat {
+        height: 38px;
+      }
+
+      .chat-pane-header {
+        padding: 8px 10px;
+        gap: 6px 8px;
+        min-height: 50px;
+        flex-wrap: wrap;
+      }
+
+      .peer-info {
+        gap: 8px;
+      }
+
+      .peer-avatar {
+        width: 30px;
+        height: 30px;
+      }
+
+      .peer-title {
+        font-size: 13px;
+      }
+
+      .peer-sub {
+        font-size: 10px;
+      }
+
+      .peer-actions {
+        gap: 6px;
+        margin-left: auto;
+      }
+
+      .peer-e2ee-badge {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+
+      .peer-e2ee-badge .badge-key-suffix {
+        display: none;
+      }
+
+      .peer-tzkt-link {
+        padding: 3px 8px;
+        font-size: 10px;
+      }
+
+      .messages-scroll {
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .bubble-row {
+        max-width: 88%;
+      }
+
+      .bubble-box {
+        padding: 9px 12px;
+        font-size: 13.5px;
+      }
+
+      .empty-pane-state {
+        padding: 20px 16px;
+        gap: 10px;
+      }
+
+      .empty-icon-circle {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+      }
+
+      .empty-pane-state h3 {
+        font-size: 15px;
+      }
+
+      .empty-pane-state p {
+        font-size: 12.5px;
+      }
+
+      .dm-composer {
+        flex-wrap: wrap;
+        padding: 8px 10px;
+        row-gap: 0;
+        column-gap: 6px;
+      }
+
+      .dm-composer::before {
+        content: '';
+        flex-basis: 100%;
+        height: 0;
+        order: 2;
+      }
+
+      .dm-emoji-btn,
+      .dm-encrypt-toggle,
+      .dm-pq-toggle {
+        order: 1;
+        height: 32px;
+      }
+
+      .dm-emoji-btn {
+        width: 34px;
+        font-size: 15px;
+      }
+
+      .dm-encrypt-toggle,
+      .dm-pq-toggle {
+        font-size: 11px;
+        padding: 0 9px;
+      }
+
+      .dm-input,
+      .dm-send-btn {
+        order: 3;
+        margin-top: 6px;
+        height: 38px;
+      }
+
+      .dm-input {
+        flex: 1 1 0%;
+        min-width: 0;
+        font-size: 16px;
+        padding: 0 11px;
+      }
+
+      .dm-send-btn {
+        padding: 0 13px;
+        font-size: 12px;
+      }
+
+      .emoji-popover {
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: 340px;
+        max-height: 220px;
+      }
+
+      .toast-stack {
+        left: 12px;
+        right: 12px;
+        bottom: 14px;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .topbar-title span:last-child {
+        font-size: 11.5px;
+      }
+
+      .mobile-back-btn span:not(.mobile-back-badge) {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -1253,13 +1665,16 @@
         </div>
       </div>
 
-      <div class="messenger-grid">
+      <div class="messenger-grid" id="messengerGrid">
         <!-- Left Contacts Pane -->
         <aside class="glass-pane">
           <div class="sidebar-header">
             <div class="sidebar-heading">
-              <span>Conversations</span>
-              <span id="dialogCountBadge">0</span>
+              <span class="sidebar-heading-left">
+                <span>Conversations</span>
+                <span class="sidebar-count-pill" id="dialogCountBadge">0</span>
+              </span>
+              <button type="button" class="mobile-return-chat-btn visible" id="mobileReturnChatBtn">Overview ›</button>
             </div>
             <div class="new-chat-row">
               <input type="text" id="newAddressInput" class="new-chat-input" maxlength="36" placeholder="tz1-tz5 or KT1 address…" />
@@ -1277,6 +1692,11 @@
         <section class="glass-pane">
           <div class="chat-pane-header" id="chatHeader">
             <div class="peer-info">
+              <button type="button" class="mobile-back-btn" data-mobile-action="open-list" aria-label="View conversations">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Chats</span>
+                <span class="mobile-back-badge">0</span>
+              </button>
               <div class="peer-title">Select or start a conversation</div>
             </div>
           </div>
@@ -1286,6 +1706,7 @@
               <div class="empty-icon-circle">💬</div>
               <h3>Direct Wallet-to-Wallet Messaging</h3>
               <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet. Enable optional End-to-End Encryption (X25519 + AES-256-GCM) so only your recipient can decrypt it.</p>
+              <button type="button" class="mobile-empty-chats-btn" data-mobile-action="open-list">➕ Start or Select a Conversation</button>
             </div>
           </div>
 
@@ -1351,6 +1772,7 @@
       let unlockPendingPromise = null;
       let isPublishingKey = false;
       let isSendingDm = false;
+      let hasAutoSwitchedInitialMobileView = false;
 
       const connectBtn = document.getElementById('connectBtn');
       const e2eeBtn = document.getElementById('e2eeBtn');
@@ -1358,6 +1780,8 @@
       const walletPill = document.getElementById('walletPill');
       const myAvatar = document.getElementById('myAvatar');
       const myAddressLabel = document.getElementById('myAddressLabel');
+      const messengerGrid = document.getElementById('messengerGrid');
+      const mobileReturnChatBtn = document.getElementById('mobileReturnChatBtn');
       const newAddressInput = document.getElementById('newAddressInput');
       const addChatBtn = document.getElementById('addChatBtn');
       const dialogsList = document.getElementById('dialogsList');
@@ -1371,6 +1795,15 @@
       const emojiToggleBtn = document.getElementById('emojiToggleBtn');
       const emojiPopover = document.getElementById('emojiPopover');
       const toastStack = document.getElementById('toastStack');
+
+      function setMobileView(view) {
+        if (!messengerGrid) return;
+        if (view === 'list') {
+          messengerGrid.classList.add('mobile-show-list');
+        } else {
+          messengerGrid.classList.remove('mobile-show-list');
+        }
+      }
 
       function shortAddr(addr) {
         if (!addr || addr.length < 12) return addr || '';
@@ -3492,9 +3925,25 @@
         }
       }
 
+      let lastTouchTimestamp = 0;
+
+      document.addEventListener(
+        'touchstart',
+        e => {
+          lastTouchTimestamp = Date.now();
+          if (activeTooltipTarget && !activeTooltipTarget.contains(e.target)) {
+            hideCustomTooltip();
+          }
+        },
+        { passive: true }
+      );
+
       document.addEventListener('mouseover', e => {
         const el = e.target.closest('[data-tooltip], [data-tooltip-title], [title]');
         if (el) {
+          if (Date.now() - lastTouchTimestamp < 800 && el.matches('button, input, a')) {
+            return;
+          }
           if (el === activeTooltipTarget) return;
           showCustomTooltip(el);
         } else if (activeTooltipTarget) {
@@ -3511,6 +3960,7 @@
       });
 
       document.addEventListener('focusin', e => {
+        if (Date.now() - lastTouchTimestamp < 800) return;
         const el = e.target.closest('[data-tooltip], [data-tooltip-title], [title]');
         if (el && el !== activeTooltipTarget) showCustomTooltip(el);
       });
@@ -3519,6 +3969,22 @@
       window.addEventListener('scroll', () => hideCustomTooltip(), true);
       window.addEventListener('resize', () => {
         if (activeTooltipTarget) positionCustomTooltip(activeTooltipTarget);
+      });
+
+      if (mobileReturnChatBtn) {
+        mobileReturnChatBtn.addEventListener('click', () => {
+          setMobileView('chat');
+        });
+      }
+
+      document.addEventListener('click', e => {
+        const openListBtn = e.target.closest('[data-mobile-action="open-list"]');
+        if (openListBtn) {
+          setMobileView('list');
+          if (myAddress && conversations.size === 0 && newAddressInput) {
+            setTimeout(() => newAddressInput.focus(), 50);
+          }
+        }
       });
 
       function updateE2EEControlsUI() {
@@ -4132,6 +4598,12 @@
           if (!currentRecipient && conversations.size > 0) {
             currentRecipient = conversations.keys().next().value;
           }
+          if (!hasAutoSwitchedInitialMobileView) {
+            hasAutoSwitchedInitialMobileView = true;
+            if (conversations.size === 0) {
+              setMobileView('list');
+            }
+          }
 
           updateE2EEControlsUI();
           renderDialogs();
@@ -4143,6 +4615,12 @@
 
       function renderDialogs() {
         dialogCountBadge.textContent = String(conversations.size);
+        if (mobileReturnChatBtn) {
+          mobileReturnChatBtn.classList.add('visible');
+          mobileReturnChatBtn.textContent = currentRecipient
+            ? `${aliasCache.get(currentRecipient) || shortAddr(currentRecipient)} ›`
+            : 'Overview ›';
+        }
         if (!myAddress) {
           dialogsList.innerHTML = `
             <div class="empty-pane-state" style="padding: 20px;">
@@ -4196,6 +4674,7 @@
           `;
           item.addEventListener('click', () => {
             currentRecipient = peer;
+            setMobileView('chat');
             updateComposerState();
             renderDialogs();
             renderActiveConversation();
@@ -4207,11 +4686,18 @@
       let lastChatHeaderState = '';
 
       function renderChatHeader() {
+        const countStr = String(conversations.size);
         if (!currentRecipient) {
-          if (lastChatHeaderState === 'empty') return;
-          lastChatHeaderState = 'empty';
+          const emptyKey = `empty|${countStr}`;
+          if (lastChatHeaderState === emptyKey) return;
+          lastChatHeaderState = emptyKey;
           chatHeader.innerHTML = `
             <div class="peer-info">
+              <button type="button" class="mobile-back-btn" data-mobile-action="open-list" aria-label="View conversations">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                <span>Chats</span>
+                <span class="mobile-back-badge">${escapeHtml(countStr)}</span>
+              </button>
               <div class="peer-title">Select or start a conversation</div>
             </div>
           `;
@@ -4220,28 +4706,33 @@
         const displayName = aliasCache.get(currentRecipient) || shortAddr(currentRecipient);
         const peerPk = peerPublicKeys.get(currentRecipient) || '';
         const peerPq = peerPqPublicKeys.get(currentRecipient) || '';
-        const nextState = `${currentRecipient}|${displayName}|${peerPk}|${peerPq ? peerPq.slice(0, 16) : ''}`;
+        const nextState = `${currentRecipient}|${displayName}|${peerPk}|${peerPq ? peerPq.slice(0, 16) : ''}|${countStr}`;
         if (nextState === lastChatHeaderState) return;
         lastChatHeaderState = nextState;
 
         const badgeHtml = peerPk && peerPq
-          ? `<span class="peer-e2ee-badge pq-ready" data-tooltip-title="Recipient Post-Quantum Hybrid Key Verified" data-tooltip="Both X25519 (32B) and NIST ML-KEM-512 (800B) public keys discovered on-chain. Supports Encrypted NFT (~0.084 XTZ) and Stealth (~0.001 XTZ) in both Standard and Post-Quantum Hybrid modes." data-tooltip-mono="X25519: ${escapeHtml(peerPk)} | ML-KEM-512: ${escapeHtml(peerPq.slice(0, 24))}…" data-tooltip-variant="purple">🛡️ E2EE + PQ Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
+          ? `<span class="peer-e2ee-badge pq-ready" data-tooltip-title="Recipient Post-Quantum Hybrid Key Verified" data-tooltip="Both X25519 (32B) and NIST ML-KEM-512 (800B) public keys discovered on-chain. Supports Encrypted NFT (~0.084 XTZ) and Stealth (~0.001 XTZ) in both Standard and Post-Quantum Hybrid modes." data-tooltip-mono="X25519: ${escapeHtml(peerPk)} | ML-KEM-512: ${escapeHtml(peerPq.slice(0, 24))}…" data-tooltip-variant="purple">🛡️ E2EE + PQ Ready<span class="badge-key-suffix"> (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span></span>`
           : peerPk
-            ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient Standard E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. Supports Encrypted NFT (~0.084 XTZ) or Stealth E2EE (~0.001 XTZ). Recipient has not published an optional ML-KEM-512 PQ key yet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span>`
+            ? `<span class="peer-e2ee-badge ready" data-tooltip-title="Recipient Standard E2EE Key Verified" data-tooltip="X25519 public key discovered on-chain. Supports Encrypted NFT (~0.084 XTZ) or Stealth E2EE (~0.001 XTZ). Recipient has not published an optional ML-KEM-512 PQ key yet." data-tooltip-mono="X25519: ${escapeHtml(peerPk)}" data-tooltip-variant="emerald">🔐 E2EE Ready<span class="badge-key-suffix"> (${escapeHtml(peerPk.slice(0, 4))}…${escapeHtml(peerPk.slice(-4))})</span></span>`
             : `<span class="peer-e2ee-badge unavailable" data-tooltip-title="Peer E2EE Key Not Published" data-tooltip="This wallet has not published an E2EE public key on-chain yet. Any message you send while E2EE is unlocked automatically attaches your public key so they can reply encrypted." data-tooltip-variant="amber">🔓 Peer Key Not Published</span>`;
 
         chatHeader.innerHTML = `
           <div class="peer-info">
+            <button type="button" class="mobile-back-btn" data-mobile-action="open-list" aria-label="Back to conversations">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              <span>Chats</span>
+              <span class="mobile-back-badge">${escapeHtml(countStr)}</span>
+            </button>
             <img class="peer-avatar" src="https://services.tzkt.io/v1/avatars/${escapeHtml(currentRecipient)}" alt="" />
-            <div>
+            <div class="peer-meta">
               <div class="peer-title">${escapeHtml(displayName)}</div>
               <div class="peer-sub">${escapeHtml(currentRecipient)}</div>
             </div>
           </div>
           <div class="peer-actions">
             ${badgeHtml}
-            <a class="contract-tag" href="https://tzkt.io/${escapeHtml(currentRecipient)}" target="_blank" rel="noopener noreferrer" data-tooltip-title="View Account on TzKT" data-tooltip="Open recipient profile and transaction history on TzKT Explorer" data-tooltip-mono="${escapeHtml(currentRecipient)}" data-tooltip-variant="cyan">
-              View on TzKT ↗
+            <a class="contract-tag peer-tzkt-link" href="https://tzkt.io/${escapeHtml(currentRecipient)}" target="_blank" rel="noopener noreferrer" data-tooltip-title="View Account on TzKT" data-tooltip="Open recipient profile and transaction history on TzKT Explorer" data-tooltip-mono="${escapeHtml(currentRecipient)}" data-tooltip-variant="cyan">
+              <span class="tzkt-text-desktop">View on TzKT</span><span class="tzkt-text-mobile">TzKT</span> ↗
             </a>
           </div>
         `;
@@ -4257,6 +4748,7 @@
               <div class="empty-icon-circle">💬</div>
               <h3>Direct Wallet-to-Wallet Messaging</h3>
               <p>Every message is minted as an on-chain token directly to your recipient's Tezos wallet. Enable optional End-to-End Encryption (X25519 + AES-256-GCM), Stealth Mode, or Post-Quantum Hybrid (NIST ML-KEM-512) protection.</p>
+              <button type="button" class="mobile-empty-chats-btn" data-mobile-action="open-list">➕ Start or Select a Conversation</button>
             </div>
           `;
           return;
@@ -4371,7 +4863,7 @@
         messagesScroll.scrollTop = messagesScroll.scrollHeight;
       }
 
-      addChatBtn.addEventListener('click', () => {
+      function handleAddNewChat() {
         const addr = newAddressInput.value.trim();
         if (!ADDR_REGEX.test(addr)) {
           toast('Please enter a valid 36-character Tezos address.');
@@ -4383,8 +4875,17 @@
         }
         currentRecipient = addr;
         newAddressInput.value = '';
+        setMobileView('chat');
         renderDialogs();
         renderActiveConversation();
+      }
+
+      addChatBtn.addEventListener('click', handleAddNewChat);
+      newAddressInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAddNewChat();
+        }
       });
 
       async function sendDm() {
@@ -4557,6 +5058,7 @@
         zeroizeKeyPair(myKeyPair);
         clearCryptoCaches();
         myKeyPair = null;
+        hasAutoSwitchedInitialMobileView = false;
         if (myAddress) {
           const activeAddr = myAddress;
           walletPill.classList.add('visible');
@@ -4611,6 +5113,7 @@
           newAddressInput.value = '';
           emojiPopover.classList.remove('open');
           hideCustomTooltip();
+          setMobileView('chat');
           updateE2EEControlsUI();
           renderDialogs();
           renderActiveConversation();

@@ -4849,7 +4849,7 @@
           }
           updateE2EEControlsUI();
           if (!activeAddr.startsWith('tz1') && !activeAddr.startsWith('tz5')) {
-            toast('⚠️ Note: Full Post-Quantum key-derivation resistance against Shor\'s algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts.');
+            toast('⚠️ Note: Full Post-Quantum key-derivation resistance against Shor\'s algorithm applies to tz5 (ML-DSA-44) accounts.');
           }
           if (!myPqKeyPublishedOnChain) {
             toast('🛡️ Post-Quantum (ML-KEM-512) mode enabled! Click "🛡️ Publish PQ Key" in the top bar (~0.001 XTZ once) so others can send you PQ messages too.');
@@ -4893,7 +4893,7 @@
           pqToggleBtn.setAttribute(
             'data-tooltip',
             peerHasPqKey
-              ? 'Uses X25519 + NIST ML-KEM-512 + AES-256-GCM (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor\'s algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts. Click to switch back to standard X25519.'
+              ? 'Uses X25519 + NIST ML-KEM-512 + AES-256-GCM (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor\'s algorithm applies to tz5 (ML-DSA-44) accounts. Click to switch back to standard X25519.'
               : 'PQ Shield is enabled, but this recipient has not published an ML-KEM-512 key (pq_pk) yet. Click to toggle off or ask them to click "🛡️ Publish PQ Key" (~0.001 XTZ).'
           );
           pqToggleBtn.setAttribute('data-tooltip-variant', peerHasPqKey ? 'purple' : 'amber');
@@ -4903,7 +4903,7 @@
           pqToggleBtn.setAttribute('data-tooltip-title', 'Post-Quantum Hybrid Shield: OFF');
           pqToggleBtn.setAttribute(
             'data-tooltip',
-            'Click to enable optional NIST ML-KEM-512 Post-Quantum Hybrid protection (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor\'s algorithm applies to tz1 (Ed25519) and tz5 (ML-DSA-44) accounts.'
+            'Click to enable optional NIST ML-KEM-512 Post-Quantum Hybrid protection (~0.084 XTZ Encrypted NFT / ~0.001 XTZ Stealth). Full PQ key-derivation resistance against Shor\'s algorithm applies to tz5 (ML-DSA-44) accounts.'
           );
           pqToggleBtn.setAttribute('data-tooltip-variant', 'purple');
         }

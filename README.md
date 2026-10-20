@@ -1,7 +1,5 @@
 # Chad Chat
-
- - Chat with friends or troll the anons
- - Your message will be sent as NFT and will be seen in indexer and wallet by recipient
+- Your message will be sent as NFT and will be seen in indexer and wallet by recipient
  - Perfect way to contact someone on-chain if there is no other way to do it
  - **Optional End-to-End Encryption (E2EE), Stealth Mode & Post-Quantum Shield**:
    - Uses **X25519 ECDH** key agreement + optional **NIST FIPS 203 ML-KEM-512** Post-Quantum KEM + **AES-256-GCM** authenticated encryption

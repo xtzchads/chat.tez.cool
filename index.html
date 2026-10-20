@@ -2065,6 +2065,7 @@
       let aliasCache = new Map();
       let pollTimer = null;
       let lastRenderedRecipient = null;
+      let lastRenderedLastId = 0;
 
       // End-to-End Encryption & Post-Quantum Hybrid state
       let myKeyPair = null; // { secretKey, publicKey, publicKeyHex, pqSeedD, pqSeedZ, selfSeed, pqPublicKey, pqSecretKey, pqPublicKeyHex }
@@ -5398,8 +5399,11 @@
         const sameConv = lastRenderedRecipient === currentRecipient;
         const prevTop = messagesScroll.scrollTop;
         const wasAtBottom = messagesScroll.scrollHeight - prevTop - messagesScroll.clientHeight < 80;
-        const stickToBottom = !sameConv || wasAtBottom;
+        const lastMsg = msgs[msgs.length - 1];
+        const myNewMsg = Boolean(sameConv && lastMsg && lastMsg.sender === myAddress && lastMsg.id !== lastRenderedLastId);
+        const stickToBottom = !sameConv || wasAtBottom || myNewMsg;
         lastRenderedRecipient = currentRecipient;
+        lastRenderedLastId = lastMsg ? lastMsg.id : 0;
 
         messagesScroll.innerHTML = '';
         msgs.forEach(m => {
@@ -5876,7 +5880,6 @@
                     : '🔒 Encrypted message minted! Only you and the recipient can decrypt it.')
                 : 'Message minted! It will appear once confirmed on-chain.'
           );
-          lastRenderedRecipient = null;
           setTimeout(fetchAllMessages, 4000);
         } catch (err) {
           toast('Transaction cancelled or failed.');

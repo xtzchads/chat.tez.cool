@@ -2064,6 +2064,7 @@
       let conversations = new Map(); // peerAddress -> Array<Msg>
       let aliasCache = new Map();
       let pollTimer = null;
+      let lastRenderedRecipient = null;
 
       // End-to-End Encryption & Post-Quantum Hybrid state
       let myKeyPair = null; // { secretKey, publicKey, publicKeyHex, pqSeedD, pqSeedZ, selfSeed, pqPublicKey, pqSecretKey, pqPublicKeyHex }
@@ -5394,6 +5395,12 @@
           return;
         }
 
+        const sameConv = lastRenderedRecipient === currentRecipient;
+        const prevTop = messagesScroll.scrollTop;
+        const wasAtBottom = messagesScroll.scrollHeight - prevTop - messagesScroll.clientHeight < 80;
+        const stickToBottom = !sameConv || wasAtBottom;
+        lastRenderedRecipient = currentRecipient;
+
         messagesScroll.innerHTML = '';
         msgs.forEach(m => {
           const row = document.createElement('div');
@@ -5479,18 +5486,22 @@
           row.appendChild(meta);
           messagesScroll.appendChild(row);
         });
-        messagesScroll.scrollTop = messagesScroll.scrollHeight;
-        messagesScroll.querySelectorAll('.bubble-gif').forEach(img => {
-          if (!img.complete) {
-            img.addEventListener(
-              'load',
-              () => {
-                messagesScroll.scrollTop = messagesScroll.scrollHeight;
-              },
-              { once: true }
-            );
+          if (stickToBottom) {
+          messagesScroll.scrollTop = messagesScroll.scrollHeight;
+          messagesScroll.querySelectorAll('.bubble-gif').forEach(img => {
+            if (!img.complete) {
+              img.addEventListener(
+                'load',
+                () => {
+                  messagesScroll.scrollTop = messagesScroll.scrollHeight;
+                },
+                { once: true }
+              );
+            }
+          });
+          } else {
+          messagesScroll.scrollTop = prevTop;
           }
-        });
       }
 
       const TZKT_SUGGEST_API_BASE = 'https://api.tzkt.io/v1';

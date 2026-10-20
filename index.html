@@ -5312,6 +5312,8 @@
       }
 
       let lastChatHeaderState = '';
+      let lastRenderedConvKey = '';
+      let lastRenderedMsgsSig = '';
 
       function renderChatHeader() {
         const countStr = String(conversations.size);
@@ -5371,6 +5373,8 @@
         updateComposerState();
 
         if (!currentRecipient) {
+          lastRenderedConvKey = '';
+          lastRenderedMsgsSig = '';
           messagesScroll.innerHTML = `
             <div class="empty-pane-state">
               <div class="empty-icon-circle">💬</div>
@@ -5384,6 +5388,8 @@
 
         const msgs = conversations.get(currentRecipient) || [];
         if (msgs.length === 0) {
+          lastRenderedConvKey = '';
+          lastRenderedMsgsSig = '';
           messagesScroll.innerHTML = `
             <div class="empty-pane-state">
               <div class="empty-icon-circle">✨</div>
@@ -5393,6 +5399,16 @@
           `;
           return;
         }
+
+        const convKey = `${myAddress}|${currentRecipient}`;
+        const sig =
+          `${myKeyPair ? myKeyPair.publicKeyHex : 'locked'}|` +
+          msgs.map(m => `${m.id}:${m.decrypted ? 1 : 0}:${(m.text || '').length}`).join(',');
+        if (convKey === lastRenderedConvKey && sig === lastRenderedMsgsSig) return; // nothing changed: leave DOM and scroll untouched
+        const keepScroll = convKey === lastRenderedConvKey; // same conversation as the previous render
+        const savedScrollTop = messagesScroll.scrollTop;
+        lastRenderedConvKey = convKey;
+        lastRenderedMsgsSig = sig;
 
         messagesScroll.innerHTML = '';
         msgs.forEach(m => {
@@ -5479,6 +5495,11 @@
           row.appendChild(meta);
           messagesScroll.appendChild(row);
         });
+        if (keepScroll) {
+          // Refresh of the same conversation: keep the scroll position exactly where it was
+          messagesScroll.scrollTop = savedScrollTop;
+          return;
+        }
         messagesScroll.scrollTop = messagesScroll.scrollHeight;
         messagesScroll.querySelectorAll('.bubble-gif').forEach(img => {
           if (!img.complete) {

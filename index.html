@@ -2091,6 +2091,10 @@
       let gifReqId = 0;
       let gifSearchTimeout = null;
 
+      // Auto-scroll: while the user sits at the bottom of the message pane we keep following new messages.
+      const BOTTOM_THRESHOLD_PX = 24; // how close to the very end still counts as "at the bottom"
+      let stickToBottom = true;
+
       const connectBtn = document.getElementById('connectBtn');
       const e2eeBtn = document.getElementById('e2eeBtn');
       const publishKeyBtn = document.getElementById('publishKeyBtn');
@@ -2117,12 +2121,33 @@
       const gifGrid = document.getElementById('gifGrid');
       const toastStack = document.getElementById('toastStack');
 
+      function isMessagesScrolledToBottom() {
+        return messagesScroll.scrollHeight - messagesScroll.scrollTop - messagesScroll.clientHeight <= BOTTOM_THRESHOLD_PX;
+      }
+
+      function scrollMessagesToBottom() {
+        messagesScroll.scrollTop = messagesScroll.scrollHeight;
+      }
+
+      // Track whether the user is at the bottom. Only real scrolling updates it, so content that grows
+      // by itself (a new bubble, a GIF finishing loading) does not drop the "following" state.
+      messagesScroll.addEventListener(
+        'scroll',
+        () => {
+          if (!messagesScroll.clientHeight) return; // pane is hidden (mobile list view): measurements are meaningless
+          stickToBottom = isMessagesScrolledToBottom();
+        },
+        { passive: true }
+      );
+
       function setMobileView(view) {
         if (!messengerGrid) return;
         if (view === 'list') {
           messengerGrid.classList.add('mobile-show-list');
         } else {
           messengerGrid.classList.remove('mobile-show-list');
+          // The chat pane was display:none (its scroll offset is lost): land on the newest message again
+          if (stickToBottom) scrollMessagesToBottom();
         }
       }
 
@@ -5407,6 +5432,9 @@
         if (convKey === lastRenderedConvKey && sig === lastRenderedMsgsSig) return; // nothing changed: leave DOM and scroll untouched
         const keepScroll = convKey === lastRenderedConvKey; // same conversation as the previous render
         const savedScrollTop = messagesScroll.scrollTop;
+        // Opening a conversation always lands on the newest message; a refresh of the same conversation
+        // (a message we sent or received just appeared) follows it only if we were already at the bottom.
+        const shouldPinToBottom = !keepScroll || stickToBottom;
         lastRenderedConvKey = convKey;
         lastRenderedMsgsSig = sig;
 
@@ -5495,21 +5523,22 @@
           row.appendChild(meta);
           messagesScroll.appendChild(row);
         });
-        if (keepScroll) {
-          // Refresh of the same conversation: keep the scroll position exactly where it was
+        if (!shouldPinToBottom) {
+          // Refresh while the user is reading older messages: keep the scroll position exactly where it was
           messagesScroll.scrollTop = savedScrollTop;
           return;
         }
-        messagesScroll.scrollTop = messagesScroll.scrollHeight;
+        scrollMessagesToBottom();
+        stickToBottom = true;
+        // GIFs load after the bubble is placed and make it taller: keep following the end, but only for as
+        // long as the user has not scrolled away in the meantime.
         messagesScroll.querySelectorAll('.bubble-gif').forEach(img => {
           if (!img.complete) {
-            img.addEventListener(
-              'load',
-              () => {
-                messagesScroll.scrollTop = messagesScroll.scrollHeight;
-              },
-              { once: true }
-            );
+            const followEnd = () => {
+              if (stickToBottom) scrollMessagesToBottom();
+            };
+            img.addEventListener('load', followEnd, { once: true });
+            img.addEventListener('error', followEnd, { once: true }); // failed GIFs are swapped for a short link
           }
         });
       }
